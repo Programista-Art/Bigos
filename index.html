@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BigOS 1.19</title>
+      <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+ 
+</head>
+<body class="w-screen h-screen text-gray-800 dark:text-gray-100 bg-black transition-colors duration-300">
+
+    <!-- GLOBALNY MODAL SYSTEMOWY (INPUT) -->
+    <div id="system-prompt-modal" class="hidden absolute inset-0 bg-black/80 z-[10000] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm transform transition-all scale-100">
+            <h3 class="font-bold mb-4 text-lg text-gray-800 dark:text-white border-b border-gray-200 dark:border-[#444] pb-2" id="system-prompt-title">Podaj wartość</h3>
+            <input type="text" id="system-prompt-input" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 text-gray-800 dark:text-white outline-none focus:border-blue-500 mb-4" onkeydown="if(event.key==='Enter') ui.confirmPrompt()">
+            <div class="flex justify-end gap-2 border-t border-gray-200 dark:border-[#444] pt-4">
+                <button onclick="ui.closePrompt()" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded text-gray-800 dark:text-white font-bold transition">Anuluj</button>
+                <button onclick="ui.confirmPrompt()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white font-bold shadow transition" id="system-prompt-btn">Zatwierdź</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EKRAN LOGOWANIA / BLOKADY -->
+    <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9900] flex flex-col items-center justify-center text-white bg-cover bg-center" style="background-image: url('tapety/bigos.jpg');">
+        <div class="bg-black/70 p-8 rounded-2xl backdrop-blur-md border border-white/20 text-center shadow-2xl w-80 max-w-[90%]">
+            <h1 class="text-4xl font-bold mb-2">BigOS 1.19</h1>
+            <p class="text-sm text-gray-300 mb-6" id="login-msg">Logowanie do systemu</p>
+            <input type="password" id="password-input" class="w-full px-4 py-3 rounded bg-white/10 border border-white/30 focus:outline-none focus:border-blue-500 text-center mb-4 text-white placeholder-gray-400" placeholder="Wpisz hasło..." onkeydown="if(event.key==='Enter') auth.handleLogin()">
+            <button onclick="auth.handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded font-bold transition shadow-lg">Odblokuj / Wejdź</button>
+            <button onclick="auth.resetPassword()" class="mt-4 text-xs text-gray-400 hover:text-white underline p-2">Zresetuj system (Format)</button>
+        </div>
+    </div>
+
+    <!-- EKRAN UŚPIENIA -->
+    <div id="sleep-screen" class="hidden absolute inset-0 bg-black z-[9950]"></div>
+
+    <!-- PULPIT -->
+    <div id="desktop-bg" class="absolute inset-0 z-0 transition-all duration-500"></div>
+    <div id="desktop-area" class="absolute inset-0 z-10 bottom-12" oncontextmenu="desktop.showContextMenu(event, 'desktop', 'root')"></div>
+    <div id="sticky-notes-container" class="absolute inset-0 z-10 bottom-12 pointer-events-none"></div>
+
+    <!-- ============================================== -->
+    <!-- OKNA APLIKACJI (Z-index 50+)                   -->
+    <!-- ============================================== -->
+
+    <!-- Narzędzia: Nadzorca, Pogodynka, Czasomierz -->
+    <div id="app-nadzorca" class="window w-[500px] h-[400px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+        <div class="title-bar bg-slate-700 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-slate-800 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-nadzorca')" ontouchstart="winManager.startDrag(event, 'app-nadzorca')">
+            <span class="text-sm font-bold">📊 Nadzorca Systemu</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('nadzorca')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.close('nadzorca')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col flex-grow bg-gray-50 dark:bg-[#151515] overflow-hidden">
+            <div class="grid grid-cols-3 gap-2 mb-4">
+                <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded border border-blue-200 dark:border-blue-800/50">
+                    <div class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1">CPU (Wirtualne)</div>
+                    <div class="text-xl font-mono text-gray-800 dark:text-gray-200" id="nadzorca-cpu">0%</div>
+                </div>
+                <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded border border-green-200 dark:border-green-800/50">
+                    <div class="text-[10px] text-green-600 dark:text-green-400 font-bold mb-1">RAM (Prawdziwy)</div>
+                    <div class="text-xl font-mono text-gray-800 dark:text-gray-200" id="nadzorca-ram">0 MB</div>
+                </div>
+                <div class="bg-purple-100 dark:bg-purple-900/30 p-2 rounded border border-purple-200 dark:border-purple-800/50">
+                    <div class="text-[10px] text-purple-600 dark:text-purple-400 font-bold mb-1">Dysk (Dane OS)</div>
+                    <div class="text-xl font-mono text-gray-800 dark:text-gray-200" id="nadzorca-disk">0 KB</div>
+                </div>
+            </div>
+            <div class="flex-grow border border-gray-300 dark:border-[#333] bg-white dark:bg-[#1a1a1a] rounded overflow-hidden flex flex-col">
+                <div class="bg-gray-200 dark:bg-[#222] p-2 text-xs font-bold border-b border-gray-300 dark:border-[#333] grid grid-cols-3">
+                    <span class="col-span-2">Aplikacja</span>
+                    <span class="text-right">Akcja</span>
+                </div>
+                <div id="nadzorca-list" class="flex-grow overflow-y-auto"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-pogodynka" class="window w-[350px] h-[450px] bg-gradient-to-b from-sky-400 to-blue-600 dark:from-gray-800 dark:to-gray-900 border border-blue-500 dark:border-gray-700 text-white">
+        <div class="title-bar bg-black/20 text-white p-2 flex justify-between items-center border-b border-white/10" onmousedown="winManager.startDrag(event, 'app-pogodynka')" ontouchstart="winManager.startDrag(event, 'app-pogodynka')">
+            <span class="text-sm font-bold">🌤️ Pogodynka</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('pogodynka')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.close('pogodynka')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center h-full">
+            <div class="w-full flex gap-2 mb-6">
+                <input type="text" id="pogodynka-city" placeholder="Wpisz miasto..." class="flex-grow px-3 py-2 rounded-full bg-white/20 border border-white/30 text-white placeholder-white/70 outline-none focus:bg-white/30 text-sm" onkeydown="if(event.key==='Enter') pogodynkaApp.search()">
+                <button onclick="pogodynkaApp.search()" class="px-4 bg-white/30 hover:bg-white/40 rounded-full font-bold transition text-sm">Szukaj</button>
+            </div>
+            <div id="pogodynka-content" class="flex-grow flex flex-col items-center justify-center w-full text-center">
+                <div class="text-6xl mb-2" id="pog-icon">🌍</div>
+                <h2 class="text-2xl font-bold mb-1" id="pog-city">Wybierz Miasto</h2>
+                <div class="text-6xl font-light mb-4" id="pog-temp">--°C</div>
+                <div class="grid grid-cols-2 gap-4 w-full mt-auto bg-black/20 p-4 rounded-xl">
+                    <div><div class="text-xs text-white/70 uppercase">Wiatr</div><div class="font-bold text-lg" id="pog-wind">-- km/h</div></div>
+                    <div><div class="text-xs text-white/70 uppercase">Kod</div><div class="font-bold text-lg" id="pog-desc">--</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-czasomierz" class="window w-[350px] h-[350px] bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333]">
+        <div class="title-bar bg-rose-600 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-rose-700 dark:border-[#222]" onmousedown="winManager.startDrag(event, 'app-czasomierz')" ontouchstart="winManager.startDrag(event, 'app-czasomierz')">
+            <span class="text-sm font-bold">⏱️ Czasomierz</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('czasomierz')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.close('czasomierz')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="flex text-sm bg-gray-100 dark:bg-[#222] border-b border-gray-300 dark:border-[#333]">
+            <button class="flex-1 py-2 font-bold bg-white dark:bg-[#1a1a1a] border-b-2 border-rose-500" id="tab-stoper-btn" onclick="czasomierzApp.switchTab('stoper')">Stoper</button>
+            <button class="flex-1 py-2 font-bold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white border-b-2 border-transparent" id="tab-minutnik-btn" onclick="czasomierzApp.switchTab('minutnik')">Minutnik</button>
+        </div>
+        <div class="p-4 flex-grow relative overflow-hidden">
+            <div id="tab-stoper" class="absolute inset-0 p-4 flex flex-col items-center">
+                <div class="text-5xl font-mono font-light mt-4 mb-8 text-gray-800 dark:text-white" id="stoper-display">00:00.00</div>
+                <div class="flex gap-4">
+                    <button onclick="czasomierzApp.stoperToggle()" class="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-800 shadow" id="stoper-toggle">Start</button>
+                    <button onclick="czasomierzApp.stoperReset()" class="w-16 h-16 rounded-full bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400 font-bold border border-gray-200 dark:border-[#333] shadow">Reset</button>
+                </div>
+            </div>
+            <div id="tab-minutnik" class="absolute inset-0 p-4 flex flex-col items-center hidden translate-x-full transition-transform">
+                <div class="flex gap-2 items-center justify-center mt-2 mb-6">
+                    <input type="number" id="minutnik-m" value="05" min="0" max="99" class="w-20 h-20 text-center text-5xl font-light bg-gray-50 dark:bg-[#222] border border-gray-300 dark:border-[#444] rounded outline-none text-gray-800 dark:text-white">
+                    <span class="text-4xl text-gray-800 dark:text-white">:</span>
+                    <input type="number" id="minutnik-s" value="00" min="0" max="59" class="w-20 h-20 text-center text-5xl font-light bg-gray-50 dark:bg-[#222] border border-gray-300 dark:border-[#444] rounded outline-none text-gray-800 dark:text-white">
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="czasomierzApp.minutnikToggle()" class="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-800 shadow" id="minutnik-toggle">Start</button>
+                    <button onclick="czasomierzApp.minutnikReset()" class="w-16 h-16 rounded-full bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400 font-bold border border-gray-200 dark:border-[#333] shadow">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Skryba (Notatnik) -->
+    <div id="app-skryba" class="window w-[650px] h-[450px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-blue-700 dark:bg-gray-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-skryba')" ontouchstart="winManager.startDrag(event, 'app-skryba')">
+            <span class="text-sm font-bold">📝 Skryba</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('skryba')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.maximize('app-skryba')" class="hover:bg-white/20 px-2 rounded">□</button>
+                <button onclick="winManager.close('skryba')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="flex gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs border-b border-gray-300 dark:border-gray-600 z-50">
+            <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 px-2 py-1 rounded transition">Plik
+                <div class="dropdown-menu bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-gray-800 dark:text-gray-100 shadow-xl pb-1 pt-1">
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="skrybaApp.newFile()">Nowy</div>
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="document.getElementById('skryba-open-pc').click()">Otwórz z komputera (.txt)</div>
+                    <input type="file" id="skryba-open-pc" class="hidden" accept=".txt" onchange="skrybaApp.openLocalFile(event)">
+                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="skrybaApp.promptSaveToSystem()">Zapisz w BigOS</div>
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="skrybaApp.saveToPC()">Pobierz na PC (.txt)</div>
+                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
+                    <div class="px-4 py-2 hover:bg-red-500 hover:text-white cursor-pointer" onclick="winManager.close('skryba')">Zamknij program</div>
+                </div>
+            </div>
+            <div class="px-2 py-1 text-gray-500 dark:text-gray-400 font-semibold truncate max-w-[200px]" id="skryba-filename-display">Nowy Plik.txt</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-800 p-2 flex gap-1 border-b border-gray-300 dark:border-gray-600 text-xs flex-wrap shadow-sm">
+            <button onclick="document.execCommand('bold',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold rounded">B</button>
+            <button onclick="document.execCommand('italic',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 italic rounded">I</button>
+            <button onclick="document.execCommand('underline',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 underline rounded">U</button>
+        </div>
+        <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 bg-white dark:bg-[#1a1a1a] dark:text-gray-100 outline-none overflow-y-auto" placeholder="Zacznij pisać..."></div>
+    </div>
+
+    <!-- 2. Szkicownik-->
+    <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+        <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
+            <span class="text-sm font-bold">🎨 Szkicownik</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('szkicownik')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.maximize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">□</button>
+                <button onclick="winManager.close('szkicownik')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="flex gap-2 px-2 py-1 bg-gray-100 dark:bg-[#222] text-xs border-b border-gray-300 dark:border-[#333] z-50">
+            <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-[#333] px-2 py-1 rounded transition">Plik
+                <div class="dropdown-menu bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1 text-gray-800 dark:text-white">
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="showPaintNewModal()">Nowy...</div>
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="document.getElementById('paint-open-file').click()">Otwórz (Wgraj z PC)</div>
+                    <input type="file" id="paint-open-file" class="hidden" accept="image/*" onchange="paintOpen(event)">
+                    <div class="border-t border-gray-200 dark:border-[#444] my-1"></div>
+                    
+                    <div class="relative group/sub">
+                        <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer flex justify-between items-center">Zapisz w BigOS <span>▶</span></div>
+                        <div class="hidden group-hover/sub:block absolute top-0 left-[100%] w-40 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1">
+                            <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveToSystem('png')">Jako PNG</div>
+                            <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveToSystem('jpeg')">Jako JPG</div>
+                        </div>
+                    </div>
+                    <div class="relative group/sub">
+                        <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer flex justify-between items-center">Zapisz na dysk PC <span>▶</span></div>
+                        <div class="hidden group-hover/sub:block absolute top-0 left-[100%] w-40 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1">
+                            <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveAs('png')">Obraz PNG</div>
+                            <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveAs('jpeg')">Obraz JPG</div>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-200 dark:border-[#444] my-1"></div>
+                    <div class="px-4 py-2 hover:bg-red-500 hover:text-white cursor-pointer" onclick="winManager.close('szkicownik')">Zamknij</div>
+                </div>
+            </div>
+            <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-[#333] px-2 py-1 rounded transition">Ustawienia
+                <div class="dropdown-menu bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1 text-gray-800 dark:text-white">
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="showPaintResizeModal()">Zmień rozmiar obrazka</div>
+                </div>
+            </div>
+        </div>
+        <div class="bg-gray-200 dark:bg-[#2a2a2a] p-2 flex gap-3 border-b border-gray-300 dark:border-[#333] text-sm items-center z-40 relative shadow-sm">
+            <div class="flex gap-1 border-r border-gray-400 dark:border-[#444] pr-3">
+                <button onclick="paintSelectTool('pencil')" data-tool="pencil" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">✏️</button>
+                <button onclick="paintSelectTool('brush')" data-tool="brush" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">🖌️</button>
+                <button onclick="paintSelectTool('eraser')" data-tool="eraser" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">🧼</button>
+                <button onclick="paintSelectTool('fill')" data-tool="fill" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">🪣</button>
+            </div>
+            <input type="color" id="paint-color" value="#000000" class="w-8 h-8 border-none bg-transparent cursor-pointer rounded">
+            <input type="range" id="paint-size" min="1" max="50" value="1" class="w-24 accent-blue-500">
+            <span id="paint-size-label" class="text-xs w-8 text-gray-500 dark:text-gray-400">1px</span>
+        </div>
+        <div class="flex-grow flex overflow-hidden flex-col sm:flex-row">
+            <div class="flex-grow relative flex bg-gray-300 dark:bg-[#151515]">
+                <div class="w-6 border-r border-gray-400 dark:border-[#444] bg-gray-200 dark:bg-[#222] relative ruler-v shrink-0"></div>
+                <div class="flex-grow flex flex-col relative overflow-hidden">
+                    <div class="h-6 border-b border-gray-400 dark:border-[#444] bg-gray-200 dark:bg-[#222] relative ruler-h shrink-0"></div>
+                    <div class="flex-grow overflow-auto flex p-6 bg-gray-400 dark:bg-[#111] items-start justify-start">
+                        <div id="paint-workspace" class="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-crosshair shrink-0 touch-none" style="width: 600px; height: 400px;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="w-full sm:w-64 bg-gray-100 dark:bg-[#222] border-t sm:border-t-0 sm:border-l border-gray-300 dark:border-[#333] flex flex-col shrink-0 z-20 shadow-[-5px_0_15px_rgba(0,0,0,0.1)]">
+                <div class="p-2 border-b border-gray-300 dark:border-[#333] flex justify-between items-center bg-gray-200 dark:bg-[#2a2a2a]">
+                    <span class="text-xs font-bold text-gray-600 dark:text-gray-300">WARSTWY</span>
+                    <button onclick="paintAddLayer()" class="bg-white dark:bg-[#444] hover:bg-gray-100 dark:hover:bg-[#555] px-2 py-1 rounded text-xs border border-gray-300 dark:border-transparent font-semibold shadow-sm">➕ Nowa</button>
+                </div>
+                <div id="paint-layers-list" class="flex-grow overflow-y-auto bg-gray-50 dark:bg-[#1a1a1a]"></div>
+            </div>
+        </div>
+        
+        <div id="paint-resize-modal" class="hidden absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm">
+                <h3 class="font-bold mb-4 text-lg border-b border-gray-200 dark:border-[#444] pb-2" id="paint-modal-title">Ustawienia Obrazu</h3>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Szerokość (px)</label><input type="number" id="paint-resize-w-px" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('w', 'px')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Wysokość (px)</label><input type="number" id="paint-resize-h-px" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('h', 'px')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Szerokość (cm)</label><input type="number" step="0.01" id="paint-resize-w-cm" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('w', 'cm')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Wysokość (cm)</label><input type="number" step="0.01" id="paint-resize-h-cm" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('h', 'cm')"></div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-[#444]">
+                    <button onclick="document.getElementById('paint-resize-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded font-bold text-gray-800 dark:text-white">Anuluj</button>
+                    <button id="paint-modal-confirm" onclick="paintApplyResize()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white font-bold shadow">Zastosuj</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Aktówka -->
+    <div id="app-aktowka" class="window w-[700px] h-[500px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
+        <div class="title-bar bg-yellow-600 dark:bg-yellow-800 text-white p-2 flex justify-between items-center border-b border-yellow-700 dark:border-gray-900" onmousedown="winManager.startDrag(event, 'app-aktowka')" ontouchstart="winManager.startDrag(event, 'app-aktowka')">
+            <span class="text-sm font-bold">📁 Aktówka (Eksplorator)</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('aktowka')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.maximize('app-aktowka')" class="hover:bg-white/20 px-2 rounded">□</button>
+                <button onclick="winManager.close('aktowka')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="bg-gray-100 dark:bg-gray-700 p-2 border-b border-gray-300 dark:border-gray-600 flex items-center gap-2 text-sm shadow-sm">
+            <button id="explorer-back-btn" onclick="fsManager.navigateUp()" class="hidden bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 hover:bg-gray-200 dark:hover:bg-gray-500 px-3 py-1 rounded font-bold shadow-sm transition">⬅️ Wstecz</button>
+            <div class="bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 px-3 py-1 rounded flex-grow font-mono text-xs overflow-hidden truncate" id="explorer-path">BigOS:\Pulpit</div>
+        </div>
+        <div class="flex flex-grow h-0 flex-col sm:flex-row">
+            <div class="w-full sm:w-44 bg-gray-50 dark:bg-gray-900 border-b sm:border-b-0 sm:border-r border-gray-200 dark:border-gray-700 p-2 text-sm overflow-y-auto shrink-0 flex sm:flex-col gap-2 sm:gap-0">
+                <div class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer rounded font-semibold flex items-center gap-2 transition flex-1 sm:flex-none" onclick="fsManager.openFolder('root')"><span class="text-lg">💻</span> Pulpit</div>
+                <div class="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 cursor-pointer rounded font-semibold text-red-600 dark:text-red-400 flex items-center gap-2 transition flex-1 sm:flex-none" onclick="fsManager.openFolder('hasiok')"><span class="text-lg">🗑️</span> Hasiok</div>
+            </div>
+            <div class="flex-grow p-4 flex flex-wrap gap-4 content-start overflow-y-auto bg-white dark:bg-gray-800 relative" id="explorer-content" oncontextmenu="desktop.showContextMenu(event, 'folder_bg', fsManager.currentFolder)">
+                <!-- Treść ładuje JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Tapeciak / Kombinator -->
+    <div id="app-tapeciak" class="window w-[450px] h-[550px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
+        <div class="title-bar bg-purple-700 dark:bg-purple-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-tapeciak')" ontouchstart="winManager.startDrag(event, 'app-tapeciak')">
+            <span class="text-sm font-bold">⚙️ Kombinator</span>
+            <button onclick="winManager.close('tapeciak')" class="hover:bg-red-600 px-2 rounded">✖</button>
+        </div>
+        <div class="p-4 flex flex-col gap-4 flex-grow overflow-y-auto">
+            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 shadow-sm">
+                <label class="block text-sm font-bold mb-2">Motyw Systemu</label>
+                <select id="system-theme-select" class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none" onchange="apps.setTheme(this.value)">
+                    <option value="dark">Ciemny (Carbon)</option>
+                    <option value="light">Jasny</option>
+                </select>
+            </div>
+            
+            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 shadow-sm">
+                <label class="block text-sm font-bold mb-2">Wybór Tapety</label>
+                <div class="mb-3">
+                    <select id="wallpaper-target" class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none text-sm mb-2">
+                        <option value="desktop">Pulpit (Tło Systemu)</option>
+                        <option value="login">Ekran Logowania</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mb-3" id="wallpaper-gallery"></div>
+                <div class="border-t border-gray-300 dark:border-gray-600 pt-3">
+                    <label class="block text-xs font-bold mb-1">Otwórz</label>
+                    <input type="file" accept="image/*" class="text-xs w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-purple-100 file:text-purple-700 dark:file:bg-gray-600 dark:file:text-white" onchange="apps.setWallpaperFile(event)">
+                </div>
+            </div>
+            <button onclick="apps.formatSystem()" class="mt-auto w-full bg-red-600 text-white py-2 rounded font-bold hover:bg-red-700 shadow-md transition text-sm">Formatuj System (Reset)</button>
+        </div>
+    </div> 
+
+    
+    <!-- 5. Grajek PRO -->
+    <div id="app-grajek" class="window w-[420px] h-[580px] bg-gray-50 dark:bg-[#111] text-gray-800 dark:text-green-400 font-mono border border-gray-300 dark:border-[#333]">
+        <div class="title-bar bg-green-700 dark:bg-[#222] text-white dark:text-gray-300 p-2 flex justify-between items-center border-b border-green-800 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-grajek')" ontouchstart="winManager.startDrag(event, 'app-grajek')">
+            <span class="text-sm font-bold">🎵 Grajek</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('grajek')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.close('grajek')" class="hover:bg-red-500 px-2">✖</button>
+            </div>
+        </div>
+        
+        <div id="grajek-yt-container" class="w-full bg-black hidden border-b border-[#333]"></div>
+        
+        <div class="p-4 flex flex-col h-full">
+            <div class="bg-white dark:bg-black border border-gray-300 dark:border-green-900/50 p-2 text-center text-xl rounded shadow-inner tracking-widest text-gray-800 dark:text-green-500 relative mb-2">
+                <span id="grajek-time">00:00</span>
+            </div>
+            <input type="range" id="grajek-progress" value="0" class="w-full accent-green-500 cursor-pointer" oninput="apps.grajekSeek(this.value)">
+            <div class="flex justify-center gap-4 mt-2">
+                <button onclick="apps.grajekPrev()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏮</button>
+                <button onclick="apps.grajekPlay()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-12 h-12 flex items-center justify-center text-xl transition shadow">▶</button>
+                <button onclick="apps.grajekPause()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏸</button>
+                <button onclick="apps.grajekNext()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏭</button>
+            </div>
+            
+            <div class="flex gap-2 mt-4 items-center flex-wrap">
+                <input type="text" id="grajek-url" placeholder="URL MP3 / YouTube..." class="flex-grow bg-white dark:bg-black text-xs p-2 text-gray-800 dark:text-green-400 border border-gray-300 dark:border-[#333] outline-none focus:border-green-500 rounded min-w-[150px]">
+                <button onclick="apps.grajkotekaAdd()" class="text-xs bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] text-gray-800 dark:text-gray-200 px-3 py-2 rounded border border-gray-300 dark:border-[#444] shadow font-bold whitespace-nowrap">Dodaj Link</button>
+            </div>
+            
+            <div class="mt-4 flex-grow border border-gray-300 dark:border-[#333] bg-white dark:bg-black rounded flex flex-col overflow-hidden">
+                <div class="bg-gray-100 dark:bg-[#222] p-1 px-2 text-xs text-gray-600 dark:text-gray-400 font-bold border-b border-gray-300 dark:border-[#333] flex justify-between items-center flex-wrap gap-2">
+                    <span>Grajkoteka (Playlista)</span>
+                    <button onclick="document.getElementById('grajek-pc').click()" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded transition whitespace-nowrap">Z Komputera</button>
+                    <input type="file" id="grajek-pc" class="hidden" accept="audio/*" multiple onchange="apps.grajekLoadPC(event)">
+                </div>
+                <div id="grajkoteka-list" class="overflow-y-auto flex-grow text-xs text-gray-800 dark:text-green-300">
+                    <!-- Elementy listy ładuje JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Rachmistrz (Kalkulator) -->
+    <div id="app-kalkulator" class="window w-[300px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+        <div class="title-bar bg-blue-600 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-700 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-kalkulator')" ontouchstart="winManager.startDrag(event, 'app-kalkulator')">
+            <span class="text-sm font-bold">🧮 Rachmistrz</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('kalkulator')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.close('kalkulator')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col gap-2">
+            <div id="calc-display" class="w-full bg-gray-100 dark:bg-black border border-gray-300 dark:border-[#444] rounded p-3 text-right text-2xl font-mono text-gray-800 dark:text-gray-200 overflow-hidden shadow-inner">0</div>
+            <div class="grid grid-cols-4 gap-2 mt-2">
+                <button onclick="kalkulatorApp.clear()" class="col-span-2 bg-red-500 hover:bg-red-600 text-white p-3 rounded font-bold transition shadow-sm touch-manipulation">C</button>
+                <button onclick="kalkulatorApp.appendOp('/')" class="bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">÷</button>
+                <button onclick="kalkulatorApp.appendOp('*')" class="bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">×</button>
+                
+                <button onclick="kalkulatorApp.appendNum('7')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">7</button>
+                <button onclick="kalkulatorApp.appendNum('8')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">8</button>
+                <button onclick="kalkulatorApp.appendNum('9')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">9</button>
+                <button onclick="kalkulatorApp.appendOp('-')" class="bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">-</button>
+                
+                <button onclick="kalkulatorApp.appendNum('4')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">4</button>
+                <button onclick="kalkulatorApp.appendNum('5')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">5</button>
+                <button onclick="kalkulatorApp.appendNum('6')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">6</button>
+                <button onclick="kalkulatorApp.appendOp('+')" class="bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">+</button>
+                
+                <button onclick="kalkulatorApp.appendNum('1')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">1</button>
+                <button onclick="kalkulatorApp.appendNum('2')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">2</button>
+                <button onclick="kalkulatorApp.appendNum('3')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">3</button>
+                <button onclick="kalkulatorApp.calculate()" class="row-span-2 bg-blue-600 hover:bg-blue-500 text-white p-3 rounded font-bold transition shadow-sm touch-manipulation">=</button>
+                
+                <button onclick="kalkulatorApp.appendNum('0')" class="col-span-2 bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">0</button>
+                <button onclick="kalkulatorApp.appendNum('.')" class="bg-white dark:bg-[#222] hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] p-3 rounded font-bold transition shadow-sm text-gray-800 dark:text-white touch-manipulation">.</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. Sieciosław (Przeglądarka) -->
+    <div id="app-siecioslaw" class="window w-[800px] h-[550px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+        <div class="title-bar bg-indigo-700 dark:bg-[#111] text-white dark:text-gray-200 p-2 flex justify-between items-center border-b border-indigo-800 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-siecioslaw')" ontouchstart="winManager.startDrag(event, 'app-siecioslaw')">
+            <span class="text-sm font-bold">🌐 Sieciosław</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('siecioslaw')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.maximize('app-siecioslaw')" class="hover:bg-white/20 px-2 rounded">□</button>
+                <button onclick="winManager.close('siecioslaw')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="bg-gray-100 dark:bg-[#222] p-2 flex gap-2 border-b border-gray-300 dark:border-[#333]">
+            <button onclick="document.getElementById('browser-frame').src=document.getElementById('browser-frame').src" class="bg-white dark:bg-[#333] border border-gray-300 dark:border-[#555] rounded px-3 hover:bg-gray-200 dark:hover:bg-[#444] font-bold text-gray-700 dark:text-white transition">⟳</button>
+            <input type="text" id="url-input" class="flex-grow px-3 py-1 border border-gray-300 dark:border-[#555] rounded text-sm outline-none focus:border-indigo-500 bg-white dark:bg-[#111] text-gray-800 dark:text-white" value="https://avocado-code.com/" onkeydown="if(event.key==='Enter') apps.navigate()">
+            <button onclick="apps.navigate()" class="px-4 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 shadow-sm transition">Przejdź</button>
+        </div>
+        <iframe id="browser-frame" src="https://avocado-code.com/" class="flex-grow w-full bg-white border-none"></iframe>
+    </div>
+
+    <!-- 8. Władca Poleceń (Terminal) -->
+    <div id="app-wladca" class="window w-[500px] h-[350px] bg-black text-green-500 font-mono border border-gray-700">
+        <div class="title-bar bg-[#222] text-gray-300 p-2 flex justify-between items-center border-b border-[#444]" onmousedown="winManager.startDrag(event, 'app-wladca')" ontouchstart="winManager.startDrag(event, 'app-wladca')">
+            <span class="text-sm font-bold">💻 Władca Poleceń</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('wladca')" class="hover:text-white px-2">_</button>
+                <button onclick="winManager.maximize('app-wladca')" class="hover:text-white px-2">□</button>
+                <button onclick="winManager.close('wladca')" class="hover:text-red-500 px-2">✖</button>
+            </div>
+        </div>
+        <div id="terminal-out" class="flex-grow p-3 overflow-y-auto whitespace-pre-wrap text-sm">Witaj we Władcy Poleceń!\nWpisz 'pomoc' aby uzyskać listę komend.\n</div>
+        <div class="p-2 flex border-t border-[#333] text-sm items-center">
+            <span class="mr-2 text-blue-400">root@bigos:~#</span>
+            <input type="text" id="term-in" class="flex-grow bg-transparent outline-none text-green-400" autocomplete="off" onkeydown="apps.terminalHandle(event)">
+        </div>
+    </div>
+
+    <!-- 9. Patrzałka (Przeglądarka Zdjęć) -->
+    <div id="app-patrzalka" class="window w-[700px] h-[500px] bg-white dark:bg-[#111] border border-gray-300 dark:border-[#333]">
+        <div class="title-bar bg-pink-700 dark:bg-[#222] text-white p-2 flex justify-between items-center border-b dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-patrzalka')" ontouchstart="winManager.startDrag(event, 'app-patrzalka')">
+            <span class="text-sm font-bold">🖼️ Patrzałka</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('patrzalka')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.maximize('app-patrzalka')" class="hover:bg-white/20 px-2 rounded">□</button>
+                <button onclick="winManager.close('patrzalka')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="flex-grow flex items-center justify-center p-2 bg-gray-200 dark:bg-black overflow-hidden relative">
+            <img id="patrzalka-img" src="" class="max-w-full max-h-full object-contain drop-shadow-2xl">
+        </div>
+    </div>
+
+    <!-- 10. Grajacz Filmów -->
+    <div id="app-grajacz" class="window w-[700px] h-[500px] bg-[#0a0a0a] text-white border border-[#333]">
+        <div class="title-bar bg-[#111] text-gray-200 p-2 flex justify-between items-center border-b border-[#222]" onmousedown="winManager.startDrag(event, 'app-grajacz')" ontouchstart="winManager.startDrag(event, 'app-grajacz')">
+            <span class="text-sm font-bold">🎬 Grajacz Filmów</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('grajacz')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.maximize('app-grajacz')" class="hover:bg-white/20 px-2 rounded">□</button>
+                <button onclick="winManager.close('grajacz')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+            </div>
+        </div>
+        <div class="flex-grow bg-black flex items-center justify-center relative overflow-hidden">
+            <video id="grajacz-video" controls class="w-full h-full object-contain hidden"></video>
+            <iframe id="grajacz-yt" class="w-full h-full hidden border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            <div id="grajacz-placeholder" class="text-gray-600 flex flex-col items-center p-4 text-center">
+                <span class="text-6xl mb-4">🎥</span>
+                <p>Wybierz plik wideo lub wklej link z YouTube</p>
+            </div>
+        </div>
+        <div class="p-3 bg-[#111] border-t border-[#222] flex gap-2 items-center flex-wrap">
+            <input type="text" id="grajacz-url" placeholder="Wklej link YouTube lub URL pliku wideo..." class="flex-grow bg-[#222] text-xs p-2 text-white border border-[#333] outline-none focus:border-blue-500 rounded min-w-[150px]">
+            <button onclick="grajaczApp.playUrl()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-xs font-bold transition">Odtwórz</button>
+            <button onclick="document.getElementById('grajacz-pc').click()" class="bg-[#333] hover:bg-[#444] border border-[#555] text-white px-4 py-2 rounded text-xs font-bold transition">Z PC</button>
+            <input type="file" id="grajacz-pc" class="hidden" accept="video/*" onchange="grajaczApp.loadPC(event)">
+        </div>
+    </div>
+    
+    <!-- MINIGRY -->
+    
+    <!-- 11. Pełzacz -->
+    <div id="app-pelzacz" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-green-700 dark:bg-green-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-pelzacz')" ontouchstart="winManager.startDrag(event, 'app-pelzacz')">
+            <span class="text-sm font-bold">🐍 Pełzacz</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('pelzacz')" class="hover:bg-green-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('pelzacz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="pelzacz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Wynik: 0</div>
+            <canvas id="canvas-pelzacz" width="300" height="300" class="bg-gray-900 rounded shadow-inner" tabindex="0"></canvas>
+            <button onclick="games.pelzacz.init()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-500 w-full shadow-md transition">Nowa Gra (Spacja)</button>
+        </div>
+    </div>
+
+    <!-- 12. Murarz -->
+    <div id="app-murarz" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-yellow-700 dark:bg-yellow-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-murarz')" ontouchstart="winManager.startDrag(event, 'app-murarz')">
+            <span class="text-sm font-bold">🧱 Murarz</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('murarz')" class="hover:bg-yellow-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('murarz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="murarz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Klocki: 0</div>
+            <canvas id="canvas-murarz" width="400" height="300" class="bg-gray-900 rounded shadow-inner" tabindex="0"></canvas>
+            <button onclick="games.murarz.init()" class="mt-4 bg-yellow-600 text-white px-4 py-2 rounded font-bold hover:bg-yellow-500 w-full shadow-md transition">Start (Myszka do sterowania)</button>
+        </div>
+    </div>
+
+    <!-- 13. Ufoludki -->
+    <div id="app-ufoludki" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-purple-700 dark:bg-purple-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-ufoludki')" ontouchstart="winManager.startDrag(event, 'app-ufoludki')">
+            <span class="text-sm font-bold">👾 Ufoludki</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('ufoludki')" class="hover:bg-purple-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('ufoludki')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="ufoludki-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Punkty: 0</div>
+            <canvas id="canvas-ufoludki" width="400" height="400" class="bg-black rounded shadow-inner" tabindex="0"></canvas>
+            <button onclick="games.ufoludki.init()" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded font-bold hover:bg-purple-500 w-full shadow-md transition">Start (Strzałki L/P + Spacja)</button>
+        </div>
+    </div>
+
+    <!-- 14. Odbijanka -->
+    <div id="app-odbijanka" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-orange-700 dark:bg-orange-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-odbijanka')" ontouchstart="winManager.startDrag(event, 'app-odbijanka')">
+            <span class="text-sm font-bold">🏓 Odbijanka</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('odbijanka')" class="hover:bg-orange-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('odbijanka')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="odbijanka-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Ty: 0 | Komputer: 0</div>
+            <canvas id="canvas-odbijanka" width="400" height="300" class="bg-gray-900 rounded shadow-inner" tabindex="0"></canvas>
+            <button onclick="games.odbijanka.init()" class="mt-4 bg-orange-600 text-white px-4 py-2 rounded font-bold hover:bg-orange-500 w-full shadow-md transition">Start (Myszka góra/dół)</button>
+        </div>
+    </div>
+
+    <!-- 15. Trzepotek -->
+    <div id="app-trzepotek" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-sky-500 dark:bg-sky-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-trzepotek')" ontouchstart="winManager.startDrag(event, 'app-trzepotek')">
+            <span class="text-sm font-bold">🐦 Trzepotek</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('trzepotek')" class="hover:bg-sky-400 px-2 rounded">_</button>
+                <button onclick="winManager.close('trzepotek')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="trzepotek-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Punkty: 0</div>
+            <canvas id="canvas-trzepotek" width="300" height="400" class="bg-sky-200 dark:bg-sky-900 rounded shadow-inner cursor-pointer touch-manipulation" tabindex="0"></canvas>
+            <button onclick="games.trzepotek.init()" class="mt-4 bg-sky-500 text-white px-4 py-2 rounded font-bold hover:bg-sky-400 w-full shadow-md transition">Start (Klik/Spacja)</button>
+        </div>
+    </div>
+
+    <!-- 16. Ścigacz -->
+    <div id="app-scigacz" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-red-700 dark:bg-red-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-scigacz')" ontouchstart="winManager.startDrag(event, 'app-scigacz')">
+            <span class="text-sm font-bold">🏎️ Ścigacz</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('scigacz')" class="hover:bg-red-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('scigacz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="scigacz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Dystans: 0</div>
+            <canvas id="canvas-scigacz" width="300" height="400" class="bg-gray-500 rounded shadow-inner" tabindex="0"></canvas>
+            <button onclick="games.scigacz.init()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-500 w-full shadow-md transition">Start (Strzałki L/P)</button>
+        </div>
+    </div>
+
+    <!-- 17. Bombiarz -->
+    <div id="app-bombiarz" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-gray-800 dark:bg-gray-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-bombiarz')" ontouchstart="winManager.startDrag(event, 'app-bombiarz')">
+            <span class="text-sm font-bold">💣 Bombiarz</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('bombiarz')" class="hover:bg-gray-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('bombiarz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="bombiarz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Punkty: 0</div>
+            <canvas id="canvas-bombiarz" width="300" height="300" class="bg-green-800 rounded shadow-inner" tabindex="0"></canvas>
+            <button onclick="games.bombiarz.init()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded font-bold hover:bg-gray-700 w-full shadow-md transition">Start (Strzałki + Spacja)</button>
+        </div>
+    </div>
+
+    <!-- 18. Kółko i Krzyżyk -->
+    <div id="app-kolko" class="window w-[300px] bg-white dark:bg-gray-800 border dark:border-gray-700">
+        <div class="title-bar bg-teal-700 dark:bg-teal-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-kolko')" ontouchstart="winManager.startDrag(event, 'app-kolko')">
+            <span class="text-sm font-bold">🎮 Kółko i Krzyżyk</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('kolko')" class="hover:bg-teal-600 px-2 rounded">_</button>
+                <button onclick="winManager.close('kolko')" class="hover:bg-red-600 px-2 rounded">✖</button>
+            </div>
+        </div>
+        <div class="p-5 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
+            <div id="tic-status" class="font-bold mb-4 text-gray-700 dark:text-gray-200 text-lg">Tura: X</div>
+            <div class="grid grid-cols-3 gap-2 bg-gray-200 dark:bg-gray-800 p-2 rounded-lg shadow-inner" id="tic-board"></div>
+            <button onclick="apps.ticInit()" class="mt-5 bg-teal-600 text-white px-4 py-2 rounded font-bold hover:bg-teal-500 w-full shadow-md transition">Rozpocznij od nowa / Start</button>
+        </div>
+    </div>
+
+    <!-- PASEK ZADAŃ -->
+    <div class="absolute bottom-0 w-full h-12 bg-gray-900/95 backdrop-blur-lg border-t border-gray-700 flex items-center px-2 justify-between z-[200] shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+        <div class="flex items-center gap-1 sm:gap-2 h-full">
+            <button onclick="apps.toggleStartMenu()" class="h-9 px-3 sm:px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded text-white font-bold shadow-lg transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+                🗃️ <span class="hidden sm:inline">Szuflada</span>
+            </button>
+            <div id="taskbar-apps" class="flex gap-1 h-full items-center ml-1 sm:ml-2 border-l border-gray-700 pl-1 sm:pl-2 overflow-x-auto no-scrollbar"></div>
+        </div>
+        <div class="flex items-center gap-1 sm:gap-2 h-full shrink-0">
+            <button onclick="apps.toggleCalendar(event)" class="text-xl cursor-pointer hover:bg-white/10 px-2 h-9 rounded transition text-white" title="Kalendarz">📅</button>
+            <div class="text-xs sm:text-sm font-semibold text-white px-2 h-9 flex items-center border-l border-gray-700">
+                <span id="taskbar-clock">00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Szuflada (Menu Start) -->
+    <div id="start-menu" class="absolute bottom-14 left-2 w-64 bg-gray-800/95 backdrop-blur-xl border border-gray-600 rounded-lg shadow-2xl p-2 hidden flex-col z-[200] text-white">
+        <div class="text-xs text-gray-400 mb-2 px-2 pb-2 border-b border-gray-600 font-bold uppercase tracking-wider">Aplikacje i Narzędzia</div>
+        <div class="flex-grow overflow-y-auto max-h-[60vh] space-y-1 pr-1">
+            <button onclick="winManager.open('skryba'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">📝</span> Skryba</button>
+            <button onclick="winManager.open('szkicownik'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎨</span> Szkicownik</button>
+            <button onclick="winManager.open('aktowka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">📁</span> Aktówka</button>
+            <button onclick="winManager.open('patrzalka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🖼️</span> Patrzałka</button>
+            <button onclick="winManager.open('grajacz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎬</span> Grajacz Filmów</button>
+            <button onclick="winManager.open('siecioslaw'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🌐</span> Sieciosław</button>
+            <button onclick="winManager.open('wladca'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">💻</span> Władca Poleceń</button>
+            <button onclick="winManager.open('kalkulator'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🧮</span> Rachmistrz</button>
+            <button onclick="winManager.open('grajek'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎵</span> Grajek</button>
+            
+            <div class="text-xs text-gray-400 mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t border-gray-700 pt-2">Narzędzia</div>
+            <button onclick="winManager.open('nadzorca'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">📊</span> Nadzorca</button>
+            <button onclick="winManager.open('pogodynka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🌤️</span> Pogodynka</button>
+            <button onclick="winManager.open('czasomierz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">⏱️</span> Czasomierz</button>
+            <button onclick="winManager.open('tapeciak'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">⚙️</span> Kombinator</button>
+            
+
+            <div class="text-xs text-gray-400 mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t border-gray-700 pt-2">Gry</div>
+            <button onclick="winManager.open('pelzacz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🐍</span> Pełzacz</button>
+            <button onclick="winManager.open('murarz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🧱</span> Murarz</button>
+            <button onclick="winManager.open('ufoludki'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">👾</span> Ufoludki</button>
+            <button onclick="winManager.open('odbijanka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🏓</span> Odbijanka</button>
+            <button onclick="winManager.open('trzepotek'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🐦</span> Trzepotek</button>
+            <button onclick="winManager.open('scigacz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🏎️</span> Ścigacz</button>
+            <button onclick="winManager.open('bombiarz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">💣</span> Bombiarz</button>
+            <button onclick="winManager.open('kolko'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎮</span> Kółko i Krzyżyk</button>
+            
+            <button onclick="apps.createStickyNote(); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded w-full text-left transition mt-2"><span class="text-xl">📌</span> Nowa Karteczka</button>
+        </div>
+        <div class="mt-2 pt-2 border-t border-gray-600">
+            <button onclick="apps.lockSystem()" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left text-sm text-gray-300 transition">🔒 Zablokuj</button>
+            <button onclick="apps.sleepSystem()" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left text-sm text-gray-300 transition">🌙 Uśpij</button>
+            <button onclick="apps.shutdownSystem()" class="flex items-center gap-3 p-2 hover:bg-red-500/30 rounded w-full text-left text-sm text-red-400 transition">🛑 Zamknij</button>
+        </div>
+    </div>
+
+    <!-- Kalendarz -->
+    <div id="calendar-widget" class="absolute bottom-14 right-2 w-80 max-w-[90vw] bg-white dark:bg-[#1f1f1f] border border-gray-300 dark:border-[#333] rounded-lg shadow-2xl hidden-cal flex-col z-[200] select-none overflow-hidden">
+        <div class="p-5 border-b border-gray-200 dark:border-[#333] bg-gray-50 dark:bg-[#1a1a1a]">
+            <div class="text-4xl font-light text-gray-800 dark:text-white" id="cal-big-time">00:00:00</div>
+            <div class="text-sm text-blue-600 dark:text-blue-400 font-semibold mt-1" id="cal-big-date">Data</div>
+        </div>
+        <div class="p-4">
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="apps.changeCalendarMonth(-1); event.stopPropagation();" class="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition font-bold text-gray-600 dark:text-gray-300">❮</button>
+                <div class="text-center font-bold text-md text-gray-800 dark:text-gray-200 capitalize" id="cal-month-year"></div>
+                <button onclick="apps.changeCalendarMonth(1); event.stopPropagation();" class="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition font-bold text-gray-600 dark:text-gray-300">❯</button>
+            </div>
+            <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-500 dark:text-gray-400 font-bold">
+                <div>Pn</div><div>Wt</div><div>Śr</div><div>Cz</div><div>Pt</div><div>Sb</div><div class="text-red-500 dark:text-red-400">Nd</div>
+            </div>
+            <div id="cal-days" class="grid grid-cols-7 gap-1 text-center text-sm font-medium"></div>
+        </div>
+    </div>
+
+    <!-- Menu PKM -->
+    <div id="context-menu" class="bg-white dark:bg-[#2a2a2a] border border-gray-300 dark:border-[#444] shadow-2xl rounded py-1 w-56 text-sm text-gray-800 dark:text-gray-200 font-medium overflow-hidden"></div>
+    <div id="toast-container" class="absolute top-4 right-4 flex flex-col gap-2 z-[9999] pointer-events-none"></div>
+    
+    <!-- ładowanie scryptów -->
+    <script src="js/globals.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/fs.js"></script>
+    <script src="js/window.js"></script>
+    <script src="js/desktop.js"></script>
+    <script src="js/aplikacje/apps.js"></script>
+  
+    <script src="js/aplikacje/czasomierz.js"></script>
+    <script src="js/aplikacje/grajacz.js"></script>
+    <script src="js/aplikacje/kalkulator.js"></script>
+    <script src="js/aplikacje/nadzorca.js"></script>
+    <script src="js/aplikacje/patrzalka.js"></script>
+    <script src="js/aplikacje/pogodynka.js"></script>
+    <script src="js/aplikacje/skryba.js"></script>
+    <script src="js/aplikacje/szkicownik.js"></script>
+
+   
+    <script src="js/gry/gry.js"></script>
+     <script src="js/main.js"></script>
+    
+  
+       
+
+</body>
+</html>

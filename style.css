@@ -1,0 +1,55 @@
+ body { overflow: hidden; user-select: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; touch-action: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.3); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.5); }
+        .dark ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+        
+        #desktop-bg {
+            background-color: #2b2b2b;
+            background-image: repeating-linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222), repeating-linear-gradient(45deg, #222 25%, #2b2b2b 25%, #2b2b2b 75%, #222 75%, #222);
+            background-position: 0 0, 10px 10px; background-size: 20px 20px;
+        }
+        #desktop-bg.custom-wp { background-size: cover !important; background-repeat: no-repeat !important; background-position: center !important; }
+
+        .window { display: none; position: absolute; box-shadow: 0 15px 40px rgba(0,0,0,0.7); border-radius: 0.5rem; overflow: hidden; max-width: 100vw; max-height: calc(100vh - 48px); }
+        .window.active { display: flex; flex-direction: column; }
+        .window.minimized { opacity: 0; pointer-events: none; transform: scale(0.9) translateY(50px); transition: all 0.2s ease; }
+        .title-bar { cursor: move; touch-action: none; }
+        
+        .desktop-icon { 
+            width: 80px; height: 80px; position: absolute; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-radius: 1rem; cursor: pointer; transition: background 0.1s; touch-action: none;
+        }
+        .desktop-icon:hover { background: rgba(255,255,255,0.15); }
+        .desktop-icon.selected { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); }
+        .icon-emoji { font-size: 2.5rem; filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.4)); pointer-events: none; }
+        .icon-text { font-size: 0.75rem; color: white; text-shadow: 1px 1px 3px black; text-align: center; margin-top: 4px; font-weight: 600; line-height: 1.1; pointer-events: none; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
+        
+        .folder-item { width: 85px; display: flex; flex-direction: column; align-items: center; padding: 8px; cursor: pointer; border-radius: 0.5rem; transition: background 0.1s; position: relative; touch-action: none; }
+        .folder-item:hover { background: rgba(128,128,128,0.2); }
+        .folder-item .icon-text { color: inherit; text-shadow: none; font-weight: 500; font-size: 0.8rem; margin-top: 6px; }
+        .folder-item .icon-emoji { filter: none; font-size: 3rem; pointer-events: none; }
+
+        #context-menu { display: none; position: absolute; z-index: 9999; }
+        #context-menu.active { display: block; }
+
+        .dropdown-menu { display: none; position: absolute; top: 100%; left: 0; min-width: 180px; z-index: 100; margin-top: 0px; box-shadow: 0 8px 15px rgba(0,0,0,0.5); }
+        .group:hover .dropdown-menu { display: block; }
+        
+        .ruler-h { background: repeating-linear-gradient(to right, #666, #666 1px, transparent 1px, transparent 10px); background-position: 24px 100%; background-size: 10px 100%; }
+        .ruler-v { background: repeating-linear-gradient(to bottom, #666, #666 1px, transparent 1px, transparent 10px); background-position: 100% 24px; background-size: 100% 10px; }
+
+        .sticky-note { position: absolute; width: 200px; min-height: 200px; background: #fef08a; box-shadow: 2px 4px 10px rgba(0,0,0,0.3); display: flex; flex-direction: column; border-top: 10px solid #facc15; touch-action: none; }
+        [contenteditable]:empty:before { content: attr(placeholder); color: #888; display: block; }
+        
+        .grajkoteka-item:hover { background: rgba(255,255,255,0.1); }
+        .grajkoteka-item.playing { background: rgba(34, 197, 94, 0.2); border-left: 4px solid #22c55e; }
+
+        #calendar-widget { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; transform-origin: bottom right; }
+        #calendar-widget.hidden-cal { transform: scale(0.9) translateY(20px); opacity: 0; pointer-events: none; }
+        
+        .wp-thumbnail { transition: transform 0.1s, border-color 0.2s; }
+        .wp-thumbnail:hover { transform: scale(1.05); border-color: #a855f7; z-index: 10; }
