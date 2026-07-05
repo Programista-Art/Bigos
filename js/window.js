@@ -107,6 +107,8 @@ const winManager = {
         highestZ++; 
         el.style.zIndex = highestZ;
         if(el.id.startsWith('app-')) winManager.updateTaskbarState(el.id.replace('app-', ''));
+        // ZDEJMIJ FOCUS Z POPRZEDNIEGO OKNA (Naprawa skaczącego kursora)
+        if(document.activeElement && !el.contains(document.activeElement)) document.activeElement.blur();
     },
     
     renderTaskbar: () => {

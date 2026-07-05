@@ -40,11 +40,24 @@ const desktop = {
         };
     },
 
-    executeItem: (item) => {
-        if(item.type === 'app') winManager.open(item.appId);
-        else if(item.type === 'folder') fsManager.openFolder(item.id);
-        else if(item.type === 'file') { skrybaApp.open(item); }
-        else if(item.type === 'image') { patrzalkaApp.open(item); }
+ executeItem: (item) => {
+        if (item.type === 'app') {
+            winManager.open(item.appId);
+        } else if (item.type === 'folder') {
+            fsManager.openFolder(item.id);
+        } else if (item.type === 'image') {
+            // Otwieranie obrazków
+            if (typeof patrzalkaApp !== 'undefined') {
+                patrzalkaApp.open(item);
+            }
+        } else if (item.type === 'file') {
+            // INTELIGENTNE OTWIERANIE PLIKÓW (Skryba lub Tabelarz)
+            if (item.name.endsWith('.csv') && typeof tabelarzApp !== 'undefined') {
+                tabelarzApp.openFromFS(item);
+            } else {
+                skrybaApp.open(item); 
+            }
+        }
     },
     
     createFolder: (targetId) => {

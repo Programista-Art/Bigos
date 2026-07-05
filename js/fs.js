@@ -1,12 +1,11 @@
-// ======================================================================
-// PLIK: js/fs.js (System Plików i Pamięć)
-// ======================================================================
+//System Plików i Pamięć)
+
 
 const fsManager = {
     currentFolder: 'root',
     
     init: () => {
-        // 1. Ładowanie systemu plików (KULOODPORNE)
+        // 1. Ładowanie systemu plików 
         const saved = localStorage.getItem('bigos_fs');
         try {
             if (saved && saved !== 'undefined' && saved !== 'null') {

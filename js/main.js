@@ -1,6 +1,4 @@
-// ======================================================================
-// PLIK: main.js (Główny rozruch systemu BigOS)
-// ======================================================================
+// Główny rozruch systemu BigOS
 
 // Ta funkcja uruchamia się automatycznie po wczytaniu całego pliku HTML
 window.onload = () => {

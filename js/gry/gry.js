@@ -1,136 +1,730 @@
- const games = {
-            pelzacz: {
-                c: null, ctx: null, loop: null, active: false, grid: 15, snake: [], apple: {}, dx: 15, dy: 0, score: 0,
-                init: function() { if(this.loop) clearTimeout(this.loop); this.c = document.getElementById('canvas-pelzacz'); this.ctx = this.c.getContext('2d'); this.snake = [{x: 150, y: 150}, {x: 135, y: 150}]; this.dx = this.grid; this.dy = 0; this.score = 0; this.active = true; this.placeApple(); document.getElementById('pelzacz-score').innerText = 'Wynik: 0'; this.c.focus(); this.update(); },
-                placeApple: function() { this.apple = { x: Math.floor(Math.random()*(this.c.width/this.grid))*this.grid, y: Math.floor(Math.random()*(this.c.height/this.grid))*this.grid }; },
-                update: function() {
-                    if(!this.active) return;
-                    if(GLOBAL_KEYS['ArrowLeft'] && this.dx === 0) { this.dx = -this.grid; this.dy = 0; } else if(GLOBAL_KEYS['ArrowUp'] && this.dy === 0) { this.dy = -this.grid; this.dx = 0; } else if(GLOBAL_KEYS['ArrowRight'] && this.dx === 0) { this.dx = this.grid; this.dy = 0; } else if(GLOBAL_KEYS['ArrowDown'] && this.dy === 0) { this.dy = this.grid; this.dx = 0; }
-                    const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
-                    if(head.x < 0 || head.x >= this.c.width || head.y < 0 || head.y >= this.c.height || this.snake.some(s => s.x === head.x && s.y === head.y)) { this.active = false; apps.showToast('Koniec Gry', 'Pełzacz uderzył w ścianę!', 'error'); return; }
-                    this.snake.unshift(head); if(head.x === this.apple.x && head.y === this.apple.y) { this.score+=10; document.getElementById('pelzacz-score').innerText = 'Wynik: '+this.score; this.placeApple(); } else this.snake.pop();
-                    this.ctx.fillStyle = '#111'; this.ctx.fillRect(0,0,this.c.width,this.c.height); this.ctx.fillStyle = 'red'; this.ctx.fillRect(this.apple.x, this.apple.y, this.grid-1, this.grid-1); this.ctx.fillStyle = '#22c55e'; this.snake.forEach(s => this.ctx.fillRect(s.x, s.y, this.grid-1, this.grid-1));
-                    this.loop = setTimeout(() => this.update(), 100);
-                },
-                stop: function() { this.active = false; if(this.loop) clearTimeout(this.loop); }
-            },
-            murarz: {
-                c: null, ctx: null, loop: null, active: false, paddle: {}, ball: {}, bricks: [], score: 0,
-                init: function() {
-                    if(this.loop) cancelAnimationFrame(this.loop); this.c = document.getElementById('canvas-murarz'); this.ctx = this.c.getContext('2d'); this.paddle = { x: 160, y: 280, w: 80, h: 10 }; this.ball = { x: 200, y: 270, dx: 3, dy: -3, r: 5 }; this.bricks = []; this.score = 0; this.active = true;
-                    for(let c=0; c<8; c++) for(let r=0; r<4; r++) this.bricks.push({ x: c*48+10, y: r*20+20, w: 40, h: 10, status: 1 }); document.getElementById('murarz-score').innerText = 'Klocki: 0';
-                    this.c.onmousemove = (e) => { const r = this.c.getBoundingClientRect(); this.paddle.x = e.clientX - r.left - this.paddle.w/2; };
-                    this.c.addEventListener('touchmove', (e) => { e.preventDefault(); const r = this.c.getBoundingClientRect(); this.paddle.x = e.touches[0].clientX - r.left - this.paddle.w/2; }, {passive: false});
-                    this.update();
-                },
-                update: function() {
-                    if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height); this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
-                    if(this.ball.x + this.ball.dx > this.c.width - this.ball.r || this.ball.x + this.ball.dx < this.ball.r) this.ball.dx = -this.ball.dx; if(this.ball.y + this.ball.dy < this.ball.r) this.ball.dy = -this.ball.dy; else if(this.ball.y + this.ball.dy > this.c.height - this.ball.r) { if(this.ball.x > this.paddle.x && this.ball.x < this.paddle.x + this.paddle.w) this.ball.dy = -this.ball.dy; else { this.active = false; apps.showToast('Koniec Gry', 'Piłka spadła!', 'error'); return; } }
-                    this.bricks.forEach(b => { if(b.status === 1) { if(this.ball.x > b.x && this.ball.x < b.x+b.w && this.ball.y > b.y && this.ball.y < b.y+b.h) { this.ball.dy = -this.ball.dy; b.status = 0; this.score++; document.getElementById('murarz-score').innerText = 'Klocki: '+this.score; } this.ctx.fillStyle = '#eab308'; this.ctx.fillRect(b.x, b.y, b.w, b.h); } });
-                    this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h); this.ctx.fillStyle = '#fff'; this.ctx.beginPath(); this.ctx.arc(this.ball.x, this.ball.y, this.ball.r, 0, Math.PI*2); this.ctx.fill();
-                    if(this.score === 32) { this.active = false; apps.showToast('Wygrana', 'Rozbiłeś wszystko!', 'success'); return; } this.loop = requestAnimationFrame(() => this.update());
-                },
-                stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-            },
-            ufoludki: {
-                c: null, ctx: null, loop: null, active: false, ship: {}, bullets: [], aliens: [], score: 0,
-                init: function() {
-                    if(this.loop) cancelAnimationFrame(this.loop); this.c = document.getElementById('canvas-ufoludki'); this.ctx = this.c.getContext('2d'); this.ship = { x: 180, y: 360, w: 40, h: 20 }; this.bullets = []; this.aliens = []; this.score = 0; this.active = true;
-                    for(let r=0; r<4; r++) for(let c=0; c<8; c++) this.aliens.push({x: c*40+20, y: r*30+20, w:25, h:20, alive: true}); document.getElementById('ufoludki-score').innerText = 'Punkty: 0'; this.c.focus(); this.lastShot = 0; this.update();
-                },
-                update: function() {
-                    if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
-                    if(GLOBAL_KEYS['ArrowLeft'] && this.ship.x > 0) this.ship.x -= 4; if(GLOBAL_KEYS['ArrowRight'] && this.ship.x < this.c.width - this.ship.w) this.ship.x += 4;
-                    if(GLOBAL_KEYS['Space'] && Date.now() - this.lastShot > 300) { this.bullets.push({x: this.ship.x + 18, y: this.ship.y, w:4, h:10}); this.lastShot = Date.now(); }
-                    this.ctx.fillStyle = '#a855f7'; this.ctx.fillRect(this.ship.x, this.ship.y, this.ship.w, this.ship.h);
-                    this.bullets.forEach((b, i) => { b.y -= 7; this.ctx.fillStyle = '#fff'; this.ctx.fillRect(b.x, b.y, b.w, b.h); if(b.y < 0) this.bullets.splice(i, 1); else { this.aliens.forEach(a => { if(a.alive && b.x > a.x && b.x < a.x+a.w && b.y > a.y && b.y < a.y+a.h) { a.alive = false; this.bullets.splice(i, 1); this.score+=10; document.getElementById('ufoludki-score').innerText = 'Punkty: '+this.score;} }); } });
-                    let allDead = true; this.aliens.forEach(a => { if(a.alive) { allDead = false; a.y += 0.2; this.ctx.fillStyle = '#22c55e'; this.ctx.fillRect(a.x, a.y, a.w, a.h); if(a.y > 350) { this.active = false; apps.showToast('Koniec', 'Ufoludki wylądowały!', 'error'); } } });
-                    if(allDead) { this.active = false; apps.showToast('Wygrana', 'Ocaliłeś BigOS!', 'success'); return; } if(this.active) this.loop = requestAnimationFrame(() => this.update());
-                },
-                stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-            },
-            odbijanka: {
-                c: null, ctx: null, loop: null, active: false, p1: {}, p2: {}, ball: {}, score1: 0, score2: 0,
-                init: function() {
-                    if(this.loop) cancelAnimationFrame(this.loop); this.c = document.getElementById('canvas-odbijanka'); this.ctx = this.c.getContext('2d'); this.p1 = { y: 120 }; this.p2 = { y: 120 }; this.ball = { x: 200, y: 150, dx: 4, dy: 4 }; this.score1 = 0; this.score2 = 0; this.active = true;
-                    this.c.onmousemove = (e) => { const r = this.c.getBoundingClientRect(); this.p1.y = e.clientY - r.top - 30; };
-                    this.c.addEventListener('touchmove', (e) => { e.preventDefault(); const r = this.c.getBoundingClientRect(); this.p1.y = e.touches[0].clientY - r.top - 30; }, {passive: false});
-                    this.updateScore(); this.update();
-                },
-                updateScore: function() { document.getElementById('odbijanka-score').innerText = `Ty: ${this.score1} | Komputer: ${this.score2}`; },
-                update: function() {
-                    if(!this.active) return; this.ctx.fillStyle = '#111'; this.ctx.fillRect(0,0,this.c.width,this.c.height); this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
-                    if(this.ball.y < 0 || this.ball.y > 290) this.ball.dy = -this.ball.dy; if(this.p2.y + 30 < this.ball.y) this.p2.y += 3; else this.p2.y -= 3;
-                    if(this.ball.x < 20 && this.ball.y > this.p1.y && this.ball.y < this.p1.y + 60) this.ball.dx = -this.ball.dx; if(this.ball.x > 370 && this.ball.y > this.p2.y && this.ball.y < this.p2.y + 60) this.ball.dx = -this.ball.dx;
-                    if(this.ball.x < 0) { this.score2++; this.ball.x = 200; this.updateScore(); } if(this.ball.x > 400) { this.score1++; this.ball.x = 200; this.updateScore(); }
-                    this.ctx.fillStyle = '#fff'; this.ctx.fillRect(10, this.p1.y, 10, 60); this.ctx.fillRect(380, this.p2.y, 10, 60); this.ctx.fillRect(this.ball.x, this.ball.y, 10, 10);
-                    this.loop = requestAnimationFrame(() => this.update());
-                },
-                stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-            },
-            trzepotek: {
-                c: null, ctx: null, loop: null, active: false, birdY: 200, velocity: 0, pipes: [], score: 0, frame: 0,
-                init: function() {
-                    if(this.loop) cancelAnimationFrame(this.loop); this.c = document.getElementById('canvas-trzepotek'); this.ctx = this.c.getContext('2d'); this.birdY = 200; this.velocity = 0; this.pipes = []; this.score = 0; this.frame = 0; this.active = true; document.getElementById('trzepotek-score').innerText = 'Punkty: 0';
-                    this.c.onclick = () => { if(this.active) this.velocity = -6; };
-                    this.c.focus(); this.update();
-                },
-                update: function() {
-                    if(!this.active) return; if(GLOBAL_KEYS['Space']) { this.velocity = -6; GLOBAL_KEYS['Space'] = false; } this.ctx.clearRect(0,0,this.c.width,this.c.height);
-                    this.velocity += 0.3; this.birdY += this.velocity;
-                    if(this.frame % 100 === 0) { const gapY = Math.random() * 200 + 50; this.pipes.push({ x: 300, w: 40, top: gapY, bottom: gapY + 100 }); } this.frame++;
-                    this.ctx.fillStyle = '#22c55e';
-                    this.pipes.forEach((p, i) => {
-                        p.x -= 2; this.ctx.fillRect(p.x, 0, p.w, p.top); this.ctx.fillRect(p.x, p.bottom, p.w, 400 - p.bottom);
-                        if(p.x === 50) { this.score++; document.getElementById('trzepotek-score').innerText = 'Punkty: '+this.score; }
-                        if(50 < p.x + p.w && 50 + 20 > p.x && (this.birdY < p.top || this.birdY + 20 > p.bottom)) { this.active = false; apps.showToast('Koniec', 'Trzepotek spadł!', 'error'); }
-                        if(p.x < -40) this.pipes.splice(i, 1);
-                    });
-                    if(this.birdY > 400 || this.birdY < 0) { this.active = false; apps.showToast('Koniec', 'Ups!', 'error'); }
-                    this.ctx.fillStyle = '#eab308'; this.ctx.beginPath(); this.ctx.arc(60, this.birdY, 10, 0, Math.PI*2); this.ctx.fill();
-                    if(this.active) this.loop = requestAnimationFrame(() => this.update());
-                },
-                stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-            },
-            scigacz: {
-                c: null, ctx: null, loop: null, active: false, carX: 130, obs: [], score: 0, speed: 3, frame: 0,
-                init: function() {
-                    if(this.loop) cancelAnimationFrame(this.loop); this.c = document.getElementById('canvas-scigacz'); this.ctx = this.c.getContext('2d'); this.carX = 130; this.obs = []; this.score = 0; this.speed = 3; this.frame = 0; this.active = true; document.getElementById('scigacz-score').innerText = 'Dystans: 0'; this.c.focus(); this.update();
-                },
-                update: function() {
-                    if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
-                    if(GLOBAL_KEYS['ArrowLeft'] && this.carX > 10) this.carX -= 4; if(GLOBAL_KEYS['ArrowRight'] && this.carX < 250) this.carX += 4;
-                    if(this.frame % Math.max(30, 80 - this.score) === 0) { this.obs.push({ x: Math.random() * 260, y: -40, w: 40, h: 40 }); } this.frame++;
-                    this.ctx.fillStyle = '#b91c1c';
-                    this.obs.forEach((o, i) => { o.y += this.speed; this.ctx.fillRect(o.x, o.y, o.w, o.h); if(this.carX < o.x + o.w && this.carX + 40 > o.x && 340 < o.y + o.h && 380 > o.y) { this.active = false; apps.showToast('Koniec', 'Wypadek!', 'error'); } if(o.y > 400) { this.obs.splice(i, 1); this.score++; document.getElementById('scigacz-score').innerText = 'Dystans: '+this.score; if(this.score%5===0) this.speed+=0.5; } });
-                    this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(this.carX, 340, 40, 50);
-                    if(this.active) this.loop = requestAnimationFrame(() => this.update());
-                },
-                stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-            },
-            bombiarz: {
-                c: null, ctx: null, loop: null, active: false, px: 20, py: 20, bombs: [], blocks: [], score: 0, lastMv: 0,
-                init: function() {
-                    if(this.loop) cancelAnimationFrame(this.loop); this.c = document.getElementById('canvas-bombiarz'); this.ctx = this.c.getContext('2d'); this.px = 20; this.py = 20; this.bombs = []; this.blocks = []; this.score = 0; this.active = true;
-                    for(let i=0; i<30; i++) this.blocks.push({ x: Math.floor(Math.random()*15)*20, y: Math.floor(Math.random()*15)*20 }); document.getElementById('bombiarz-score').innerText = 'Punkty: 0'; this.c.focus(); this.update();
-                },
-                update: function() {
-                    if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
-                    if(Date.now() - this.lastMv > 100) { if(GLOBAL_KEYS['ArrowLeft'] && this.px > 0) { this.px -= 20; this.lastMv = Date.now(); } if(GLOBAL_KEYS['ArrowRight'] && this.px < 280) { this.px += 20; this.lastMv = Date.now(); } if(GLOBAL_KEYS['ArrowUp'] && this.py > 0) { this.py -= 20; this.lastMv = Date.now(); } if(GLOBAL_KEYS['ArrowDown'] && this.py < 280) { this.py += 20; this.lastMv = Date.now(); } }
-                    if(GLOBAL_KEYS['Space'] && !this.bombs.some(b=>b.x===this.px&&b.y===this.py)) { this.bombs.push({ x: this.px, y: this.py, time: 100 }); GLOBAL_KEYS['Space'] = false; }
-                    this.ctx.fillStyle = '#64748b'; this.blocks.forEach(b => this.ctx.fillRect(b.x, b.y, 20, 20));
-                    this.ctx.fillStyle = '#ef4444';
-                    this.bombs.forEach((b, i) => { b.time--; this.ctx.beginPath(); this.ctx.arc(b.x+10, b.y+10, 8, 0, Math.PI*2); this.ctx.fill(); if(b.time <= 0) { this.bombs.splice(i, 1); this.blocks = this.blocks.filter(bl => { let dist = Math.abs(bl.x - b.x) + Math.abs(bl.y - b.y); if(dist <= 20) { this.score+=5; document.getElementById('bombiarz-score').innerText = 'Punkty: '+this.score; return false; } return true; }); } });
-                    this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(this.px, this.py, 20, 20);
-                    if(this.active) this.loop = requestAnimationFrame(() => this.update());
-                },
-                stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-            },
-            kolko: {
-                ticB: ['','','','','','','','',''], ticP: 'X', ticA: true,
-                init: () => { games.kolko.ticB=['','','','','','','','','']; games.kolko.ticP='X'; games.kolko.ticA=true; document.getElementById('tic-status').innerText='Tura: X'; const c=document.getElementById('tic-board'); c.innerHTML=''; for(let i=0;i<9;i++){ const cell=document.createElement('div'); cell.className='w-16 h-16 bg-gray-200 dark:bg-[#222] flex items-center justify-center text-3xl font-bold cursor-pointer rounded transition hover:bg-gray-300 dark:hover:bg-[#333]'; cell.onclick=()=>games.kolko.play(i, cell); c.appendChild(cell); } },
-                play: (i, cell) => { if(!games.kolko.ticA || games.kolko.ticB[i]!=='')return; games.kolko.ticB[i]=games.kolko.ticP; cell.innerText=games.kolko.ticP; cell.classList.add(games.kolko.ticP==='X'?'text-red-500':'text-blue-500'); if(games.kolko.chk()){ document.getElementById('tic-status').innerText=`🏆 Zwycięzca: ${games.kolko.ticP}!`; games.kolko.ticA=false; apps.showToast('Gry', `Gracz ${games.kolko.ticP} wygrywa!`, 'success');} else if(!games.kolko.ticB.includes('')){ document.getElementById('tic-status').innerText='Remis!'; games.kolko.ticA=false; } else { games.kolko.ticP=games.kolko.ticP==='X'?'O':'X'; document.getElementById('tic-status').innerText=`Tura: ${games.kolko.ticP}`; } },
-                chk: () => [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]].some(c=>games.kolko.ticB[c[0]]&&games.kolko.ticB[c[0]]===games.kolko.ticB[c[1]]&&games.kolko.ticB[c[1]]===games.kolko.ticB[c[2]]),
-                stop: () => {}
-            }
+// ======================================================================
+// PLIK: js/gry.js (Silnik Minigier dla BigOS)
+// ======================================================================
+
+// ---------------------------------------------------------
+// WŁASNY SYSTEM ŚLEDZENIA KLAWISZY
+// ---------------------------------------------------------
+const gryKeys = {};
+window.addEventListener('keydown', (e) => { 
+    gryKeys[e.code] = true; 
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) {
+        if(Object.values(games).some(g => g && g.active)) e.preventDefault();
+    }
+}, {passive: false});
+window.addEventListener('keyup', (e) => { gryKeys[e.code] = false; });
+
+// ---------------------------------------------------------
+// SYSTEM ŁADOWANIA WŁASNYCH GRAFIK Z FOLDERU
+// ---------------------------------------------------------
+const gameAssets = {
+    apple: new Image(), snake_head: new Image(), snake_body: new Image(),
+    paddle: new Image(), ball: new Image(), brick: new Image(),
+    ship: new Image(), alien: new Image(), bullet: new Image(),
+    car: new Image(), obs: new Image(),
+    bird: new Image(), pipe: new Image(),
+    bomber: new Image(), bomb: new Image(), box: new Image()
+};
+
+gameAssets.apple.src = 'games/img/apple.png';
+gameAssets.snake_head.src = 'games/img/snake_head.png';
+gameAssets.snake_body.src = 'games/img/snake_body.png';
+gameAssets.paddle.src = 'games/img/paddle.png';
+gameAssets.ball.src = 'games/img/ball.png';
+gameAssets.brick.src = 'games/img/brick.png';
+gameAssets.ship.src = 'games/img/ship.png';
+gameAssets.alien.src = 'games/img/alien.png';
+gameAssets.bullet.src = 'games/img/bullet.png';
+gameAssets.car.src = 'games/img/car.png';
+gameAssets.obs.src = 'games/img/obs.png';
+gameAssets.bird.src = 'games/img/bird.png';
+gameAssets.pipe.src = 'games/img/pipe.png';
+gameAssets.bomber.src = 'games/img/bomber.png';
+gameAssets.bomb.src = 'games/img/bomb.png';
+gameAssets.box.src = 'games/img/box.png';
+
+const drawSprite = (ctx, img, x, y, w, h, fallbackFn) => {
+    if (img && img.complete && img.naturalWidth > 0) ctx.drawImage(img, x, y, w, h);
+    else fallbackFn(); 
+};
+
+// ---------------------------------------------------------
+// SYSTEM DŹWIĘKOWY (Śledzenie i zatrzymywanie długich plików)
+// ---------------------------------------------------------
+const gameSounds = {
+    eat: new Audio('games/sound/eat.mp3'),
+    die: new Audio('games/sound/die.mp3'),
+    bounce: new Audio('games/sound/bounce.mp3'),
+    break: new Audio('games/sound/break.mp3'),
+    win: new Audio('games/sound/win.mp3'),
+    shoot: new Audio('games/sound/shoot.mp3'),
+    invader: new Audio('games/sound/invader.mp3'),
+    pong: new Audio('games/sound/pong.mp3'),
+    score: new Audio('games/sound/score.mp3'),
+    flap: new Audio('games/sound/flap.mp3'),
+    hit: new Audio('games/sound/hit.mp3'),
+    crash: new Audio('games/sound/crash.mp3'),
+    drop: new Audio('games/sound/drop.mp3'),
+    explosion: new Audio('games/sound/explosion.mp3')
+};
+
+let activeSounds = []; // Tablica trzymająca grające dźwięki
+
+const stopAllSounds = () => {
+    activeSounds.forEach(s => {
+        try { 
+            s.pause(); 
+            s.currentTime = 0; 
+        } catch(e) {}
+    });
+    activeSounds = [];
+};
+
+const playSnd = (id) => {
+    if (gameSounds[id]) {
+        const snd = gameSounds[id].cloneNode(); 
+        snd.volume = 0.6;
+        snd.play().catch(e => {});
+        activeSounds.push(snd);
+        // Po zakończeniu utworu, zdejmujemy go z listy
+        snd.onended = () => {
+            const idx = activeSounds.indexOf(snd);
+            if(idx > -1) activeSounds.splice(idx, 1);
         };
+    }
+};
+
+const games = {
+    // ---------------------------------------------------------
+    // 1. PEŁZACZ (SNAKE)
+    // ---------------------------------------------------------
+    pelzacz: {
+        c: null, ctx: null, loop: null, active: false, grid: 20, snake: [], apple: {}, dx: 20, dy: 0, score: 0,
+        init: function() { 
+            stopAllSounds(); // Zatrzymuje piosenki z poprzedniej gry
+            if(this.loop) clearTimeout(this.loop); 
+            this.c = document.getElementById('canvas-pelzacz'); this.ctx = this.c.getContext('2d'); 
+            this.snake = [{x: 140, y: 140}, {x: 120, y: 140}]; this.dx = this.grid; this.dy = 0; this.score = 0; this.active = true; 
+            this.placeApple(); document.getElementById('pelzacz-score').innerText = 'Wynik: 0'; 
+            this.c.focus(); this.update(); 
+        },
+        placeApple: function() { 
+            this.apple = { x: Math.floor(Math.random()*(this.c.width/this.grid))*this.grid, y: Math.floor(Math.random()*(this.c.height/this.grid))*this.grid }; 
+        },
+        update: function() {
+            if(!this.active) return;
+            if(gryKeys['ArrowLeft'] && this.dx === 0) { this.dx = -this.grid; this.dy = 0; } 
+            else if(gryKeys['ArrowUp'] && this.dy === 0) { this.dy = -this.grid; this.dx = 0; } 
+            else if(gryKeys['ArrowRight'] && this.dx === 0) { this.dx = this.grid; this.dy = 0; } 
+            else if(gryKeys['ArrowDown'] && this.dy === 0) { this.dy = this.grid; this.dx = 0; }
+            
+            const head = {x: this.snake[0].x + this.dx, y: this.snake[0].y + this.dy};
+            if(head.x < 0 || head.x >= this.c.width || head.y < 0 || head.y >= this.c.height || this.snake.some(s => s.x === head.x && s.y === head.y)) { 
+                this.active = false; playSnd('die'); if(typeof apps !== 'undefined') apps.showToast('Koniec Gry', 'Pełzacz uderzył w ścianę!', 'error'); return; 
+            }
+            
+            this.snake.unshift(head); 
+            if(head.x === this.apple.x && head.y === this.apple.y) { 
+                this.score+=10; playSnd('eat'); document.getElementById('pelzacz-score').innerText = 'Wynik: '+this.score; this.placeApple(); 
+            } else this.snake.pop();
+            
+            this.ctx.fillStyle = '#111827'; this.ctx.fillRect(0,0,this.c.width,this.c.height); 
+            this.ctx.font = "18px Arial"; this.ctx.textAlign = "left"; this.ctx.textBaseline = "top";
+            
+            drawSprite(this.ctx, gameAssets.apple, this.apple.x, this.apple.y, this.grid, this.grid, () => {
+                this.ctx.fillText('🍎', this.apple.x, this.apple.y + 2); 
+            });
+            
+            this.snake.forEach((s, i) => { 
+                if (i === 0) {
+                    drawSprite(this.ctx, gameAssets.snake_head, s.x, s.y, this.grid, this.grid, () => { this.ctx.fillText('🐸', s.x, s.y + 2); });
+                } else {
+                    drawSprite(this.ctx, gameAssets.snake_body, s.x, s.y, this.grid, this.grid, () => { this.ctx.fillText('🟩', s.x, s.y + 2); });
+                }
+            });
+            
+            this.loop = setTimeout(() => this.update(), 120 - Math.min(this.score, 80)); 
+        },
+        stop: function() { this.active = false; if(this.loop) clearTimeout(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 2. MURARZ (BREAKOUT)
+    // ---------------------------------------------------------
+    murarz: {
+        c: null, ctx: null, loop: null, active: false, paddle: {}, ball: {}, bricks: [], score: 0,
+        init: function() {
+            stopAllSounds();
+            if(this.loop) cancelAnimationFrame(this.loop); 
+            this.c = document.getElementById('canvas-murarz'); this.ctx = this.c.getContext('2d'); 
+            this.paddle = { x: 160, y: 280, w: 80, h: 10 }; 
+            this.ball = { x: 200, y: 260, dx: 2.5, dy: -2.5, r: 8 }; 
+            this.bricks = []; this.score = 0; this.active = true;
+            
+            for(let c=0; c<8; c++) {
+                for(let r=0; r<5; r++) { 
+                    this.bricks.push({ 
+                        x: c*48+10, 
+                        y: r*25+50, 
+                        w: 44, 
+                        h: 18, 
+                        status: 1, 
+                        type: ['🧱','🧊','📦'][Math.floor(Math.random()*3)] 
+                    }); 
+                }
+            }
+            
+            document.getElementById('murarz-score').innerText = 'Klocki: 0';
+            this.c.onmousemove = (e) => { 
+                const r = this.c.getBoundingClientRect(); 
+                const scaleX = this.c.width / r.width;
+                let newX = (e.clientX - r.left) * scaleX - this.paddle.w/2; 
+                this.paddle.x = Math.max(0, Math.min(this.c.width - this.paddle.w, newX)); 
+            };
+            this.c.addEventListener('touchmove', (e) => { 
+                const r = this.c.getBoundingClientRect(); 
+                const scaleX = this.c.width / r.width;
+                let newX = (e.touches[0].clientX - r.left) * scaleX - this.paddle.w/2; 
+                this.paddle.x = Math.max(0, Math.min(this.c.width - this.paddle.w, newX)); 
+            }, {passive: false});
+            this.update();
+        },
+        update: function() {
+            if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height); 
+            
+            if(gryKeys['ArrowLeft'] && this.paddle.x > 0) this.paddle.x -= 5;
+            if(gryKeys['ArrowRight'] && this.paddle.x < this.c.width - this.paddle.w) this.paddle.x += 5;
+
+            this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
+            
+            if(this.ball.x + this.ball.dx > this.c.width - this.ball.r || this.ball.x + this.ball.dx < this.ball.r) { this.ball.dx = -this.ball.dx; playSnd('bounce'); }
+            if(this.ball.y + this.ball.dy < this.ball.r) { this.ball.dy = -this.ball.dy; playSnd('bounce'); }
+            else if(this.ball.y + this.ball.dy > this.c.height - this.ball.r) { 
+                if(this.ball.x > this.paddle.x && this.ball.x < this.paddle.x + this.paddle.w) {
+                    this.ball.dy = -this.ball.dy;
+                    this.ball.dx = ((this.ball.x - (this.paddle.x + this.paddle.w/2)) / (this.paddle.w/2)) * 3;
+                    playSnd('bounce');
+                } else { 
+                    this.active = false; playSnd('die'); if(typeof apps !== 'undefined') apps.showToast('Koniec Gry', 'Piłka spadła!', 'error'); return; 
+                } 
+            }
+            
+            this.ctx.font = "20px Arial"; this.ctx.textBaseline = "top";
+            this.bricks.forEach(b => { 
+                if(b.status === 1) { 
+                    if(this.ball.x > b.x && this.ball.x < b.x+b.w && this.ball.y > b.y && this.ball.y < b.y+b.h) { 
+                        this.ball.dy = -this.ball.dy; b.status = 0; this.score++; playSnd('break'); document.getElementById('murarz-score').innerText = 'Klocki: '+this.score; 
+                    } 
+                    drawSprite(this.ctx, gameAssets.brick, b.x, b.y, b.w, b.h, () => {
+                        this.ctx.fillText(b.type, b.x + 10, b.y - 2); 
+                    });
+                } 
+            });
+            
+            drawSprite(this.ctx, gameAssets.paddle, this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h, () => {
+                this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h); 
+            });
+            drawSprite(this.ctx, gameAssets.ball, this.ball.x - 10, this.ball.y - 10, 20, 20, () => {
+                this.ctx.fillText('⚽', this.ball.x - 10, this.ball.y - 10);
+            });
+            
+            if(this.score === 40) { this.active = false; playSnd('win'); if(typeof apps !== 'undefined') apps.showToast('Wygrana', 'Rozbiłeś wszystko!', 'success'); return; } 
+            this.loop = requestAnimationFrame(() => this.update());
+        },
+        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 3. UFOLUDKI (SPACE INVADERS)
+    // ---------------------------------------------------------
+    ufoludki: {
+        c: null, ctx: null, loop: null, active: false, ship: {}, bullets: [], aliens: [], score: 0, lastShot: 0,
+        init: function() {
+            stopAllSounds();
+            if(this.loop) cancelAnimationFrame(this.loop); 
+            this.c = document.getElementById('canvas-ufoludki'); this.ctx = this.c.getContext('2d'); 
+            this.ship = { x: 180, y: 350, w: 40, h: 40 }; this.bullets = []; this.aliens = []; this.score = 0; this.active = true;
+            for(let r=0; r<4; r++) for(let c=0; c<8; c++) this.aliens.push({x: c*45+20, y: r*35+20, w:30, h:30, alive: true}); 
+            document.getElementById('ufoludki-score').innerText = 'Punkty: 0'; this.lastShot = 0; this.update();
+        },
+        update: function() {
+            if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
+            
+            if(gryKeys['ArrowLeft'] && this.ship.x > 0) this.ship.x -= 3; 
+            if(gryKeys['ArrowRight'] && this.ship.x < this.c.width - this.ship.w) this.ship.x += 3;
+            if(gryKeys['Space'] && Date.now() - this.lastShot > 300) { 
+                this.bullets.push({x: this.ship.x + 16, y: this.ship.y, w:8, h:15}); this.lastShot = Date.now(); playSnd('shoot');
+            }
+            
+            this.ctx.font = "30px Arial"; this.ctx.textBaseline = "top";
+            
+            drawSprite(this.ctx, gameAssets.ship, this.ship.x, this.ship.y, this.ship.w, this.ship.h, () => {
+                this.ctx.fillText('🚀', this.ship.x, this.ship.y); 
+            });
+            
+            this.bullets.forEach((b, i) => { 
+                b.y -= 5; 
+                drawSprite(this.ctx, gameAssets.bullet, b.x, b.y, b.w, b.h, () => {
+                    this.ctx.fillStyle = '#fbbf24'; this.ctx.fillRect(b.x, b.y, b.w, b.h); 
+                });
+                if(b.y < 0) this.bullets.splice(i, 1); 
+                else { 
+                    this.aliens.forEach(a => { 
+                        if(a.alive && b.x > a.x && b.x < a.x+a.w && b.y > a.y && b.y < a.y+a.h) { 
+                            a.alive = false; this.bullets.splice(i, 1); this.score+=10; playSnd('invader'); document.getElementById('ufoludki-score').innerText = 'Punkty: '+this.score;
+                        } 
+                    }); 
+                } 
+            });
+            
+            let allDead = true; 
+            this.aliens.forEach(a => { 
+                if(a.alive) { 
+                    allDead = false; a.y += 0.15; 
+                    drawSprite(this.ctx, gameAssets.alien, a.x, a.y, a.w, a.h, () => { this.ctx.fillText('👾', a.x, a.y); });
+                    if(a.y > 330) { this.active = false; playSnd('die'); if(typeof apps !== 'undefined') apps.showToast('Koniec', 'Ufoludki wylądowały!', 'error'); } 
+                } 
+            });
+            
+            if(allDead) { this.active = false; playSnd('win'); if(typeof apps !== 'undefined') apps.showToast('Wygrana', 'Ocaliłeś BigOS!', 'success'); return; } 
+            if(this.active) this.loop = requestAnimationFrame(() => this.update());
+        },
+        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 4. ODBIJANKA (PONG)
+    // ---------------------------------------------------------
+    odbijanka: {
+        c: null, ctx: null, loop: null, active: false, p1: {}, p2: {}, ball: {}, score1: 0, score2: 0,
+        init: function() {
+            stopAllSounds();
+            if(this.loop) cancelAnimationFrame(this.loop); 
+            this.c = document.getElementById('canvas-odbijanka'); this.ctx = this.c.getContext('2d'); 
+            this.p1 = { y: 120 }; this.p2 = { y: 120 }; this.ball = { x: 200, y: 150, dx: 3, dy: 3 }; this.score1 = 0; this.score2 = 0; this.active = true;
+            this.c.onmousemove = (e) => { 
+                const r = this.c.getBoundingClientRect(); 
+                const scaleY = this.c.height / r.height;
+                let newY = (e.clientY - r.top) * scaleY - 30; 
+                this.p1.y = Math.max(0, Math.min(this.c.height - 60, newY)); 
+            };
+            this.c.addEventListener('touchmove', (e) => { 
+                const r = this.c.getBoundingClientRect(); 
+                const scaleY = this.c.height / r.height;
+                let newY = (e.touches[0].clientY - r.top) * scaleY - 30; 
+                this.p1.y = Math.max(0, Math.min(this.c.height - 60, newY)); 
+            }, {passive: false});
+            this.updateScore(); this.update();
+        },
+        updateScore: function() { document.getElementById('odbijanka-score').innerText = `Ty: ${this.score1} | Komputer: ${this.score2}`; },
+        update: function() {
+            if(!this.active) return; this.ctx.fillStyle = '#111'; this.ctx.fillRect(0,0,this.c.width,this.c.height); 
+            
+            if(gryKeys['ArrowUp'] && this.p1.y > 0) this.p1.y -= 5;
+            if(gryKeys['ArrowDown'] && this.p1.y < this.c.height - 60) this.p1.y += 5;
+
+            this.ball.x += this.ball.dx; this.ball.y += this.ball.dy;
+            
+            if(this.ball.y < 10 || this.ball.y > 290) { this.ball.dy = -this.ball.dy; playSnd('pong'); }
+            if(this.p2.y + 30 < this.ball.y) this.p2.y += 2.5; else this.p2.y -= 2.5;
+            
+            this.p2.y = Math.max(0, Math.min(this.c.height - 60, this.p2.y));
+            
+            if(this.ball.x < 25 && this.ball.y > this.p1.y && this.ball.y < this.p1.y + 60) { this.ball.dx = -this.ball.dx; this.ball.x = 25; playSnd('pong'); } 
+            if(this.ball.x > 375 && this.ball.y > this.p2.y && this.ball.y < this.p2.y + 60) { this.ball.dx = -this.ball.dx; this.ball.x = 375; playSnd('pong'); }
+            
+            if(this.ball.x < 0) { this.score2++; this.ball.x = 200; this.ball.dx = 3; playSnd('score'); this.updateScore(); } 
+            if(this.ball.x > 400) { this.score1++; this.ball.x = 200; this.ball.dx = -3; playSnd('score'); this.updateScore(); }
+            
+            drawSprite(this.ctx, gameAssets.paddle, 10, this.p1.y, 10, 60, () => { this.ctx.fillStyle = '#3b82f6'; this.ctx.fillRect(10, this.p1.y, 10, 60); });
+            drawSprite(this.ctx, gameAssets.paddle, 380, this.p2.y, 10, 60, () => { this.ctx.fillStyle = '#ef4444'; this.ctx.fillRect(380, this.p2.y, 10, 60); });
+            
+            this.ctx.font = "20px Arial"; 
+            drawSprite(this.ctx, gameAssets.ball, this.ball.x - 10, this.ball.y - 10, 20, 20, () => { this.ctx.fillText('🎾', this.ball.x - 10, this.ball.y - 10); });
+            
+            this.loop = requestAnimationFrame(() => this.update());
+        },
+        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 5. TRZEPOTEK (FLAPPY BIRD)
+    // ---------------------------------------------------------
+    trzepotek: {
+        c: null, ctx: null, loop: null, active: false, birdY: 200, velocity: 0, pipes: [], score: 0, frame: 0,
+        init: function() {
+            stopAllSounds();
+            if(this.loop) cancelAnimationFrame(this.loop); 
+            this.c = document.getElementById('canvas-trzepotek'); this.ctx = this.c.getContext('2d'); 
+            this.birdY = 200; this.velocity = 0; this.pipes = []; this.score = 0; this.frame = 0; this.active = true; 
+            document.getElementById('trzepotek-score').innerText = 'Punkty: 0';
+            
+            this.c.onmousedown = (e) => { e.preventDefault(); this.doAction(); };
+            this.c.ontouchstart = (e) => { e.preventDefault(); this.doAction(); };
+            
+            this.update();
+        },
+        doAction: function() {
+            if(!this.active) return;
+            this.velocity = -5.5;
+            playSnd('flap');
+            gryKeys['Space'] = false; 
+        },
+        update: function() {
+            if(!this.active) return; 
+            if(gryKeys['Space']) { this.doAction(); } 
+            
+            this.ctx.clearRect(0,0,this.c.width,this.c.height);
+            this.velocity += 0.25;
+            this.birdY += this.velocity;
+            
+            if(this.frame % 100 === 0) { const gapY = Math.random() * 150 + 60; this.pipes.push({ x: 300, w: 50, top: gapY, bottom: gapY + 140 }); } 
+            this.frame++;
+            
+            this.ctx.fillStyle = '#22c55e';
+            this.pipes.forEach((p, i) => {
+                p.x -= 2; 
+                drawSprite(this.ctx, gameAssets.pipe, p.x, 0, p.w, p.top, () => { this.ctx.fillRect(p.x, 0, p.w, p.top); this.ctx.strokeRect(p.x, 0, p.w, p.top); });
+                drawSprite(this.ctx, gameAssets.pipe, p.x, p.bottom, p.w, 400 - p.bottom, () => { this.ctx.fillRect(p.x, p.bottom, p.w, 400 - p.bottom); this.ctx.strokeRect(p.x, p.bottom, p.w, 400 - p.bottom); });
+                
+                if(p.x === 44) { this.score++; playSnd('score'); document.getElementById('trzepotek-score').innerText = 'Punkty: '+this.score; }
+                if(44 < p.x + p.w && 44 + 25 > p.x && (this.birdY < p.top || this.birdY + 20 > p.bottom)) { 
+                    this.active = false; playSnd('hit'); if(typeof apps !== 'undefined') apps.showToast('Koniec', 'Trzepotek uderzył w rurę!', 'error'); 
+                }
+                if(p.x < -60) this.pipes.splice(i, 1);
+            });
+            
+            if(this.birdY > 380 || this.birdY < -20) { this.active = false; playSnd('hit'); if(typeof apps !== 'undefined') apps.showToast('Koniec', 'Zderzenie z ziemią!', 'error'); }
+            
+            this.ctx.font = "30px Arial"; this.ctx.textBaseline = "top";
+            drawSprite(this.ctx, gameAssets.bird, 45, this.birdY, 30, 30, () => { this.ctx.fillText('🦇', 45, this.birdY); });
+            
+            if(this.active) this.loop = requestAnimationFrame(() => this.update());
+        },
+        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 6. ŚCIGACZ (WYŚCIGI)
+    // ---------------------------------------------------------
+    scigacz: {
+        c: null, ctx: null, loop: null, active: false, carX: 130, obs: [], score: 0, speed: 2.5, frame: 0,
+        init: function() {
+            stopAllSounds();
+            if(this.loop) cancelAnimationFrame(this.loop); 
+            this.c = document.getElementById('canvas-scigacz'); this.ctx = this.c.getContext('2d'); 
+            this.carX = 130; this.obs = []; this.score = 0; this.speed = 2.5; this.frame = 0; this.active = true; 
+            document.getElementById('scigacz-score').innerText = 'Dystans: 0'; this.update();
+        },
+        update: function() {
+            if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
+            
+            this.ctx.fillStyle = '#374151'; this.ctx.fillRect(0,0,this.c.width,this.c.height);
+            this.ctx.fillStyle = '#fff';
+            for(let i=0; i<5; i++) { this.ctx.fillRect(145, ((this.frame * this.speed) % 100) + (i*100) - 100, 10, 50); }
+
+            if(gryKeys['ArrowLeft'] && this.carX > 10) this.carX -= 4; 
+            if(gryKeys['ArrowRight'] && this.carX < 250) this.carX += 4;
+            
+            if(this.frame % Math.max(30, 80 - Math.floor(this.score/2)) === 0) { 
+                this.obs.push({ x: Math.random() * 250, y: -50, type: ['🛻','🚓','🚕','🚧'][Math.floor(Math.random()*4)] }); 
+            } 
+            this.frame++;
+            
+            this.ctx.font = "40px Arial"; this.ctx.textBaseline = "top";
+            this.obs.forEach((o, i) => { 
+                o.y += this.speed; 
+                drawSprite(this.ctx, gameAssets.obs, o.x, o.y, 40, 40, () => { this.ctx.fillText(o.type, o.x, o.y); });
+                
+                if(this.carX < o.x + 35 && this.carX + 35 > o.x && 340 < o.y + 35 && 380 > o.y) { 
+                    this.active = false; playSnd('crash'); if(typeof apps !== 'undefined') apps.showToast('Koniec', 'Wypadek drogowy!', 'error'); 
+                } 
+                if(o.y > 420) { 
+                    this.obs.splice(i, 1); this.score++; document.getElementById('scigacz-score').innerText = 'Dystans: '+this.score; 
+                    if(this.score%10===0) this.speed+=0.2; 
+                } 
+            });
+            
+            drawSprite(this.ctx, gameAssets.car, this.carX, 340, 40, 50, () => { this.ctx.fillText('🚘', this.carX, 340); });
+            
+            if(this.active) this.loop = requestAnimationFrame(() => this.update());
+        },
+        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 7. BOMBIARZ
+    // ---------------------------------------------------------
+    bombiarz: {
+        c: null, ctx: null, loop: null, active: false, px: 20, py: 20, bombs: [], blocks: [], score: 0, lastMv: 0, explosions: [],
+        init: function() {
+            stopAllSounds();
+            if(this.loop) cancelAnimationFrame(this.loop); 
+            this.c = document.getElementById('canvas-bombiarz'); this.ctx = this.c.getContext('2d'); 
+            this.px = 20; this.py = 20; this.bombs = []; this.blocks = []; this.explosions = []; this.score = 0; this.active = true;
+            for(let i=0; i<35; i++) {
+                let bx = Math.floor(Math.random()*13+1)*20; let by = Math.floor(Math.random()*13+1)*20;
+                this.blocks.push({ x: bx, y: by }); 
+            }
+            document.getElementById('bombiarz-score').innerText = 'Punkty: 0'; this.update();
+        },
+        doAction: function() {
+            if(!this.active) return;
+            if(!this.bombs.some(b=>b.x===this.px&&b.y===this.py)) { 
+                this.bombs.push({ x: this.px, y: this.py, time: 80 }); playSnd('drop'); gryKeys['Space'] = false; 
+            }
+        },
+        update: function() {
+            if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
+            
+            if(Date.now() - this.lastMv > 120) { 
+                let nx = this.px; let ny = this.py;
+                if(gryKeys['ArrowLeft'] && this.px > 0) nx -= 20; 
+                if(gryKeys['ArrowRight'] && this.px < 280) nx += 20; 
+                if(gryKeys['ArrowUp'] && this.py > 0) ny -= 20; 
+                if(gryKeys['ArrowDown'] && this.py < 280) ny += 20; 
+                
+                if(!this.blocks.some(b => b.x === nx && b.y === ny)) { this.px = nx; this.py = ny; }
+                this.lastMv = Date.now(); 
+            }
+            
+            if(gryKeys['Space']) { this.doAction(); }
+            
+            this.ctx.font = "20px Arial"; this.ctx.textBaseline = "top";
+            
+            this.blocks.forEach(b => { drawSprite(this.ctx, gameAssets.box, b.x, b.y, 20, 20, () => { this.ctx.fillText('📦', b.x, b.y); }); });
+            
+            this.bombs.forEach((b, i) => { 
+                b.time--; 
+                drawSprite(this.ctx, gameAssets.bomb, b.x, b.y, 20, 20, () => {
+                    if(Math.floor(b.time/10)%2 === 0) this.ctx.fillText('💣', b.x, b.y); else this.ctx.fillText('🧨', b.x, b.y);
+                });
+                
+                if(b.time <= 0) { 
+                    this.bombs.splice(i, 1); this.explosions.push({x: b.x, y: b.y, timer: 15}); playSnd('explosion');
+                    this.blocks = this.blocks.filter(bl => { 
+                        let dist = Math.abs(bl.x - b.x) + Math.abs(bl.y - b.y); 
+                        if(dist <= 20) { this.score+=5; playSnd('score'); document.getElementById('bombiarz-score').innerText = 'Punkty: '+this.score; return false; } 
+                        return true; 
+                    }); 
+                } 
+            });
+            
+            this.explosions.forEach((ex, i) => {
+                ex.timer--;
+                this.ctx.fillText('💥', ex.x, ex.y); this.ctx.fillText('💥', ex.x-20, ex.y); this.ctx.fillText('💥', ex.x+20, ex.y);
+                this.ctx.fillText('💥', ex.x, ex.y-20); this.ctx.fillText('💥', ex.x, ex.y+20);
+                if(ex.timer <= 0) this.explosions.splice(i, 1);
+            });
+            
+            drawSprite(this.ctx, gameAssets.bomber, this.px, this.py, 20, 20, () => { this.ctx.fillText('🤠', this.px, this.py); });
+            
+            if(this.active) this.loop = requestAnimationFrame(() => this.update());
+        },
+        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
+    },
+
+    // ---------------------------------------------------------
+    // 8. KÓŁKO I KRZYŻYK
+    // ---------------------------------------------------------
+    kolko: {
+        ticB: ['','','','','','','','',''], ticP: '❌', ticA: true,
+        init: () => { 
+            stopAllSounds();
+            games.kolko.ticB=['','','','','','','','','']; games.kolko.ticP='❌'; games.kolko.ticA=true; 
+            document.getElementById('tic-status').innerText='Tura: ❌'; 
+            const c=document.getElementById('tic-board'); c.innerHTML=''; 
+            for(let i=0;i<9;i++){ 
+                const cell=document.createElement('div'); 
+                cell.className='w-16 h-16 bg-white dark:bg-[#1a1a1a] flex items-center justify-center text-4xl shadow-sm cursor-pointer rounded-xl transition hover:bg-gray-100 dark:hover:bg-[#333] border border-gray-300 dark:border-gray-600'; 
+                cell.onclick=()=>games.kolko.play(i, cell); 
+                c.appendChild(cell); 
+            } 
+        },
+        play: (i, cell) => { 
+            if(!games.kolko.ticA || games.kolko.ticB[i]!=='') return; 
+            games.kolko.ticB[i]=games.kolko.ticP; 
+            cell.innerText=games.kolko.ticP; 
+            playSnd('drop');
+            
+            if(games.kolko.chk()){ 
+                document.getElementById('tic-status').innerText=`🏆 Wygrywa: ${games.kolko.ticP}!`; 
+                games.kolko.ticA=false; playSnd('win'); if(typeof apps !== 'undefined') apps.showToast('Gry', `Gracz ${games.kolko.ticP} wygrywa!`, 'success');
+            } else if(!games.kolko.ticB.includes('')){ 
+                document.getElementById('tic-status').innerText='🤝 Remis!'; games.kolko.ticA=false; 
+            } else { 
+                games.kolko.ticP = games.kolko.ticP==='❌' ? '⭕' : '❌'; 
+                document.getElementById('tic-status').innerText=`Tura: ${games.kolko.ticP}`; 
+            } 
+        },
+        chk: () => [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]].some(c=>games.kolko.ticB[c[0]]&&games.kolko.ticB[c[0]]===games.kolko.ticB[c[1]]&&games.kolko.ticB[c[1]]===games.kolko.ticB[c[2]]),
+        stop: () => {}
+    }
+};
+
+if(typeof apps !== 'undefined') apps.ticInit = games.kolko.init;
+
+// ---------------------------------------------------------
+// WSTRZYKNIĘCIE CSS DLA MOBILE, KONTROLEK I MAKSYMALIZACJI OKNA
+// ---------------------------------------------------------
+
+const gameStyles = document.createElement('style');
+gameStyles.innerHTML = `
+    .window[id^="app-pelzacz"] > div:nth-child(2),
+    .window[id^="app-murarz"] > div:nth-child(2),
+    .window[id^="app-ufoludki"] > div:nth-child(2),
+    .window[id^="app-odbijanka"] > div:nth-child(2),
+    .window[id^="app-trzepotek"] > div:nth-child(2),
+    .window[id^="app-scigacz"] > div:nth-child(2),
+    .window[id^="app-bombiarz"] > div:nth-child(2) {
+        display: flex; flex-direction: column; flex-grow: 1; height: 100%; overflow: hidden;
+    }
+    div[id$="-score"] { flex-shrink: 0; margin-bottom: 5px; }
+
+    .window[id="app-kolko"] { height: max-content !important; }
+    .window[id="app-kolko"] > div:nth-child(2) { height: 100%; }
+
+    .window.maximized canvas[id^="canvas-"] {
+        width: 100% !important; height: 100% !important;
+        object-fit: contain !important; flex-grow: 1; min-height: 0;
+    }
+    
+    .game-fs-btn { 
+        background-color: #2563eb; color: white; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 13px; 
+        margin-bottom: 8px; border: 1px solid #1d4ed8; flex-shrink: 0; 
+        width: 100% !important; max-width: 320px !important; display: block; align-self: center;
+    }
+    .game-fs-btn:active { background-color: #1e40af; }
+    
+    .window[id^="app-"] > div > button[onclick^="games."] {
+        width: 100% !important; max-width: 320px !important; align-self: center; margin-top: 10px !important;
+    }
+    
+    .mobile-dpad { display: none !important; grid-template-columns: repeat(3, 70px); grid-template-rows: repeat(3, 60px); gap: 10px; justify-content: center; margin-top: auto; margin-bottom: 10px; width: 100%; flex-shrink: 0; }
+    
+    .mobile-dpad-pong { display: none !important; flex-direction: row; justify-content: space-between; gap: 20px; padding: 0 20px; width: 100%; margin-top: auto; margin-bottom: 20px; flex-shrink: 0; }
+    .mobile-dpad-pong .d-btn { flex: 1; height: 90px; font-size: 40px; border-radius: 16px; flex-direction: column; }
+    .mobile-dpad-pong .d-btn span { font-size: 14px; font-weight: bold; color: #9ca3af; margin-top: 5px; }
+
+    .d-btn { background: #374151; color: white; border-radius: 12px; font-size: 28px; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: manipulation; border: 1px solid #4b5563; cursor: pointer; }
+    .d-btn:active { background: #6b7280; }
+    .d-up { grid-column: 2; grid-row: 1; }
+    .d-left { grid-column: 1; grid-row: 2; }
+    .d-down { grid-column: 2; grid-row: 2; }
+    .d-right { grid-column: 3; grid-row: 2; }
+    .d-action-start { grid-column: 1 / span 3; grid-row: 3; background: #059669; border-color: #047857; font-size: 18px; font-weight: bold; margin-top: 5px; height: 60px;}
+    .d-action-start:active { background: #047857; }
+    
+    @media (max-width: 768px) {
+        .window[id^="app-pelzacz"], .window[id^="app-murarz"], .window[id^="app-ufoludki"], .window[id^="app-odbijanka"], .window[id^="app-trzepotek"], .window[id^="app-scigacz"], .window[id^="app-bombiarz"] {
+            width: 100vw !important; height: calc(100vh - 48px) !important; left: 0 !important; top: 0 !important; max-height: none !important; transform: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important;
+        }
+
+        .window.active:not(.minimized)[id="app-kolko"] {
+            width: 100vw !important; height: calc(100vh - 48px) !important; left: 0 !important; top: 0 !important; max-height: none !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important;
+        }
+        .window[id="app-kolko"] > div:nth-child(2) {
+            flex-grow: 1; display: flex; flex-direction: column; justify-content: center; margin: 0;
+        }
+
+        .pc-start-btn { display: none !important; }
+        .game-fs-btn { display: none !important; }
+        canvas[id^="canvas-"] { width: 100% !important; height: 100% !important; max-height: none !important; object-fit: contain !important; flex-grow: 1; min-height: 0; margin: auto 0; }
+        
+        .window.active:not(.minimized) .mobile-dpad { display: grid !important; }
+        .window.active:not(.minimized) .mobile-dpad-pong { display: flex !important; }
+    }
+`;
+document.head.appendChild(gameStyles);
+
+setTimeout(() => {
+    document.querySelectorAll('canvas[id^="canvas-"]').forEach(c => {
+        const gameName = c.id.replace('canvas-', '');
+        const win = c.closest('.window');
+        
+        c.title = "Zagraj na pełnym oknie (Kliknij dwukrotnie w środek gry)";
+        c.ondblclick = () => { if(win && typeof winManager !== 'undefined') winManager.maximize(win.id); };
+
+        const parent = c.parentElement;
+        const startBtn = parent.querySelector('button[onclick^="games."]');
+        if(startBtn) startBtn.classList.add('pc-start-btn', 'shrink-0');
+        
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'flex flex-col items-center mt-2 shrink-0';
+        controlsDiv.style.width = "100%";
+        
+        const fsBtn = document.createElement('button');
+        fsBtn.className = 'game-fs-btn';
+        fsBtn.innerHTML = '🔲 Powiększ Okno Gry / Zmniejsz';
+        fsBtn.onclick = () => { if(win && typeof winManager !== 'undefined') winManager.maximize(win.id); };
+        
+        const dpad = document.createElement('div');
+        
+        if (gameName === 'odbijanka') {
+            dpad.className = 'mobile-dpad-pong';
+            dpad.innerHTML = `
+                <div class="d-btn" data-key="ArrowUp">⬆️<span>GÓRA</span></div>
+                <div class="d-btn" data-key="ArrowDown">⬇️<span>DÓŁ</span></div>
+            `;
+        } else {
+            dpad.className = 'mobile-dpad';
+            dpad.innerHTML = `
+                <div class="d-btn d-up" data-key="ArrowUp">⬆️</div>
+                <div class="d-btn d-left" data-key="ArrowLeft">⬅️</div>
+                <div class="d-btn d-down" data-key="ArrowDown">⬇️</div>
+                <div class="d-btn d-right" data-key="ArrowRight">➡️</div>
+                <div class="d-btn d-action-start" data-key="Space">▶ START / Akcja</div>
+            `;
+        }
+        
+        dpad.querySelectorAll('.d-btn').forEach(btn => {
+            const key = btn.getAttribute('data-key');
+            const isAction = btn.classList.contains('d-action-start');
+            
+            const press = (e) => { 
+                e.preventDefault(); 
+                if (games[gameName] && !games[gameName].active) {
+                    if (isAction || gameName === 'odbijanka') { games[gameName].init(); }
+                } else if (games[gameName] && games[gameName].active && isAction && typeof games[gameName].doAction === 'function') {
+                    games[gameName].doAction();
+                }
+                gryKeys[key] = true; 
+            };
+            const release = (e) => { e.preventDefault(); gryKeys[key] = false; };
+            
+            btn.addEventListener('mousedown', press);
+            btn.addEventListener('mouseup', release);
+            btn.addEventListener('mouseleave', release);
+            btn.addEventListener('touchstart', press, {passive: false});
+            btn.addEventListener('touchend', release, {passive: false});
+        });
+        
+        controlsDiv.appendChild(fsBtn);
+        controlsDiv.appendChild(dpad);
+        
+        if(startBtn) parent.insertBefore(controlsDiv, startBtn.nextSibling);
+        else parent.appendChild(controlsDiv);
+    });
+}, 1000);
+
+// ---------------------------------------------------------
+// NAPRAWA ZAMYKANIA GIER W TLE I WYŁĄCZANIA DŹWIĘKÓW
+// ---------------------------------------------------------
+if (typeof winManager !== 'undefined' && !winManager._isGamePatched) {
+    const originalClose = winManager.close;
+    
+    // Nadpisujemy systemowe polecenie zamykania okien
+    winManager.close = (appId) => {
+        // 1. Zatrzymujemy silnik (np. renderowanie Bombiarza i zjadanie baterii na telefonie)
+        if (games[appId] && typeof games[appId].stop === 'function') {
+            games[appId].stop(); 
+        }
+        // 2. Twardo zatrzymujemy każdą piosenkę grającą obecnie z pliku .mp3 (np. win / die)
+        stopAllSounds(); 
+        
+        // 3. Po wyczyszczeniu tła wołamy właściwą komendę zwijającą okienko BigOS
+        originalClose(appId);
+    };
+    
+    winManager._isGamePatched = true; // Zabezpieczenie przed podwójnym łataniem
+}

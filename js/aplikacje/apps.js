@@ -1,11 +1,13 @@
 // ======================================================================
-// PLIK: js/apps.js (Logika wbudowanych Aplikacji, Szuflady, Tapet)
+// PLIK: js/aplikacje/apps.js (Logika wbudowanych Aplikacji, Szuflady, Tapet)
 // ======================================================================
 
 let calOffset = 0; 
 
 const apps = {
+    // ==================================================================
     // 1. ZARZĄDZANIE TAPETAMI (KOMBINATOR)
+    // ==================================================================
     defaultWallpapers: [
         { name: 'BigOS', url: 'tapety/bigos.jpg' },
         { name: 'Natura', url: 'tapety/natura.jpg' },
@@ -28,7 +30,7 @@ const apps = {
             img.title = wp.name;
             img.onerror = function() { 
                 this.onerror = null; 
-                this.src = 'tapety/bigos.jpg'; // Ochrona przed brakującym plikiem
+                this.src = 'tapety/bigos.jpg'; 
             };
             img.className = 'cursor-pointer border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 wp-thumbnail w-full h-20 object-cover rounded shadow bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-gray-500';
             img.onclick = () => apps.setWallpaperUrl(wp.url);
@@ -65,7 +67,8 @@ const apps = {
             apps.showToast('Kombinator','Ustawiono nową tapetę!','success');
         } 
     },
-// ZAKTUALIZOWANA FUNKCJA - Kompresuje zdjęcia przed zapisem!
+    
+    // ZAKTUALIZOWANA FUNKCJA: Kompresja i wymuszenie zapisu!
     setWallpaperFile: (e) => { 
         const f = e.target.files[0]; 
         if(!f) return; 
@@ -75,7 +78,6 @@ const apps = {
         r.onload = (ev) => { 
             const res = ev.target.result;
             
-            // Kompresja obrazka przy użyciu wbudowanego Canvas
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
@@ -83,10 +85,9 @@ const apps = {
                 
                 let width = img.width;
                 let height = img.height;
-                const maxWidth = 1920;
-                const maxHeight = 1080;
+                const maxWidth = 1280;
+                const maxHeight = 720;
                 
-                // Zmniejszamy obraz, jeśli przekracza Full HD (1080p)
                 if (width > maxWidth || height > maxHeight) {
                     const ratio = Math.min(maxWidth / width, maxHeight / height);
                     width = width * ratio;
@@ -97,28 +98,44 @@ const apps = {
                 canvas.height = height;
                 ctx.drawImage(img, 0, 0, width, height);
                 
-                // Zapis jako zoptymalizowany plik JPEG (80% jakości) - drastycznie zmniejsza wagę pliku!
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                // Silna kompresja (Jakość 0.6 = mało KB)
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
                 
+                // Zmiana UI natychmiastowo
+                if(target === 'desktop') {
+                    document.getElementById('desktop-bg').style.backgroundImage=`url('${compressedDataUrl}')`; 
+                    document.getElementById('desktop-bg').classList.add('custom-wp'); 
+                } else {
+                    document.getElementById('login-screen').style.backgroundImage=`url('${compressedDataUrl}')`; 
+                }
+
                 try {
-                    if(target === 'desktop') {
-                        document.getElementById('desktop-bg').style.backgroundImage=`url('${compressedDataUrl}')`; 
-                        document.getElementById('desktop-bg').classList.add('custom-wp'); 
-                        localStorage.setItem('bigos_bg', compressedDataUrl); 
-                    } else {
-                        document.getElementById('login-screen').style.backgroundImage=`url('${compressedDataUrl}')`; 
-                        localStorage.setItem('bigos_login_bg', compressedDataUrl); 
-                    }
+                    // Ratowanie tła (w pierwszej kolejności)
+                    if(target === 'desktop') localStorage.setItem('bigos_bg', compressedDataUrl);
+                    else localStorage.setItem('bigos_login_bg', compressedDataUrl);
                     
-                    const customWp = JSON.parse(localStorage.getItem('bigos_custom_wp') || '[]');
+                    // Zapisujemy nową tapetę do galerii
+                    let customWp = JSON.parse(localStorage.getItem('bigos_custom_wp') || '[]');
+                    // Usuwamy stare, "grube" śmieci jeśli istnieją w historii (zwalniamy pamięć!)
+                    customWp = customWp.filter(w => w.url.length < 500000); 
+                    
                     if(!customWp.find(w => w.name === f.name)) {
                         customWp.push({ name: f.name, url: compressedDataUrl });
+                        if(customWp.length > 3) { customWp.shift(); } // Max 3 własne tapety
                         localStorage.setItem('bigos_custom_wp', JSON.stringify(customWp));
                     }
+                    
                     apps.renderWallpaperGallery();
-                    apps.showToast('Kombinator','Wgrano i zoptymalizowano tapetę lokalną!','success');
+                    apps.showToast('Kombinator','Wgrano i zapisano tapetę na stałe!','success');
                 } catch(error) {
-                    apps.showToast('Błąd Pamięci','Zdjęcie nadal jest zbyt gigantyczne by je zapisać!','error');
+                    // BRUTALNE RATOWANIE ZAPISU - Jeśli pamięć wciąż wyrzuca błąd "Przepełnienia",
+                    // czyścimy galerię i zapisujemy obrazek na siłę!
+                    localStorage.removeItem('bigos_custom_wp');
+                    if(target === 'desktop') localStorage.setItem('bigos_bg', compressedDataUrl);
+                    else localStorage.setItem('bigos_login_bg', compressedDataUrl);
+                    
+                    apps.renderWallpaperGallery();
+                    apps.showToast('Optymalizacja','Usunięto stare pliki, by zrobić miejsce nowej tapecie!','info');
                 }
             };
             img.src = res;
@@ -126,32 +143,80 @@ const apps = {
         r.readAsDataURL(f); 
         e.target.value = '';
     },
-
-    
     resetWallpaper: () => { 
-        const defaultBg = apps.defaultWallpapers[0].url; 
         const target = document.getElementById('wallpaper-target').value;
         if(target === 'desktop') {
+            const defaultBg = 'tapety/natura.jpg'; // Domyślna Natura dla pulpitu
             document.getElementById('desktop-bg').style.backgroundImage = `url('${defaultBg}')`; 
             document.getElementById('desktop-bg').classList.add('custom-wp'); 
             localStorage.setItem('bigos_bg', defaultBg); 
         } else {
+            const defaultBg = 'tapety/bigos.jpg'; // Domyślny BigOS dla Logowania
             document.getElementById('login-screen').style.backgroundImage = `url('${defaultBg}')`; 
             localStorage.setItem('bigos_login_bg', defaultBg); 
         }
-        apps.showToast('Kombinator', 'Przywrócono tapetę domyślną', 'info'); 
+        apps.showToast('Kombinator', 'Przywrócono domyślną tapetę', 'info'); 
     },
 
+    // ==================================================================
     // 2. FUNKCJE SYSTEMOWE I MOTYWY
+    // ==================================================================
     setTheme: (theme) => { currentTheme = theme; localStorage.setItem('bigos_theme', theme); document.getElementById('system-theme-select').value = theme; if(theme === 'dark') document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark'); },
     showToast: (t, m, type = 'info') => { const c = document.getElementById('toast-container'); const el = document.createElement('div'); const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' }; el.className = `${colors[type]} text-white px-4 py-3 rounded-lg shadow-xl transform transition-all translate-y-10 opacity-0 pointer-events-auto border border-white/20 z-[9999]`; el.innerHTML = `<strong>${t}</strong><br><span class="text-sm">${m}</span>`; c.appendChild(el); requestAnimationFrame(() => el.classList.remove('translate-y-10', 'opacity-0')); setTimeout(() => { el.classList.add('opacity-0'); setTimeout(() => el.remove(), 300); }, 3000); },
     toggleStartMenu: () => { document.getElementById('start-menu').classList.toggle('hidden'); document.getElementById('start-menu').classList.toggle('flex'); document.getElementById('calendar-widget').classList.add('hidden-cal'); },
     formatSystem: () => { ui.showPrompt("POTWIERDŹ", "Wpisz 'RESET' aby formatować system", "Formatuj", (val) => { if(val === 'RESET') { localStorage.clear(); location.reload(); } }); },
-    lockSystem: () => { document.getElementById('start-menu').classList.add('hidden'); document.getElementById('login-screen').style.display = 'flex'; document.getElementById('login-screen').style.opacity = '1'; document.getElementById('password-input').value = ''; document.getElementById('login-msg').innerText = "System Zablokowany. Podaj hasło."; },
-    sleepSystem: () => { document.getElementById('start-menu').classList.add('hidden'); const screen = document.getElementById('sleep-screen'); screen.classList.remove('hidden'); const wake = () => { screen.classList.add('hidden'); document.removeEventListener('mousemove', wake); document.removeEventListener('keydown', wake); document.removeEventListener('touchstart', wake); }; setTimeout(() => { document.addEventListener('mousemove', wake); document.addEventListener('keydown', wake); document.addEventListener('touchstart', wake); }, 1000); },
+    
+    lockSystem: () => { 
+        document.getElementById('start-menu').classList.add('hidden'); 
+        const login = document.getElementById('login-screen');
+        login.style.display = 'flex'; 
+        // Wymuszenie reflow dla płynnej animacji
+        void login.offsetWidth;
+        login.style.opacity = '1'; 
+        document.getElementById('password-input').value = ''; 
+        document.getElementById('login-msg').innerText = "System zablokowany. Podaj hasło aby wrócić."; 
+    },
+    
+    sleepSystem: () => { 
+        document.getElementById('start-menu').classList.add('hidden'); 
+        const screen = document.getElementById('sleep-screen'); 
+        
+        // Ustawiamy zegar uśpienia
+        const clockEl = document.getElementById('sleep-clock');
+        if(clockEl) clockEl.innerText = new Date().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
+        
+        screen.classList.remove('hidden'); 
+        screen.style.display = 'flex';
+        void screen.offsetWidth; // Reflow
+        screen.style.opacity = '1'; 
+        
+        const wake = () => { 
+            screen.style.opacity = '0';
+            setTimeout(() => {
+                screen.classList.add('hidden');
+                screen.style.display = 'none';
+                // Prawdziwe zachowanie OS - po wybudzeniu blokuje ekran logowania
+                if(typeof apps !== 'undefined') apps.lockSystem();
+            }, 1000);
+            
+            document.removeEventListener('mousemove', wake); 
+            document.removeEventListener('keydown', wake); 
+            document.removeEventListener('touchstart', wake); 
+        }; 
+        
+        // Dajemy sekundę na uspokojenie myszki, by od razu nie wybudziło
+        setTimeout(() => { 
+            document.addEventListener('mousemove', wake); 
+            document.addEventListener('keydown', wake); 
+            document.addEventListener('touchstart', wake); 
+        }, 1000); 
+    },
+    
     shutdownSystem: () => { document.body.innerHTML = `<div class="w-full h-full bg-black flex flex-col items-center justify-center text-white"><button onclick="location.reload()" class="w-24 h-24 rounded-full border-4 border-gray-600 text-gray-600 hover:text-white hover:border-white transition flex items-center justify-center text-4xl mb-4" title="Włącz BigOS">⏻</button><p class="text-gray-500 font-mono">System BigOS wyłączony.</p></div>`; },
     
+    // ==================================================================
     // 3. KALENDARZ I KARTECZKI
+    // ==================================================================
     toggleCalendar: (e) => { if(e)e.stopPropagation(); calOffset = 0; apps.generateCalendar(); document.getElementById('calendar-widget').classList.toggle('hidden-cal'); document.getElementById('start-menu').classList.add('hidden'); },
     changeCalendarMonth: (dir) => { calOffset += dir; apps.generateCalendar(); },
     generateCalendar: () => {
@@ -162,7 +227,9 @@ const apps = {
     saveStickyNotes: () => { const ns=[]; document.querySelectorAll('.sticky-note').forEach(el=>{ ns.push({id:el.id, x:parseInt(el.style.left), y:parseInt(el.style.top), t:el.querySelector('div[contenteditable]').innerHTML});}); localStorage.setItem('bigos_stickies',JSON.stringify(ns)); },
     loadStickyNotes: () => { const s = localStorage.getItem('bigos_stickies'); if(s) JSON.parse(s).forEach(n=>apps.createStickyNote(n.id, n.t, n.x, n.y)); },
     
+    // ==================================================================
     // 4. SIECIOSŁAW I WŁADCA POLECEŃ
+    // ==================================================================
     navigate: () => { document.getElementById('browser-frame').src = document.getElementById('url-input').value; },
     terminalHandle: (e) => {
         if(e.key === 'Enter') {
@@ -173,7 +240,9 @@ const apps = {
         }
     },
 
-    // 5. GRAJEK (ODTWARZACZ)
+    // ==================================================================
+    // 5. GRAJEK (ODTWARZACZ AUDIO I WIDEO YT)
+    // ==================================================================
     grajekAudio: new Audio(), grajekIntv: null, grajkoteka: [], currentGrajekIndex: -1,
     loadGrajkoteka: () => { const saved = localStorage.getItem('bigos_grajkoteka'); if(saved) apps.grajkoteka = JSON.parse(saved); apps.renderGrajkoteka(); },
     saveGrajkoteka: () => { localStorage.setItem('bigos_grajkoteka', JSON.stringify(apps.grajkoteka)); apps.renderGrajkoteka(); },

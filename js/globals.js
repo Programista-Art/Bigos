@@ -20,6 +20,7 @@ const defaultApps = [
     { id: 'app_pogodynka', type: 'app', name: 'Pogodynka', icon: '🌤️', appId: 'pogodynka' },
     { id: 'app_czasomierz', type: 'app', name: 'Czasomierz', icon: '⏱️', appId: 'czasomierz' },
     { id: 'app_pelzacz', type: 'app', name: 'Pełzacz', icon: '🐍', appId: 'pelzacz' },
+    { id: 'app_tank', type: 'app', name: 'Czogi', icon: '🚜', appId: 'tank' },
     { id: 'app_murarz', type: 'app', name: 'Murarz', icon: '🧱', appId: 'murarz' },
     { id: 'app_ufoludki', type: 'app', name: 'Ufoludki', icon: '👾', appId: 'ufoludki' },
     { id: 'app_odbijanka', type: 'app', name: 'Odbijanka', icon: '🏓', appId: 'odbijanka' },
@@ -27,6 +28,9 @@ const defaultApps = [
     { id: 'app_scigacz', type: 'app', name: 'Ścigacz', icon: '🏎️', appId: 'scigacz' },
     { id: 'app_bombiarz', type: 'app', name: 'Bombiarz', icon: '💣', appId: 'bombiarz' },
     { id: 'app_kolko', type: 'app', name: 'Kółko i Krzyżyk', icon: '🎮', appId: 'kolko' },
+    { id: 'app_powitanie', type: 'app', name: 'Powitanie', icon: '👋', appId: 'powitanie' },
+    { id: 'app_tabelarz', type: 'app', name: 'Tabelarz', icon: '📈', appId: 'tabelarz' },
+    { id: 'app_zadaniowiec', type: 'app', name: 'Zadaniowiec', icon: '📋', appId: 'zadaniowiec' },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 
