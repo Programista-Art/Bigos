@@ -31,8 +31,10 @@ const defaultApps = [
     { id: 'app_powitanie', type: 'app', name: 'Powitanie', icon: '👋', appId: 'powitanie' },
     { id: 'app_tabelarz', type: 'app', name: 'Tabelarz', icon: '📈', appId: 'tabelarz' },
     { id: 'app_zadaniowiec', type: 'app', name: 'Zadaniowiec', icon: '📋', appId: 'zadaniowiec' },
+    { id: 'app_wasm', type: 'app', name: 'WASM Engine', icon: '🎮', appId: 'wasm' },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
+
 
 const GLOBAL_KEYS = {};
 window.addEventListener('keydown', e => GLOBAL_KEYS[e.code] = true);
@@ -43,3 +45,16 @@ function getEventPos(e) {
     else if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
     return { x: e.clientX, y: e.clientY };
 }
+window.onload = () => {
+    setInterval(() => {
+        const clock = document.getElementById('taskbar-clock');
+        if(clock) clock.innerText = new Date().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
+    }, 1000);
+    
+    if (typeof fsManager !== 'undefined') fsManager.init();
+    if (typeof auth !== 'undefined') auth.check();
+    if (typeof apps !== 'undefined') {
+        apps.loadStickyNotes();
+        apps.generateCalendar();
+    }
+};

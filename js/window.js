@@ -36,6 +36,7 @@ const winManager = {
         if(appId === 'aktowka' && typeof fsManager !== 'undefined') fsManager.renderExplorerContent(fsManager.currentFolder); 
         if(appId === 'nadzorca' && typeof nadzorcaApp !== 'undefined') nadzorcaApp.init();
         if(appId === 'szkicownik' && typeof initPaint !== 'undefined') setTimeout(initPaint, 100);
+        if(appId === 'grajek' && typeof apps !== 'undefined') apps.loadGrajkoteka();
         if(typeof games !== 'undefined' && games[appId] && games[appId].init) games[appId].init();
     },
     

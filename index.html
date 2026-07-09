@@ -27,39 +27,68 @@
         </div>
     </div>
 
-    <!-- EKRAN LOGOWANIA / BLOKADY
-    <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9900] flex flex-col items-center justify-center text-white bg-cover bg-center" style="background-image: url('tapety/bigos.jpg');">
-        <div class="bg-black/70 p-8 rounded-2xl backdrop-blur-md border border-white/20 text-center shadow-2xl w-80 max-w-[90%]">
-            <h1 class="text-4xl font-bold mb-2">BigOS</h1>
-            <p class="text-sm text-gray-300 mb-6" id="login-msg">Logowanie do systemu</p>
-            <input type="password" id="password-input" class="w-full px-4 py-3 rounded bg-white/10 border border-white/30 focus:outline-none focus:border-blue-500 text-center mb-4 text-white placeholder-gray-400" placeholder="Wpisz hasło..." onkeydown="if(event.key==='Enter') auth.handleLogin()">
-            <button onclick="auth.handleLogin()" class="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded font-bold transition shadow-lg">Odblokuj / Wejdź</button>
-            <button onclick="auth.resetPassword()" class="mt-4 text-xs text-gray-400 hover:text-white underline p-2">Zresetuj system (Format)</button>
-        </div>
-    </div>-->
 
-    <!-- EKRAN UŚPIENIA -->
-    <!-- <div id="sleep-screen" class="hidden absolute inset-0 bg-black z-[9950]"></div> --> 
+
+ 
      <!-- EKRAN LOGOWANIA / BLOKADY -->
-    <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9900] flex flex-col items-center justify-center text-white bg-cover bg-center transition-opacity duration-500" style="background-image: url('tapety/bigos.jpg');">
+   <!-- EKRAN LOGOWANIA / BLOKADY -->
+    <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9999] flex flex-col items-center justify-center text-white bg-cover bg-center transition-opacity duration-500" style="background-image: url('tapety/bigos.jpg');">
+        <!-- Ciemna nakładka z rozmyciem tła -->
         <div class="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+        
+        <!-- Zawartość główna -->
         <div class="z-10 flex flex-col items-center w-full max-w-sm px-6">
             <!-- Awatar użytkownika -->
             <div class="w-28 h-28 bg-gray-600/40 rounded-full flex items-center justify-center mb-6 shadow-2xl border-2 border-white/20 backdrop-blur-sm overflow-hidden">
                 <span class="text-6xl">👤</span>
             </div>
+            
             <!-- Nazwa i komunikat -->
             <h1 class="text-3xl font-semibold mb-1 shadow-black/50 text-white drop-shadow-lg tracking-wide">root</h1>
             <p class="text-sm text-gray-300 mb-8 drop-shadow" id="login-msg">Zaloguj się do systemu BigOS</p>
             
             <!-- Pole hasła w stylu macOS/Windows 11 -->
-            <div class="relative w-full mb-4 group">
+            <div class="relative w-full mb-6 group">
                 <input type="password" id="password-input" class="w-full px-5 py-3 rounded-full bg-black/40 border border-white/20 focus:outline-none focus:border-blue-500 focus:bg-black/60 text-center text-white placeholder-gray-400 backdrop-blur-md transition-all shadow-inner" placeholder="Wpisz hasło..." autocomplete="off" onkeydown="if(event.key==='Enter') auth.handleLogin()">
                 <button onclick="auth.handleLogin()" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-blue-500 rounded-full transition-colors border border-white/30 text-white" title="Zaloguj">➔</button>
             </div>
             
-            <button onclick="auth.resetPassword()" class="mt-8 text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Zresetuj system (Format)</button>
+            <!-- Zresetuj system -->
+            <button onclick="auth.resetPassword()" class="mb-12 text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Zresetuj system (Format)</button>
+
+            <!-- MIEJSCE NA BANER REKLAMOWY (AdSense) -->
+            <div class="bg-black/40 backdrop-blur-md border border-white/10 p-2 rounded-xl flex flex-col items-center justify-center shadow-2xl" style="min-width: 320px; min-height: 100px;">
+                <span class="text-[10px] text-gray-400 mb-1 tracking-widest uppercase font-bold">Reklama</span>
+                
+                <!-- Kod jednostki reklamowej AdSense -->
+                <ins class="adsbygoogle"
+                     style="display:inline-block;width:320px;height:100px"
+                     data-ad-client="ca-pub-TUTAJ_WPISZESZ_SWOJ_KOD_KLIENta"
+                     data-ad-slot="TUTAJ_KOD_SLOTU"></ins>
+                <script>
+                     (adsbygoogle = window.adsbygoogle || []).push({});
+                </script>
+                <!-- Koniec kodu AdSense -->
+            </div>
         </div>
+    </div>
+
+        <!-- MIEJSCE NA BANER REKLAMOWY (AdSense) -->
+        <div class="bg-black/40 backdrop-blur-md border border-white/10 p-2 rounded-xl flex flex-col items-center justify-center shadow-2xl" style="min-width: 320px; min-height: 100px;">
+            <span class="text-[10px] text-gray-400 mb-1 tracking-widest uppercase font-bold">Reklama</span>
+            
+            <!-- Kod jednostki reklamowej AdSense -->
+            <ins class="adsbygoogle"
+                 style="display:inline-block;width:320px;height:100px"
+                 data-ad-client="ca-pub-TUTAJ_WPISZESZ_SWOJ_KOD_KLIENta"
+                 data-ad-slot="TUTAJ_KOD_SLOTU"></ins>
+            <script>
+                 (adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+            <!-- Koniec kodu AdSense -->
+            
+        </div>
+
     </div>
 
     <!-- EKRAN UŚPIENIA -->
@@ -469,7 +498,7 @@
         <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 bg-white dark:bg-[#1a1a1a] dark:text-gray-100 outline-none overflow-y-auto" placeholder="Zacznij pisać..."></div>
     </div>
 
-    <!-- 2. Szkicownik-->
+   <!-- 2. Szkicownik-->
     <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
         <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
             <span class="text-sm font-bold">🎨 Szkicownik</span>
@@ -479,80 +508,114 @@
                 <button onclick="winManager.close('szkicownik')" class="hover:bg-red-600 px-2 rounded">✖</button>
             </div>
         </div>
+        
+        <!-- Pasek Menu Górnego -->
         <div class="flex gap-2 px-2 py-1 bg-gray-100 dark:bg-[#222] text-xs border-b border-gray-300 dark:border-[#333] z-50">
             <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-[#333] px-2 py-1 rounded transition">Plik
-                <div class="dropdown-menu bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1 text-gray-800 dark:text-white">
-                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="showPaintNewModal()">Nowy...</div>
-                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="document.getElementById('paint-open-file').click()">Otwórz (Wgraj z PC)</div>
+                <div class="dropdown-menu bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1 text-gray-800 dark:text-white w-48">
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="showPaintNewModal()">✨ Nowy...</div>
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="document.getElementById('paint-open-file').click()">📂 Otwórz (Wgraj z PC)...</div>
+                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintShowBigOSPicker()">🗂️ Otwórz z BigOS...</div>
                     <input type="file" id="paint-open-file" class="hidden" accept="image/*" onchange="paintOpen(event)">
                     <div class="border-t border-gray-200 dark:border-[#444] my-1"></div>
                     
                     <div class="relative group/sub">
-                        <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer flex justify-between items-center">Zapisz w BigOS <span>▶</span></div>
+                        <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer flex justify-between items-center">☁️ Zapisz w BigOS <span class="text-[10px]">▶</span></div>
                         <div class="hidden group-hover/sub:block absolute top-0 left-[100%] w-40 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1">
                             <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveToSystem('png')">Jako PNG</div>
                             <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveToSystem('jpeg')">Jako JPG</div>
                         </div>
                     </div>
                     <div class="relative group/sub">
-                        <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer flex justify-between items-center">Zapisz na dysk PC <span>▶</span></div>
+                        <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer flex justify-between items-center">💾 Zapisz na dysk PC <span class="text-[10px]">▶</span></div>
                         <div class="hidden group-hover/sub:block absolute top-0 left-[100%] w-40 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1">
                             <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveAs('png')">Obraz PNG</div>
                             <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveAs('jpeg')">Obraz JPG</div>
+                            <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="paintSaveAs('webp')">Obraz WebP</div>
                         </div>
                     </div>
                     <div class="border-t border-gray-200 dark:border-[#444] my-1"></div>
-                    <div class="px-4 py-2 hover:bg-red-500 hover:text-white cursor-pointer" onclick="winManager.close('szkicownik')">Zamknij</div>
+                    <div class="px-4 py-2 hover:bg-red-500 hover:text-white cursor-pointer" onclick="paintCloseFile()">❌ Zamknij plik</div>
                 </div>
             </div>
             <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-[#333] px-2 py-1 rounded transition">Ustawienia
-                <div class="dropdown-menu bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1 text-gray-800 dark:text-white">
+                <div class="dropdown-menu bg-white dark:bg-[#333] border border-gray-300 dark:border-[#444] rounded shadow-xl py-1 text-gray-800 dark:text-white whitespace-nowrap">
                     <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="showPaintResizeModal()">Zmień rozmiar obrazka</div>
                 </div>
             </div>
         </div>
-        <div class="bg-gray-200 dark:bg-[#2a2a2a] p-2 flex gap-3 border-b border-gray-300 dark:border-[#333] text-sm items-center z-40 relative shadow-sm">
-            <div class="flex gap-1 border-r border-gray-400 dark:border-[#444] pr-3">
-                <button onclick="paintSelectTool('pencil')" data-tool="pencil" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">✏️</button>
-                <button onclick="paintSelectTool('brush')" data-tool="brush" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">🖌️</button>
-                <button onclick="paintSelectTool('eraser')" data-tool="eraser" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">🧼</button>
-                <button onclick="paintSelectTool('fill')" data-tool="fill" class="paint-tool-btn p-1 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444]">🪣</button>
+        
+        <!-- Pasek Narzędzi -->
+        <div class="bg-gray-200 dark:bg-[#2a2a2a] p-2 flex flex-wrap gap-2 border-b border-gray-300 dark:border-[#333] text-sm items-center z-40 relative shadow-sm">
+            <div class="flex gap-1 border-r border-gray-400 dark:border-[#444] pr-2">
+                <button onclick="paintSelectTool('pencil')" data-tool="pencil" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Ołówek">✏️</button>
+                <button onclick="paintSelectTool('brush')" data-tool="brush" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Pędzel">🖌️</button>
+                <button onclick="paintSelectTool('eraser')" data-tool="eraser" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Gumka">🧼</button>
+                <button onclick="paintSelectTool('fill')" data-tool="fill" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Wypełnienie (Wiadro)">🪣</button>
             </div>
-            <input type="color" id="paint-color" value="#000000" class="w-8 h-8 border-none bg-transparent cursor-pointer rounded">
-            <input type="range" id="paint-size" min="1" max="50" value="1" class="w-24 accent-blue-500">
-            <span id="paint-size-label" class="text-xs w-8 text-gray-500 dark:text-gray-400">1px</span>
+            <div class="flex gap-1 border-r border-gray-400 dark:border-[#444] pr-2">
+                <button onclick="paintSelectTool('picker')" data-tool="picker" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Kroplomierz">💧</button>
+                <button onclick="paintSelectTool('text')" data-tool="text" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Tekst">🔤</button>
+                <button onclick="paintSelectTool('line')" data-tool="line" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Linia">➖</button>
+                <button onclick="paintSelectTool('rect')" data-tool="rect" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Prostokąt">⬛</button>
+                <button onclick="paintSelectTool('gradient')" data-tool="gradient" class="paint-tool-btn p-1.5 rounded border border-transparent hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Gradient">🌈</button>
+            </div>
+            <div class="flex gap-1 border-r border-gray-400 dark:border-[#444] pr-2">
+                <button onclick="paintUndo()" class="p-1.5 rounded hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Cofnij (Ctrl+Z)">↩️</button>
+                <button onclick="paintRedo()" class="p-1.5 rounded hover:bg-gray-300 dark:hover:bg-[#444] transition" title="Ponów (Ctrl+Y)">↪️</button>
+            </div>
+            <select class="p-1.5 rounded text-xs bg-white dark:bg-[#1a1a1a] text-gray-800 dark:text-white border border-gray-400 dark:border-[#555] cursor-pointer outline-none shadow-sm hover:shadow transition" onchange="if(this.value) { paintApplyFilter(this.value); this.value=''; }">
+                <option value="" disabled selected>✨ Efekty specjalne...</option>
+                <option value="blur">Rozmycie (Blur)</option>
+                <option value="brightness">Jasność</option>
+                <option value="contrast">Kontrast</option>
+                <option value="hue">Odcień (Hue)</option>
+                <option value="saturate">Nasycenie</option>
+                <option value="noise">Szum pikseli</option>
+                <option value="grayscale">Skala szarości</option>
+                <option value="invert">Odwróć kolory</option>
+                <option value="sepia">Sepia (Retro)</option>
+            </select>
+            
+            <div class="ml-auto flex items-center gap-2">
+                <input type="color" id="paint-color" value="#000000" class="w-8 h-8 border-none bg-transparent cursor-pointer rounded">
+                <input type="range" id="paint-size" min="1" max="50" value="1" class="w-24 accent-blue-500">
+                <span id="paint-size-label" class="text-xs w-8 text-gray-500 dark:text-gray-400">1px</span>
+            </div>
         </div>
+        
+        <!-- Obszar Roboczy i Warstwy -->
         <div class="flex-grow flex overflow-hidden flex-col sm:flex-row">
             <div class="flex-grow relative flex bg-gray-300 dark:bg-[#151515]">
                 <div class="w-6 border-r border-gray-400 dark:border-[#444] bg-gray-200 dark:bg-[#222] relative ruler-v shrink-0"></div>
                 <div class="flex-grow flex flex-col relative overflow-hidden">
                     <div class="h-6 border-b border-gray-400 dark:border-[#444] bg-gray-200 dark:bg-[#222] relative ruler-h shrink-0"></div>
                     <div class="flex-grow overflow-auto flex p-6 bg-gray-400 dark:bg-[#111] items-start justify-start">
-                        <div id="paint-workspace" class="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-crosshair shrink-0 touch-none" style="width: 600px; height: 400px;"></div>
+                        <div id="paint-workspace" class="relative bg-white shadow-[0_0_20px_rgba(0,0,0,0.5)] cursor-crosshair shrink-0 touch-none" style="width: 800px; height: 600px;"></div>
                     </div>
                 </div>
             </div>
             <div class="w-full sm:w-64 bg-gray-100 dark:bg-[#222] border-t sm:border-t-0 sm:border-l border-gray-300 dark:border-[#333] flex flex-col shrink-0 z-20 shadow-[-5px_0_15px_rgba(0,0,0,0.1)]">
                 <div class="p-2 border-b border-gray-300 dark:border-[#333] flex justify-between items-center bg-gray-200 dark:bg-[#2a2a2a]">
                     <span class="text-xs font-bold text-gray-600 dark:text-gray-300">WARSTWY</span>
-                    <button onclick="paintAddLayer()" class="bg-white dark:bg-[#444] hover:bg-gray-100 dark:hover:bg-[#555] px-2 py-1 rounded text-xs border border-gray-300 dark:border-transparent font-semibold shadow-sm">➕ Nowa</button>
+                    <button onclick="paintAddLayer()" class="bg-white dark:bg-[#444] hover:bg-gray-100 dark:hover:bg-[#555] px-2 py-1 rounded text-xs border border-gray-300 dark:border-transparent font-semibold shadow-sm transition">➕ Nowa</button>
                 </div>
-                <div id="paint-layers-list" class="flex-grow overflow-y-auto bg-gray-50 dark:bg-[#1a1a1a]"></div>
+                <div id="paint-layers-list" class="flex-grow overflow-y-auto bg-gray-50 dark:bg-[#1a1a1a] custom-scrollbar"></div>
             </div>
         </div>
         
         <div id="paint-resize-modal" class="hidden absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
             <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm">
-                <h3 class="font-bold mb-4 text-lg border-b border-gray-200 dark:border-[#444] pb-2" id="paint-modal-title">Ustawienia Obrazu</h3>
+                <h3 class="font-bold mb-4 text-lg border-b border-gray-200 dark:border-[#444] pb-2 text-gray-800 dark:text-white" id="paint-modal-title">Ustawienia Obrazu</h3>
                 <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Szerokość (px)</label><input type="number" id="paint-resize-w-px" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('w', 'px')"></div>
-                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Wysokość (px)</label><input type="number" id="paint-resize-h-px" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('h', 'px')"></div>
-                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Szerokość (cm)</label><input type="number" step="0.01" id="paint-resize-w-cm" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('w', 'cm')"></div>
-                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Wysokość (cm)</label><input type="number" step="0.01" id="paint-resize-h-cm" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white" oninput="paintResizeCalc('h', 'cm')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Szerokość (px)</label><input type="number" id="paint-resize-w-px" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white font-medium" oninput="paintResizeCalc('w', 'px')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Wysokość (px)</label><input type="number" id="paint-resize-h-px" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white font-medium" oninput="paintResizeCalc('h', 'px')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Szerokość (cm)</label><input type="number" step="0.01" id="paint-resize-w-cm" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white font-medium" oninput="paintResizeCalc('w', 'cm')"></div>
+                    <div><label class="block mb-1 text-xs text-gray-500 dark:text-gray-400">Wysokość (cm)</label><input type="number" step="0.01" id="paint-resize-h-cm" class="w-full bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded p-2 outline-none focus:border-blue-500 text-gray-800 dark:text-white font-medium" oninput="paintResizeCalc('h', 'cm')"></div>
                 </div>
                 <div class="flex justify-end gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-[#444]">
-                    <button onclick="document.getElementById('paint-resize-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded font-bold text-gray-800 dark:text-white">Anuluj</button>
-                    <button id="paint-modal-confirm" onclick="paintApplyResize()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white font-bold shadow">Zastosuj</button>
+                    <button onclick="document.getElementById('paint-resize-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded font-medium text-gray-800 dark:text-white transition">Anuluj</button>
+                    <button id="paint-modal-confirm" onclick="paintApplyResize()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white font-medium shadow-md transition">Zastosuj</button>
                 </div>
             </div>
         </div>
@@ -1005,8 +1068,11 @@
     <script src="js/window.js"></script>
     <script src="js/desktop.js"></script>
     <script src="js/aplikacje/apps.js"></script>
+
+    <!-- Aplikacje -->
   
     <script src="js/aplikacje/czasomierz.js"></script>
+    <script src="js/aplikacje/wasm-engine.js"></script>
     <script src="js/aplikacje/grajacz.js"></script>
     <script src="js/aplikacje/kalkulator.js"></script>
     <script src="js/aplikacje/nadzorca.js"></script>
@@ -1017,10 +1083,16 @@
     <script src="js/aplikacje/tablica.js"></script>
     <script src="js/aplikacje/zadaniowiec.js"></script>
     <script src="js/aplikacje/wladca.js"></script>
+    <script src="js/aplikacje/grajek.js"></script>
     <script src="js/powitanie.js"></script>
+    <script src="js/aplikacje/apps.js"></script>
+    <script src="js/aplikacje/kombinator.js"></script>
+    <script src="js/aplikacje/kalendarz.js"></script>
+    <script src="js/aplikacje/karteczki.js"></script>
+    <script src="js/aplikacje/siecioslaw.js"></script>
+    
    
     <!-- GRY -->
-    <!-- <script src="js/gry/gry.js"></script> -->
      <script src="js/gry/silnik.js"></script>
     <script src="js/gry/pelzacz.js"></script>
     <script src="js/gry/murarz.js"></script>
@@ -1035,7 +1107,5 @@
     <script src="js/main.js"></script>
     
   
-       
-
 </body>
 </html>

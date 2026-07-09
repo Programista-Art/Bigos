@@ -1,5 +1,5 @@
 // ======================================================================
-// PLIK: js/gry.js (Silnik Minigier dla BigOS)
+// PLIK: js/gry.js (Silnik Minigier dla BigOS z Lazy Loadingiem)
 // ======================================================================
 
 // ---------------------------------------------------------
@@ -15,33 +15,39 @@ window.addEventListener('keydown', (e) => {
 window.addEventListener('keyup', (e) => { gryKeys[e.code] = false; });
 
 // ---------------------------------------------------------
-// SYSTEM ŁADOWANIA WŁASNYCH GRAFIK Z FOLDERU
+// SYSTEM LAZY LOADINGU WŁASNYCH GRAFIK Z FOLDERU
 // ---------------------------------------------------------
-const gameAssets = {
-    apple: new Image(), snake_head: new Image(), snake_body: new Image(),
-    paddle: new Image(), ball: new Image(), brick: new Image(),
-    ship: new Image(), alien: new Image(), bullet: new Image(),
-    car: new Image(), obs: new Image(),
-    bird: new Image(), pipe: new Image(),
-    bomber: new Image(), bomb: new Image(), box: new Image()
+// Przechowujemy tylko ścieżki tekstowe. Pliki pobiorą się dopiero po otwarciu danej gry!
+const gameAssetsConfig = {
+    apple: 'games/img/apple.png', 
+    snake_head: 'games/img/snake_head.png', 
+    snake_body: 'games/img/snake_body.png',
+    paddle: 'games/img/paddle.png', 
+    ball: 'games/img/ball.png', 
+    brick: 'games/img/brick.png',
+    ship: 'games/img/ship.png', 
+    alien: 'games/img/alien.png', 
+    bullet: 'games/img/bullet.png',
+    car: 'games/img/car.png', 
+    obs: 'games/img/obs.png',
+    bird: 'games/img/bird.png', 
+    pipe: 'games/img/pipe.png',
+    bomber: 'games/img/bomber.png', 
+    bomb: 'games/img/bomb.png', 
+    box: 'games/img/box.png'
 };
 
-gameAssets.apple.src = 'games/img/apple.png';
-gameAssets.snake_head.src = 'games/img/snake_head.png';
-gameAssets.snake_body.src = 'games/img/snake_body.png';
-gameAssets.paddle.src = 'games/img/paddle.png';
-gameAssets.ball.src = 'games/img/ball.png';
-gameAssets.brick.src = 'games/img/brick.png';
-gameAssets.ship.src = 'games/img/ship.png';
-gameAssets.alien.src = 'games/img/alien.png';
-gameAssets.bullet.src = 'games/img/bullet.png';
-gameAssets.car.src = 'games/img/car.png';
-gameAssets.obs.src = 'games/img/obs.png';
-gameAssets.bird.src = 'games/img/bird.png';
-gameAssets.pipe.src = 'games/img/pipe.png';
-gameAssets.bomber.src = 'games/img/bomber.png';
-gameAssets.bomb.src = 'games/img/bomb.png';
-gameAssets.box.src = 'games/img/box.png';
+const gameAssets = {};
+let sharedAssetsLoaded = false;
+
+const loadSharedAssets = () => {
+    if (sharedAssetsLoaded) return;
+    Object.keys(gameAssetsConfig).forEach(key => {
+        gameAssets[key] = new Image();
+        gameAssets[key].src = gameAssetsConfig[key];
+    });
+    sharedAssetsLoaded = true;
+};
 
 const drawSprite = (ctx, img, x, y, w, h, fallbackFn) => {
     if (img && img.complete && img.naturalWidth > 0) ctx.drawImage(img, x, y, w, h);
@@ -49,49 +55,52 @@ const drawSprite = (ctx, img, x, y, w, h, fallbackFn) => {
 };
 
 // ---------------------------------------------------------
-// SYSTEM DŹWIĘKOWY (Śledzenie i zatrzymywanie długich plików)
+// SYSTEM DŹWIĘKOWY (Lazy Loading Dźwięków na żądanie)
 // ---------------------------------------------------------
-const gameSounds = {
-    eat: new Audio('games/sound/eat.mp3'),
-    die: new Audio('games/sound/die.mp3'),
-    bounce: new Audio('games/sound/bounce.mp3'),
-    break: new Audio('games/sound/break.mp3'),
-    win: new Audio('games/sound/win.mp3'),
-    shoot: new Audio('games/sound/shoot.mp3'),
-    invader: new Audio('games/sound/invader.mp3'),
-    pong: new Audio('games/sound/pong.mp3'),
-    score: new Audio('games/sound/score.mp3'),
-    flap: new Audio('games/sound/flap.mp3'),
-    hit: new Audio('games/sound/hit.mp3'),
-    crash: new Audio('games/sound/crash.mp3'),
-    drop: new Audio('games/sound/drop.mp3'),
-    explosion: new Audio('games/sound/explosion.mp3')
+const gameSoundsConfig = {
+    eat: 'games/sound/eat.mp3',
+    die: 'games/sound/die.mp3',
+    bounce: 'games/sound/bounce.mp3',
+    break: 'games/sound/break.mp3',
+    win: 'games/sound/win.mp3',
+    shoot: 'games/sound/shoot.mp3',
+    invader: 'games/sound/invader.mp3',
+    pong: 'games/sound/pong.mp3',
+    score: 'games/sound/score.mp3',
+    flap: 'games/sound/flap.mp3',
+    hit: 'games/sound/hit.mp3',
+    crash: 'games/sound/crash.mp3',
+    drop: 'games/sound/drop.mp3',
+    explosion: 'games/sound/explosion.mp3'
 };
 
-let activeSounds = []; // Tablica trzymająca grające dźwięki
+const gameSounds = {};
+let activeSounds = []; 
 
 const stopAllSounds = () => {
     activeSounds.forEach(s => {
-        try { 
-            s.pause(); 
-            s.currentTime = 0; 
-        } catch(e) {}
+        try { s.pause(); s.currentTime = 0; } catch(e) {}
     });
     activeSounds = [];
 };
 
 const playSnd = (id) => {
-    if (gameSounds[id]) {
-        const snd = gameSounds[id].cloneNode(); 
-        snd.volume = 0.6;
-        snd.play().catch(e => {});
-        activeSounds.push(snd);
-        // Po zakończeniu utworu, zdejmujemy go z listy
-        snd.onended = () => {
-            const idx = activeSounds.indexOf(snd);
-            if(idx > -1) activeSounds.splice(idx, 1);
-        };
+    if (!gameSoundsConfig[id]) return;
+    
+    // Pobiera dany plik mp3 DOPIERO za pierwszym razem, gdy ma zostać odtworzony
+    if (!gameSounds[id]) {
+        gameSounds[id] = new Audio(gameSoundsConfig[id]);
     }
+    
+    const snd = gameSounds[id].cloneNode(); 
+    snd.volume = 0.6;
+    snd.play().catch(e => {});
+    activeSounds.push(snd);
+    
+    snd.onended = () => {
+        const idx = activeSounds.indexOf(snd);
+        if(idx > -1) activeSounds.splice(idx, 1);
+    };
 };
 
 const games = {
@@ -101,7 +110,8 @@ const games = {
     pelzacz: {
         c: null, ctx: null, loop: null, active: false, grid: 20, snake: [], apple: {}, dx: 20, dy: 0, score: 0,
         init: function() { 
-            stopAllSounds(); // Zatrzymuje piosenki z poprzedniej gry
+            stopAllSounds(); 
+            loadSharedAssets(); // LAZY LOAD: ładuje sprite'y dopieru tu
             if(this.loop) clearTimeout(this.loop); 
             this.c = document.getElementById('canvas-pelzacz'); this.ctx = this.c.getContext('2d'); 
             this.snake = [{x: 140, y: 140}, {x: 120, y: 140}]; this.dx = this.grid; this.dy = 0; this.score = 0; this.active = true; 
@@ -155,6 +165,7 @@ const games = {
         c: null, ctx: null, loop: null, active: false, paddle: {}, ball: {}, bricks: [], score: 0,
         init: function() {
             stopAllSounds();
+            loadSharedAssets();
             if(this.loop) cancelAnimationFrame(this.loop); 
             this.c = document.getElementById('canvas-murarz'); this.ctx = this.c.getContext('2d'); 
             this.paddle = { x: 160, y: 280, w: 80, h: 10 }; 
@@ -241,6 +252,7 @@ const games = {
         c: null, ctx: null, loop: null, active: false, ship: {}, bullets: [], aliens: [], score: 0, lastShot: 0,
         init: function() {
             stopAllSounds();
+            loadSharedAssets();
             if(this.loop) cancelAnimationFrame(this.loop); 
             this.c = document.getElementById('canvas-ufoludki'); this.ctx = this.c.getContext('2d'); 
             this.ship = { x: 180, y: 350, w: 40, h: 40 }; this.bullets = []; this.aliens = []; this.score = 0; this.active = true;
@@ -278,14 +290,20 @@ const games = {
             });
             
             let allDead = true; 
+            let isGameOver = false;
+            
             this.aliens.forEach(a => { 
                 if(a.alive) { 
                     allDead = false; a.y += 0.15; 
                     drawSprite(this.ctx, gameAssets.alien, a.x, a.y, a.w, a.h, () => { this.ctx.fillText('👾', a.x, a.y); });
-                    if(a.y > 330) { this.active = false; playSnd('die'); if(typeof apps !== 'undefined') apps.showToast('Koniec', 'Ufoludki wylądowały!', 'error'); } 
+                    if(a.y > 330 && !isGameOver) { 
+                        isGameOver = true; this.active = false; playSnd('die'); 
+                        if(typeof apps !== 'undefined') apps.showToast('Koniec', 'Ufoludki wylądowały!', 'error'); 
+                    } 
                 } 
             });
             
+            if(isGameOver) return; 
             if(allDead) { this.active = false; playSnd('win'); if(typeof apps !== 'undefined') apps.showToast('Wygrana', 'Ocaliłeś BigOS!', 'success'); return; } 
             if(this.active) this.loop = requestAnimationFrame(() => this.update());
         },
@@ -299,6 +317,7 @@ const games = {
         c: null, ctx: null, loop: null, active: false, p1: {}, p2: {}, ball: {}, score1: 0, score2: 0,
         init: function() {
             stopAllSounds();
+            loadSharedAssets();
             if(this.loop) cancelAnimationFrame(this.loop); 
             this.c = document.getElementById('canvas-odbijanka'); this.ctx = this.c.getContext('2d'); 
             this.p1 = { y: 120 }; this.p2 = { y: 120 }; this.ball = { x: 200, y: 150, dx: 3, dy: 3 }; this.score1 = 0; this.score2 = 0; this.active = true;
@@ -354,6 +373,7 @@ const games = {
         c: null, ctx: null, loop: null, active: false, birdY: 200, velocity: 0, pipes: [], score: 0, frame: 0,
         init: function() {
             stopAllSounds();
+            loadSharedAssets();
             if(this.loop) cancelAnimationFrame(this.loop); 
             this.c = document.getElementById('canvas-trzepotek'); this.ctx = this.c.getContext('2d'); 
             this.birdY = 200; this.velocity = 0; this.pipes = []; this.score = 0; this.frame = 0; this.active = true; 
@@ -411,6 +431,7 @@ const games = {
         c: null, ctx: null, loop: null, active: false, carX: 130, obs: [], score: 0, speed: 2.5, frame: 0,
         init: function() {
             stopAllSounds();
+            loadSharedAssets();
             if(this.loop) cancelAnimationFrame(this.loop); 
             this.c = document.getElementById('canvas-scigacz'); this.ctx = this.c.getContext('2d'); 
             this.carX = 130; this.obs = []; this.score = 0; this.speed = 2.5; this.frame = 0; this.active = true; 
@@ -446,78 +467,6 @@ const games = {
             });
             
             drawSprite(this.ctx, gameAssets.car, this.carX, 340, 40, 50, () => { this.ctx.fillText('🚘', this.carX, 340); });
-            
-            if(this.active) this.loop = requestAnimationFrame(() => this.update());
-        },
-        stop: function() { this.active = false; if(this.loop) cancelAnimationFrame(this.loop); }
-    },
-
-    // ---------------------------------------------------------
-    // 7. BOMBIARZ
-    // ---------------------------------------------------------
-    bombiarz: {
-        c: null, ctx: null, loop: null, active: false, px: 20, py: 20, bombs: [], blocks: [], score: 0, lastMv: 0, explosions: [],
-        init: function() {
-            stopAllSounds();
-            if(this.loop) cancelAnimationFrame(this.loop); 
-            this.c = document.getElementById('canvas-bombiarz'); this.ctx = this.c.getContext('2d'); 
-            this.px = 20; this.py = 20; this.bombs = []; this.blocks = []; this.explosions = []; this.score = 0; this.active = true;
-            for(let i=0; i<35; i++) {
-                let bx = Math.floor(Math.random()*13+1)*20; let by = Math.floor(Math.random()*13+1)*20;
-                this.blocks.push({ x: bx, y: by }); 
-            }
-            document.getElementById('bombiarz-score').innerText = 'Punkty: 0'; this.update();
-        },
-        doAction: function() {
-            if(!this.active) return;
-            if(!this.bombs.some(b=>b.x===this.px&&b.y===this.py)) { 
-                this.bombs.push({ x: this.px, y: this.py, time: 80 }); playSnd('drop'); gryKeys['Space'] = false; 
-            }
-        },
-        update: function() {
-            if(!this.active) return; this.ctx.clearRect(0,0,this.c.width,this.c.height);
-            
-            if(Date.now() - this.lastMv > 120) { 
-                let nx = this.px; let ny = this.py;
-                if(gryKeys['ArrowLeft'] && this.px > 0) nx -= 20; 
-                if(gryKeys['ArrowRight'] && this.px < 280) nx += 20; 
-                if(gryKeys['ArrowUp'] && this.py > 0) ny -= 20; 
-                if(gryKeys['ArrowDown'] && this.py < 280) ny += 20; 
-                
-                if(!this.blocks.some(b => b.x === nx && b.y === ny)) { this.px = nx; this.py = ny; }
-                this.lastMv = Date.now(); 
-            }
-            
-            if(gryKeys['Space']) { this.doAction(); }
-            
-            this.ctx.font = "20px Arial"; this.ctx.textBaseline = "top";
-            
-            this.blocks.forEach(b => { drawSprite(this.ctx, gameAssets.box, b.x, b.y, 20, 20, () => { this.ctx.fillText('📦', b.x, b.y); }); });
-            
-            this.bombs.forEach((b, i) => { 
-                b.time--; 
-                drawSprite(this.ctx, gameAssets.bomb, b.x, b.y, 20, 20, () => {
-                    if(Math.floor(b.time/10)%2 === 0) this.ctx.fillText('💣', b.x, b.y); else this.ctx.fillText('🧨', b.x, b.y);
-                });
-                
-                if(b.time <= 0) { 
-                    this.bombs.splice(i, 1); this.explosions.push({x: b.x, y: b.y, timer: 15}); playSnd('explosion');
-                    this.blocks = this.blocks.filter(bl => { 
-                        let dist = Math.abs(bl.x - b.x) + Math.abs(bl.y - b.y); 
-                        if(dist <= 20) { this.score+=5; playSnd('score'); document.getElementById('bombiarz-score').innerText = 'Punkty: '+this.score; return false; } 
-                        return true; 
-                    }); 
-                } 
-            });
-            
-            this.explosions.forEach((ex, i) => {
-                ex.timer--;
-                this.ctx.fillText('💥', ex.x, ex.y); this.ctx.fillText('💥', ex.x-20, ex.y); this.ctx.fillText('💥', ex.x+20, ex.y);
-                this.ctx.fillText('💥', ex.x, ex.y-20); this.ctx.fillText('💥', ex.x, ex.y+20);
-                if(ex.timer <= 0) this.explosions.splice(i, 1);
-            });
-            
-            drawSprite(this.ctx, gameAssets.bomber, this.px, this.py, 20, 20, () => { this.ctx.fillText('🤠', this.px, this.py); });
             
             if(this.active) this.loop = requestAnimationFrame(() => this.update());
         },
@@ -707,24 +656,16 @@ setTimeout(() => {
     });
 }, 1000);
 
-// ---------------------------------------------------------
-// NAPRAWA ZAMYKANIA GIER W TLE I WYŁĄCZANIA DŹWIĘKÓW
-// ---------------------------------------------------------
 if (typeof winManager !== 'undefined' && !winManager._isGamePatched) {
     const originalClose = winManager.close;
     
-    // Nadpisujemy systemowe polecenie zamykania okien
     winManager.close = (appId) => {
-        // 1. Zatrzymujemy silnik (np. renderowanie Bombiarza i zjadanie baterii na telefonie)
         if (games[appId] && typeof games[appId].stop === 'function') {
             games[appId].stop(); 
         }
-        // 2. Twardo zatrzymujemy każdą piosenkę grającą obecnie z pliku .mp3 (np. win / die)
         stopAllSounds(); 
-        
-        // 3. Po wyczyszczeniu tła wołamy właściwą komendę zwijającą okienko BigOS
         originalClose(appId);
     };
     
-    winManager._isGamePatched = true; // Zabezpieczenie przed podwójnym łataniem
+    winManager._isGamePatched = true; 
 }

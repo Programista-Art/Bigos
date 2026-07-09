@@ -223,6 +223,8 @@ Dostępne komendy:
   <span class="text-yellow-400">pogoda [miasto]</span> - Pogoda dla zadanego miasta
   <span class="text-yellow-400">ping [adres]</span>    - Symuluje wysyłanie pakietów PING
   <span class="text-yellow-400">open [url]</span>      - Otwiera adres w Sieciosławiu
+  <span class="text-yellow-400">upload</span>          - Wgrywa plik z komputera do BigOS
+  <span class="text-yellow-400">wasm_demo</span>       - Generuje testowy moduł WebAssembly
   <span class="text-yellow-400">[nazwa]</span>         - Otwiera plik lub aplikację`;
                 break;
                 
@@ -526,56 +528,12 @@ Dostępne komendy:
 
             case 'cytat':
                 const quotes = [
-                "Programista nie popełnia błędów. Tworzy nowe wyzwania dla debuggera.",
-                "Najlepszy kod to ten, którego nie trzeba poprawiać... szkoda, że taki nie istnieje.",
-                "Kawa jest paliwem, a kod skutkiem ubocznym.",
-                "Jeśli działa za pierwszym razem, to znaczy, że coś przeoczyłeś.",
-                "Programista zna odpowiedź. Tylko jeszcze nie zna pytania.",
-                "Każdy bug ma swoje prawa obywatelskie.",
-                "Debugowanie to detektywistyczna praca, w której sam jesteś przestępcą.",
-                "Najgroźniejsze słowa w IT: 'To tylko mała zmiana'.",
-                "Komputer robi dokładnie to, co mu każesz, a nie to, co masz na myśli.",
-                "Najlepszy komentarz w kodzie to ten, którego nie trzeba pisać.",
-                "Dobry programista rozwiązuje problemy. Świetny sprawia, że ich nie ma.",
-                "Nie dotykaj działającego kodu. Nigdy.",
-                "Każdy program jest prosty... dopóki nie trzeba go utrzymywać.",
-                "Programista śpi spokojnie, dopóki produkcja nie zadzwoni o 3 nad ranem.",
-                "To nie komputer jest wolny. To kod jest ambitny.",
-                "Jedna linijka kodu potrafi zepsuć cały dzień.",
-                "Programowanie uczy cierpliwości. Głównie do samego siebie.",
-                "Najlepszym przyjacielem programisty jest Ctrl+Z.",
-                "Backup jest jak spadochron. Lepiej go mieć.",
-                "Jeśli kod wygląda idealnie, prawdopodobnie jeszcze go nie uruchomiłeś.",
-                "Programista nie zgaduje. On testuje hipotezy.",
-                "Każdy projekt zaczyna się od 'to zajmie godzinę'.",
-                "Nie ma rzeczy niemożliwych. Są tylko źle nazwane zmienne.",
-                "Komentarze w kodzie są jak notatki dla przyszłego siebie.",
-                "Programowanie to sztuka zamieniania kawy w błędy.",
-                "Bug znaleziony przez klienta jest zawsze najbardziej kreatywny.",
-                "Najkrótsza droga do rozwiązania prowadzi przez Stack Overflow.",
-                "Najpierw działało. Potem poprawiłem.",
-                "Kompilator jest najlepszym nauczycielem pokory.",
-                "Programista wierzy w cuda. Inaczej nie nacisnąłby 'Uruchom'.",
-                "Nie ma nic bardziej trwałego niż tymczasowe rozwiązanie.",
-                "Dobry kod jest jak dowcip – nie trzeba go tłumaczyć.",
-                "Największy wróg projektu to zdanie: 'Mam jeszcze jeden pomysł'.",
-                "Programowanie to jedyny zawód, w którym usuwanie kodu oznacza postęp.",
-                "Każdy bug był kiedyś czyimś pomysłem.",
-                "Najpierw piszesz kod. Potem kod pisze ciebie.",
-                "Jeśli komputer milczy, to znaczy, że szykuje niespodziankę.",
-                "Programista nigdy się nie nudzi. Zawsze znajdzie nowy błąd.",
-                "Nie licz godzin spędzonych na debugowaniu. One same cię policzą.",
-                "Najbardziej podejrzany kod to ten, który działa.",
-                "Optymalizacja zaczyna się pięć minut przed terminem.",
-                "Najłatwiej znaleźć błąd zaraz po wysłaniu programu klientowi.",
-                "Programista zna tysiąc sposobów na zepsucie jednej funkcji.",
-                "Najdroższy kod to ten napisany w pośpiechu.",
-                "Każda poprawka ma ukryty koszt.",
-                "Programowanie przypomina układanie puzzli, tylko ktoś ciągle zmienia obrazek.",
-                "Nie ma lepszego testera niż użytkownik z piątkowego wieczoru.",
-                "Jeżeli czegoś nie da się zepsuć, użytkownik znajdzie sposób.",
-                "Programista nie walczy z komputerem. Prowadzi z nim długie negocjacje.",
-                "Największym sukcesem programisty jest dzień bez komunikatu 'Unexpected Error'."
+                    "Programowanie to w 10% pisanie kodu, a w 90% szukanie dlaczego nie działa.",
+                    "Jeśli to głupie, ale działa, to nie jest głupie.",
+                    "Istnieje 10 rodzajów ludzi: ci, którzy rozumieją system binarny, i ci, którzy go nie rozumieją.",
+                    "To nie jest błąd, to nieudokumentowana funkcja.",
+                    "W teorii teoria i praktyka są tym samym. W praktyce nie są.",
+                    "Zanim zaczniesz naprawiać kod, upewnij się, że komputer jest podłączony do prądu."
                 ];
                 const randQuote = quotes[Math.floor(Math.random() * quotes.length)];
                 out.innerHTML += `\n💡 Cytat dla Ciebie:\n"${randQuote}"`;
@@ -638,6 +596,70 @@ Dostępne komendy:
                         winManager.open('siecioslaw');
                     }
                 }
+                break;
+
+            case 'upload':
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    out.innerHTML += `\nŁadowanie i kodowanie pliku ${desktop.escapeHTML(file.name)}... (to może chwilę potrwać)`;
+                    out.scrollTop = out.scrollHeight;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        try {
+                            let base64 = ev.target.result;
+                            if (base64.includes(',')) {
+                                base64 = base64.split(',')[1];
+                            }
+                            
+                            let iconType = '📄';
+                            if (file.name.endsWith('.wasm')) iconType = '⚙️';
+                            else if (file.name.endsWith('.csv')) iconType = '📊';
+                            else if (file.name.endsWith('.txt')) iconType = '📝';
+
+                            fileSystem.push({
+                                id: 'file_' + Date.now(),
+                                type: 'file',
+                                name: file.name,
+                                icon: iconType,
+                                content: base64,
+                                parentId: wladcaApp.currentPath,
+                                x: Math.floor(Math.random() * 200) + 20,
+                                y: Math.floor(Math.random() * 200) + 20
+                            });
+
+                            if (typeof fsManager !== 'undefined') fsManager.save();
+                            if (typeof desktop !== 'undefined') desktop.render();
+                            if (typeof fsManager !== 'undefined' && fsManager.currentFolder === wladcaApp.currentPath) fsManager.renderExplorerContent(wladcaApp.currentPath);
+                            
+                            out.innerHTML += `\n[Sukces] Plik ${desktop.escapeHTML(file.name)} został zapisany w obecnym katalogu!`;
+                            out.scrollTop = out.scrollHeight;
+                        } catch (err) {
+                            out.innerHTML += `\n[Błąd] Nie udało się wgrać pliku. Prawdopodobnie brak miejsca w pamięci przeglądarki.`;
+                            out.scrollTop = out.scrollHeight;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                };
+                fileInput.click();
+                out.innerHTML += `\nWybierz plik z dysku...`;
+                break;
+
+            case 'wasm_demo':
+                // Prosty, prekompilowany moduł WASM dodający 2 liczby
+                // Oparty na kodzie WAT: (module (func $add (param $a i32) (param $b i32) (result i32) local.get $a local.get $b i32.add) (export "add" (func $add)))
+                const wasmBase64 = "AGFzbQEAAAABBwFgAn9/AX8DAgEABwcBA2FkZAAACgkBBwAgACABags=";
+                fileSystem.push({ id: 'file_'+Date.now(), type: 'file', name: 'test_dodawania.wasm', icon: '⚙️', content: wasmBase64, parentId: wladcaApp.currentPath, x: 20, y: 20 });
+                
+                if(typeof fsManager !== 'undefined') fsManager.save();
+                if(typeof desktop !== 'undefined') desktop.render();
+                if(typeof fsManager !== 'undefined' && fsManager.currentFolder === wladcaApp.currentPath) fsManager.renderExplorerContent(wladcaApp.currentPath);
+                
+                out.innerHTML += `\n[WASM] Wygenerowano plik 'test_dodawania.wasm'.\nZnajdź go i kliknij dwukrotnie, aby uruchomić w wbudowanym silniku BigOS WebAssembly Engine!`;
                 break;
 
             case 'pogoda':
