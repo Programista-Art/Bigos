@@ -5,9 +5,9 @@
 const kombinatorApp = {
     defaultWallpapers: [
         { name: 'BigOS', url: 'tapety/bigos.webp' },
-        { name: 'Natura', url: 'tapety/natura.webp' },
-        { name: 'Kosmos', url: 'tapety/kosmos.webp' },
-        { name: 'Abstrakcja', url: 'tapety/abstrakcja.webp' }
+        { name: 'Natura', url: 'tapety/ferrari.webp' },
+        { name: 'Kosmos', url: 'tapety/ferrari.webp' },
+        { name: 'Abstrakcja', url: 'tapety/ferrari.webp' }
     ],
 
     initThemesUI: () => {
@@ -44,7 +44,7 @@ const kombinatorApp = {
             img.loading = 'lazy'; 
             img.onerror = function() { 
                 this.onerror = null; 
-                this.src = 'tapety/bigos.webp'; 
+                this.src = 'tapety/ferrari.webp'; 
             };
             // Nowe, w pełni zintegrowane z motywem klasy dla miniatur
             img.className = 'cursor-pointer border-2 g-border hover:border-blue-500 wp-thumbnail w-full h-24 object-cover rounded-lg shadow-md bg-black/40 flex items-center justify-center text-xs g-text-muted transition-all';
