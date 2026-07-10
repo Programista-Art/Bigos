@@ -1,171 +1,14 @@
 // ======================================================================
-// PLIK: js/apps.js (Logika wbudowanych Aplikacji, Szuflady, Tapet)
+// PLIK: js/aplikacje/apps.js (Jądro Systemu - Zasilanie, Menu, Toasty)
 // ======================================================================
-
-let calOffset = 0; 
 
 const apps = {
     // ==================================================================
-    // 1. ZARZĄDZANIE TAPETAMI (KOMBINATOR)
+    // 1. KOMUNIKATY I SYSTEMOWE GUI
     // ==================================================================
-    defaultWallpapers: [
-        { name: 'BigOS', url: 'tapety/bigos.webp' },
-        { name: 'Natura', url: 'tapety/natura.webp' },
-        { name: 'Kosmos', url: 'tapety/kosmos.webp' },
-        { name: 'Abstrakcja', url: 'tapety/abstrakcja.webp' }
-    ],
-
-    renderWallpaperGallery: () => {
-        const gallery = document.getElementById('wallpaper-gallery');
-        if(!gallery) return;
-        
-        gallery.innerHTML = '';
-        const customWp = JSON.parse(localStorage.getItem('bigos_custom_wp') || '[]');
-        const allWp = [...apps.defaultWallpapers, ...customWp];
-        
-        allWp.forEach((wp, index) => {
-            const imgContainer = document.createElement('div');
-            imgContainer.className = 'relative group';
-            
-            const img = document.createElement('img');
-            img.src = wp.url; 
-            img.alt = wp.name; 
-            img.title = wp.name;
-            img.loading = 'lazy'; 
-            img.onerror = function() { 
-                this.onerror = null; 
-                this.src = 'tapety/bigos.webp'; 
-            };
-            img.className = 'cursor-pointer border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 wp-thumbnail w-full h-20 object-cover rounded shadow bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-gray-500';
-            img.onclick = () => apps.setWallpaperUrl(wp.url);
-            
-            imgContainer.appendChild(img);
-            
-            if (index >= apps.defaultWallpapers.length) {
-                const delBtn = document.createElement('button'); 
-                delBtn.innerHTML = '✖'; 
-                delBtn.className = 'absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition';
-                delBtn.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    customWp.splice(index - apps.defaultWallpapers.length, 1); 
-                    localStorage.setItem('bigos_custom_wp', JSON.stringify(customWp)); 
-                    apps.renderWallpaperGallery(); 
-                };
-                imgContainer.appendChild(delBtn);
-            }
-            gallery.appendChild(imgContainer);
-        });
-    },
-
-    setWallpaperUrl: (customUrl) => { 
-        const u = customUrl || document.getElementById('wallpaper-url').value; 
-        const target = document.getElementById('wallpaper-target').value;
-        
-        if(u) { 
-            if(target === 'desktop') {
-                document.getElementById('desktop-bg').style.backgroundImage = `url('${u}')`; 
-                document.getElementById('desktop-bg').classList.add('custom-wp'); 
-                localStorage.setItem('bigos_bg', u); 
-            } else {
-                document.getElementById('login-screen').style.backgroundImage = `url('${u}')`; 
-                localStorage.setItem('bigos_login_bg', u); 
-            }
-            apps.showToast('Kombinator', 'Ustawiono nową tapetę!', 'success');
-        } 
-    },
-
-    setWallpaperFile: (e) => { 
-        const f = e.target.files[0]; 
-        if(!f) return; 
-        
-        const target = document.getElementById('wallpaper-target').value;
-        const r = new FileReader(); 
-        
-        r.onload = (ev) => { 
-            const res = ev.target.result;
-            const img = new Image();
-            
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                let width = img.width;
-                let height = img.height;
-                const maxWidth = 1920;
-                const maxHeight = 1080;
-                
-                if (width > maxWidth || height > maxHeight) {
-                    const ratio = Math.min(maxWidth / width, maxHeight / height);
-                    width = width * ratio;
-                    height = height * ratio;
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                ctx.drawImage(img, 0, 0, width, height);
-                
-                const compressedDataUrl = canvas.toDataURL('image/webp', 0.8);
-                
-                try {
-                    if(target === 'desktop') {
-                        document.getElementById('desktop-bg').style.backgroundImage = `url('${compressedDataUrl}')`; 
-                        document.getElementById('desktop-bg').classList.add('custom-wp'); 
-                        localStorage.setItem('bigos_bg', compressedDataUrl); 
-                    } else {
-                        document.getElementById('login-screen').style.backgroundImage = `url('${compressedDataUrl}')`; 
-                        localStorage.setItem('bigos_login_bg', compressedDataUrl); 
-                    }
-                    
-                    const customWp = JSON.parse(localStorage.getItem('bigos_custom_wp') || '[]');
-                    if(!customWp.find(w => w.name === f.name)) {
-                        customWp.push({ name: f.name, url: compressedDataUrl });
-                        localStorage.setItem('bigos_custom_wp', JSON.stringify(customWp));
-                    }
-                    
-                    apps.renderWallpaperGallery();
-                    apps.showToast('Kombinator', 'Wgrano i zoptymalizowano tapetę (WebP)!', 'success');
-                } catch(error) {
-                    apps.showToast('Błąd Pamięci', 'Zdjęcie nadal jest za duże by je zapisać!', 'error');
-                }
-            };
-            img.src = res;
-        }; 
-        r.readAsDataURL(f); 
-        e.target.value = '';
-    },
-
-    resetWallpaper: () => { 
-        const defaultBg = apps.defaultWallpapers[0].url; 
-        const target = document.getElementById('wallpaper-target').value;
-        
-        if(target === 'desktop') {
-            document.getElementById('desktop-bg').style.backgroundImage = `url('${defaultBg}')`; 
-            document.getElementById('desktop-bg').classList.add('custom-wp'); 
-            localStorage.setItem('bigos_bg', defaultBg); 
-        } else {
-            document.getElementById('login-screen').style.backgroundImage = `url('${defaultBg}')`; 
-            localStorage.setItem('bigos_login_bg', defaultBg); 
-        }
-        apps.showToast('Kombinator', 'Przywrócono tapetę domyślną', 'info'); 
-    },
-
-    // ==================================================================
-    // 2. FUNKCJE SYSTEMOWE I MOTYWY
-    // ==================================================================
-    setTheme: (theme) => { 
-        currentTheme = theme; 
-        localStorage.setItem('bigos_theme', theme); 
-        document.getElementById('system-theme-select').value = theme; 
-        
-        if(theme === 'dark') {
-            document.documentElement.classList.add('dark'); 
-        } else {
-            document.documentElement.classList.remove('dark'); 
-        }
-    },
-
     showToast: (t, m, type = 'info') => { 
         const c = document.getElementById('toast-container'); 
+        if(!c) return;
         const el = document.createElement('div'); 
         const colors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' }; 
         
@@ -189,9 +32,26 @@ const apps = {
         sm.classList.toggle('flex'); 
         const calWidget = document.getElementById('calendar-widget');
         if(calWidget) calWidget.classList.add('hidden-cal'); 
+
+        if (!document.getElementById('start-btn-format')) {
+            const formatBtn = document.createElement('div');
+            formatBtn.id = 'start-btn-format';
+            formatBtn.className = 'w-full flex items-center gap-3 px-4 py-2 hover:bg-white/10 transition cursor-pointer text-red-400 hover:text-red-300 mt-1 border-t border-gray-700/50 pt-3';
+            formatBtn.onclick = () => { 
+                apps.toggleStartMenu(); 
+                apps.formatSystem(); 
+            };
+            formatBtn.innerHTML = `
+                <span style="width: 20px; text-align: center;">⚠️</span>
+                <span class="text-sm font-medium">Formatuj</span>
+            `;
+            sm.appendChild(formatBtn);
+        }
     },
 
-    // NOWE OKNO MODALNE DO FORMATOWANIA
+    // ==================================================================
+    // 2. ZARZĄDZANIE ZASILANIEM I SYSTEMEM
+    // ==================================================================
     formatSystem: () => { 
         let modal = document.getElementById('format-confirm-modal');
         if (!modal) {
@@ -211,7 +71,6 @@ const apps = {
             `;
             document.body.appendChild(modal);
 
-            // Logika przycisków
             document.getElementById('format-btn-cancel').onclick = () => {
                 modal.classList.remove('opacity-100', 'pointer-events-auto');
                 modal.classList.add('opacity-0', 'pointer-events-none');
@@ -226,9 +85,8 @@ const apps = {
             };
         }
 
-        // Wyświetlanie okna z animacją
         modal.style.display = 'flex';
-        void modal.offsetWidth; // Wymuszenie przerysowania by animacja zadziałała
+        void modal.offsetWidth; 
         modal.classList.remove('opacity-0', 'pointer-events-none');
         modal.classList.add('opacity-100', 'pointer-events-auto');
         document.getElementById('format-modal-box').classList.remove('scale-95');
@@ -265,147 +123,18 @@ const apps = {
     shutdownSystem: () => { 
         document.body.innerHTML = `<div class="w-full h-full bg-black flex flex-col items-center justify-center text-white"><button onclick="location.reload()" class="w-24 h-24 rounded-full border-4 border-gray-600 text-gray-600 hover:text-white hover:border-white transition flex items-center justify-center text-4xl mb-4" title="Włącz BigOS">⏻</button><p class="text-gray-500 font-mono">System BigOS wyłączony.</p></div>`; 
     },
+
+    // ==================================================================
+    // 3. KOMPATYBILNOŚĆ WSTECZNA DLA HTML (Tylko przekierowania do modułów!)
+    // ==================================================================
+    toggleCalendar: (e) => { if(typeof kalendarzApp !== 'undefined') kalendarzApp.toggleCalendar(e); },
+    changeCalendarMonth: (dir) => { if(typeof kalendarzApp !== 'undefined') kalendarzApp.changeCalendarMonth(dir); },
+    generateCalendar: () => { if(typeof kalendarzApp !== 'undefined') kalendarzApp.generateCalendar(); },
     
-    // ==================================================================
-    // 3. KALENDARZ I KARTECZKI
-    // ==================================================================
-    toggleCalendar: (e) => { 
-        if(e) e.stopPropagation(); 
-        calOffset = 0; 
-        apps.generateCalendar(); 
-        document.getElementById('calendar-widget').classList.toggle('hidden-cal'); 
-        document.getElementById('start-menu').classList.add('hidden'); 
-    },
-
-    changeCalendarMonth: (dir) => { 
-        calOffset += dir; 
-        apps.generateCalendar(); 
-    },
-
-    generateCalendar: () => {
-        const c = document.getElementById('cal-days'); 
-        const t = document.getElementById('cal-month-year'); 
-        const targetDate = new Date(); 
-        targetDate.setMonth(targetDate.getMonth() + calOffset); 
-        
-        const now = new Date(); 
-        const mPl = ["Styczeń","Luty","Marzec","Kwiecień","Maj","Czerwiec","Lipiec","Sierpień","Wrzesień","Październik","Listopad","Grudzień"]; 
-        
-        t.innerText = `${mPl[targetDate.getMonth()]} ${targetDate.getFullYear()}`; 
-        
-        const first = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1).getDay(); 
-        const days = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0).getDate(); 
-        
-        let start = first === 0 ? 6 : first - 1; 
-        c.innerHTML = ''; 
-        
-        for(let i=0; i<start; i++) {
-            c.innerHTML += `<div></div>`;
-        }
-        
-        for(let i=1; i<=days; i++) { 
-            const isToday = (i === now.getDate() && targetDate.getMonth() === now.getMonth() && targetDate.getFullYear() === now.getFullYear()); 
-            c.innerHTML += `<div class="${isToday?'bg-blue-600 text-white rounded-full shadow-md':'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer rounded-full transition text-gray-800 dark:text-gray-300'} w-7 h-7 flex items-center justify-center mx-auto">${i}</div>`; 
-        }
-    },
-
-    createStickyNote: (id='n_'+Date.now(), text='', x=100, y=100) => { 
-        const c = document.getElementById('sticky-notes-container'); 
-        const n = document.createElement('div'); 
-        
-        n.id = id; 
-        n.className = 'sticky-note pointer-events-auto rounded p-2'; 
-        n.style.left = x + 'px'; 
-        n.style.top = y + 'px'; 
-        
-        n.innerHTML = `
-            <div class="flex justify-between items-center mb-1 cursor-move" 
-                 onmousedown="desktop.activeDrag={el:this.parentElement,type:'sticky',id:'${id}',oX:event.clientX-this.parentElement.getBoundingClientRect().left,oY:event.clientY-this.parentElement.getBoundingClientRect().top};winManager.bringToFront(this.parentElement)" 
-                 ontouchstart="const p=getEventPos(event); desktop.activeDrag={el:this.parentElement,type:'sticky',id:'${id}',oX:p.x-this.parentElement.getBoundingClientRect().left,oY:p.y-this.parentElement.getBoundingClientRect().top};winManager.bringToFront(this.parentElement)">
-                <span class="text-xs font-bold text-yellow-800">📌</span>
-                <button onclick="this.parentElement.parentElement.remove();apps.saveStickyNotes()" class="text-red-700 font-bold">✖</button>
-            </div>
-            <div contenteditable="true" class="flex-grow outline-none text-sm text-yellow-900" oninput="apps.saveStickyNotes()">${text}</div>
-        `; 
-        
-        c.appendChild(n); 
-        apps.saveStickyNotes(); 
-    },
-
-    saveStickyNotes: () => { 
-        const ns = []; 
-        document.querySelectorAll('.sticky-note').forEach(el => { 
-            ns.push({
-                id: el.id, 
-                x: parseInt(el.style.left), 
-                y: parseInt(el.style.top), 
-                t: el.querySelector('div[contenteditable]').innerHTML
-            });
-        }); 
-        localStorage.setItem('bigos_stickies', JSON.stringify(ns)); 
-    },
-
-    loadStickyNotes: () => { 
-        const s = localStorage.getItem('bigos_stickies'); 
-        if(s) {
-            JSON.parse(s).forEach(n => apps.createStickyNote(n.id, n.t, n.x, n.y)); 
-        }
-    },
+    createStickyNote: (id, text, x, y) => { if(typeof karteczkiApp !== 'undefined') karteczkiApp.createStickyNote(id, text, x, y); },
+    saveStickyNotes: () => { if(typeof karteczkiApp !== 'undefined') karteczkiApp.saveStickyNotes(); },
+    loadStickyNotes: () => { if(typeof karteczkiApp !== 'undefined') karteczkiApp.loadStickyNotes(); },
     
-    // ==================================================================
-    // 4. SIECIOSŁAW I WŁADCA POLECEŃ
-    // ==================================================================
-    navigate: () => { 
-        document.getElementById('browser-frame').src = document.getElementById('url-input').value; 
-    },
-
-    terminalHandle: (e) => {
-        if(e.key === 'Enter') {
-            const input = document.getElementById('term-in'); 
-            const out = document.getElementById('terminal-out'); 
-            const cmd = input.value.trim();
-            
-            out.innerHTML += `\n<span class="text-blue-400">root@bigos:~#</span> ${desktop.escapeHTML(cmd)}`;
-            
-            if(cmd.toLowerCase() === 'pomoc') {
-                out.innerHTML += `\nKomendy: pomoc, data, wyczysc, wersja`; 
-            } else if(cmd.toLowerCase() === 'data') {
-                out.innerHTML += `\n` + new Date().toString(); 
-            } else if(cmd.toLowerCase() === 'wyczysc') {
-                out.innerHTML = 'Witaj we Władcy Poleceń!'; 
-            } else if(cmd.toLowerCase() === 'wersja') {
-                out.innerHTML += `\nBigOS Wersja 1.21 Modularna`; 
-            } else if(cmd !== '') {
-                out.innerHTML += `\nbash: ${desktop.escapeHTML(cmd)}: nieznane polecenie`;
-            }
-            
-            input.value = ''; 
-            out.scrollTop = out.scrollHeight;
-        }
-    }
+    navigate: () => { if(typeof siecioslawApp !== 'undefined') siecioslawApp.navigate(); },
+    terminalHandle: (e) => { if(typeof wladcaApp !== 'undefined') wladcaApp.handle(e); }
 };
-
-// Automatyczne dodanie przycisku Formatowania do Szuflady (Menu Start) w formie spójnej listy
-setTimeout(() => {
-    const startMenu = document.getElementById('start-menu');
-    // Usunięcie ewentualnych starych przycisków, jeśli takie istniały
-    const oldBtn = document.getElementById('start-btn-format');
-    if (oldBtn) oldBtn.remove();
-    
-    if (startMenu) {
-        const formatBtn = document.createElement('div');
-        formatBtn.id = 'start-btn-format';
-        // Klasy odpowiadają standardowym przyciskom na dole Szuflady (Zablokuj, Uśpij, Zamknij)
-        formatBtn.className = 'w-full flex items-center gap-3 px-4 py-2 hover:bg-white/10 transition cursor-pointer text-red-500 hover:text-red-400 mt-2 border-t border-gray-700/50 pt-3';
-        formatBtn.onclick = () => { 
-            apps.toggleStartMenu(); 
-            apps.formatSystem(); 
-        };
-        formatBtn.innerHTML = `
-            <span style="width: 20px; text-align: center;">⚠️</span>
-            <span class="text-sm font-medium">Formatuj</span>
-        `;
-        // Dodajemy na sam koniec Szuflady
-        startMenu.appendChild(formatBtn);
-    }
-}, 1000);

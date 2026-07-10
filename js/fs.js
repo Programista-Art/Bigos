@@ -163,7 +163,7 @@ const fsManager = {
                             <button class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all" onclick="fsManager.action('rename')">✏️ Zmień nazwę</button>
                             <button class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all" onclick="fsManager.action('copy')">📋 Kopiuj</button>
                             <button class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all" onclick="fsManager.action('cut')">✂️ Wytnij</button>
-                            <button class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all" onclick="fsManager.action('zip')">🗜️ Kompresuj ZIP</button>
+                            <button id="fs-prev-zip-btn" class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all" onclick="fsManager.action('zip')">🗜️ Kompresuj ZIP</button>
                             <button class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all text-blue-400 border-blue-500/30" onclick="fsManager.action('share')">🔗 Pobierz na PC</button>
                             <button class="g-btn py-1.5 rounded text-xs text-left px-3 hover:pl-4 transition-all text-red-500 mt-2 border-red-500/30" onclick="fsManager.action('delete')">🗑️ Usuń</button>
                         </div>
@@ -179,7 +179,7 @@ const fsManager = {
         `;
         appWindow.appendChild(proUI);
 
-        // NAPRAWA Pustego Prawego Kliku w Aktówce - Zezwalamy na otwieranie domyślnego menu kontekstowego BigOS
+        // Zezwalamy na otwieranie domyślnego menu kontekstowego BigOS z tła
         const wrapper = document.getElementById('explorer-content-wrapper');
         if (wrapper) {
             wrapper.oncontextmenu = (e) => {
@@ -304,7 +304,6 @@ const fsManager = {
 
             el.ondblclick = (e) => { e.stopPropagation(); desktop.executeItem(item); };
             
-            // NAPRAWA: Zezwalamy na normalny Prawy Klik! Niezbędne preventDefault.
             el.oncontextmenu = (e) => { 
                 e.preventDefault(); 
                 e.stopPropagation(); 
@@ -372,6 +371,15 @@ const fsManager = {
         }
         document.getElementById('fs-prev-type').innerText = typeName;
 
+        const zipBtn = document.getElementById('fs-prev-zip-btn');
+        if (zipBtn) {
+            if (item.name.endsWith('.zip')) {
+                zipBtn.innerHTML = '🗜️ Otwórz w Upychaczu';
+            } else {
+                zipBtn.innerHTML = '🗜️ Kompresuj ZIP';
+            }
+        }
+
         const contentBox = document.getElementById('fs-prev-content-box');
         const contentVal = document.getElementById('fs-prev-content');
         
@@ -431,7 +439,6 @@ const fsManager = {
                 break;
             case 'zip':
                 if (typeof kompresorApp !== 'undefined') {
-                    // Przekierowanie do nowej, profesjonalnej aplikacji Upychacz
                     kompresorApp.openWithItem(id);
                     return;
                 }
@@ -442,7 +449,6 @@ const fsManager = {
                     return;
                 }
                 
-                // NAPRAWA BINARIÓW: Zabezpieczone dekodowanie prawdziwych plików ZIP i obrazów
                 try {
                     let blob;
                     if (item.content && item.content.startsWith('data:')) {
@@ -450,14 +456,12 @@ const fsManager = {
                         const mimeMatch = parts[0].match(/:(.*?);/);
                         const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
                         
-                        // Zmiana Base64 na surowe bity by Windows mógł przeczytać format ZIP
                         const bstr = atob(parts[1]);
                         let n = bstr.length;
                         const u8arr = new Uint8Array(n);
                         while(n--) { u8arr[n] = bstr.charCodeAt(n); }
                         blob = new Blob([u8arr], {type: mime});
                     } else {
-                        // Zwykłe pliki tekstowe .txt lub .csv
                         let mime = item.name.endsWith('.csv') ? 'text/csv' : 'text/plain';
                         blob = new Blob([item.content || ''], { type: mime });
                     }

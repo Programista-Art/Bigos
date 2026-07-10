@@ -45,7 +45,14 @@ const kalendarzApp = {
         
         for(let i=1; i<=days; i++) { 
             const isToday = (i === now.getDate() && targetDate.getMonth() === now.getMonth() && targetDate.getFullYear() === now.getFullYear()); 
-            c.innerHTML += `<div class="${isToday?'bg-blue-600 text-white rounded-full shadow-md':'hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer rounded-full transition text-gray-800 dark:text-gray-300'} w-7 h-7 flex items-center justify-center mx-auto">${i}</div>`; 
+            
+            if (isToday) {
+                // Dzisiejszy dzień - używa akcentu z aktualnego motywu (var(--primary))
+                c.innerHTML += `<div class="w-7 h-7 flex items-center justify-center mx-auto rounded-full font-bold shadow-md cursor-pointer hover:opacity-80 transition" style="background: var(--primary); color: #000;">${i}</div>`;
+            } else {
+                // Zwykły dzień - używa g-text i delikatnego podświetlenia
+                c.innerHTML += `<div class="w-7 h-7 flex items-center justify-center mx-auto rounded-full cursor-pointer transition g-text hover:bg-white/10">${i}</div>`; 
+            }
         }
     }
 };

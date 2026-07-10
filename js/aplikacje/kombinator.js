@@ -4,44 +4,16 @@
 
 const kombinatorApp = {
     defaultWallpapers: [
-        { name: 'BigOS', url: 'tapety/ferrari.webp' },
-        { name: 'Natura', url: 'tapety/bigos.webp' }
+        { name: 'BigOS', url: 'tapety/bigos.webp' },
+        { name: 'Natura', url: 'tapety/natura.webp' },
+        { name: 'Kosmos', url: 'tapety/kosmos.webp' },
+        { name: 'Abstrakcja', url: 'tapety/abstrakcja.webp' }
     ],
 
-    // NOWOŚĆ: Inicjalizacja nowych motywów w interfejsie Kombinatora
     initThemesUI: () => {
-        // Dodanie stylów naprawiających widoczność pól wyboru (Eleganckie ciemne barwy)
-        if (!document.getElementById('kombinator-select-styles')) {
-            const style = document.createElement('style');
-            style.id = 'kombinator-select-styles';
-            style.innerHTML = `
-                #system-theme-select, #wallpaper-target {
-                    color: #e5e7eb !important; /* Jasny tekst w spoczynku */
-                    background-color: #374151 !important; /* Szare, przyjemne tło w spoczynku */
-                    border: 1px solid #4b5563 !important;
-                    transition: all 0.2s;
-                }
-                #system-theme-select:focus, #wallpaper-target:focus {
-                    color: #ffffff !important; /* Całkowicie biały tekst gdy pole jest aktywne */
-                    background-color: #1f2937 !important; /* Ciemniejsze, grafitowe tło dla focusa */
-                    border-color: #3b82f6 !important; /* Niebieska obwódka */
-                    outline: none !important;
-                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important; /* Efekt poświaty Focus */
-                }
-                #system-theme-select option, #wallpaper-target option {
-                    color: #ffffff !important; /* Biały tekst opcji */
-                    background-color: #1f2937 !important; /* Ciemne tło rozwijanej listy */
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
         const sel = document.getElementById('system-theme-select');
-        // Jeśli znaleźliśmy dropdown i mamy załadowany silnik themeManager z theme.js
         if (sel && typeof themeManager !== 'undefined') {
-            sel.innerHTML = ''; // Czyścimy stare opcje (tylko jasny/ciemny)
-            
-            // Dodajemy wszystkie nowoczesne motywy do listy
+            sel.innerHTML = ''; 
             themeManager.themesList.forEach(t => {
                 const opt = document.createElement('option');
                 opt.value = t.id;
@@ -49,8 +21,6 @@ const kombinatorApp = {
                 if (themeManager.settings.activeTheme === t.id) opt.selected = true;
                 sel.appendChild(opt);
             });
-            
-            // Podpinamy nową funkcję zmieniającą motyw globalnie
             sel.onchange = (e) => kombinatorApp.setTheme(e.target.value);
         }
     },
@@ -76,15 +46,17 @@ const kombinatorApp = {
                 this.onerror = null; 
                 this.src = 'tapety/bigos.webp'; 
             };
-            img.className = 'cursor-pointer border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 wp-thumbnail w-full h-20 object-cover rounded shadow bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs text-gray-500';
+            // Nowe, w pełni zintegrowane z motywem klasy dla miniatur
+            img.className = 'cursor-pointer border-2 g-border hover:border-blue-500 wp-thumbnail w-full h-24 object-cover rounded-lg shadow-md bg-black/40 flex items-center justify-center text-xs g-text-muted transition-all';
             img.onclick = () => kombinatorApp.setWallpaperUrl(wp.url);
             
             imgContainer.appendChild(img);
             
+            // Przycisk usuwania własnych tapet
             if (index >= kombinatorApp.defaultWallpapers.length) {
                 const delBtn = document.createElement('button'); 
                 delBtn.innerHTML = '✖'; 
-                delBtn.className = 'absolute top-1 right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition';
+                delBtn.className = 'absolute top-1 right-1 bg-red-500 hover:bg-red-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition shadow-md';
                 delBtn.onclick = (e) => { 
                     e.stopPropagation(); 
                     customWp.splice(index - kombinatorApp.defaultWallpapers.length, 1); 
@@ -189,28 +161,21 @@ const kombinatorApp = {
         if(typeof apps !== 'undefined') apps.showToast('Kombinator', 'Przywrócono tapetę domyślną', 'info'); 
     },
 
-    // Zaktualizowana funkcja setTheme korzystająca z Globalnego Silnika Motywów
     setTheme: (theme) => { 
         if (typeof themeManager !== 'undefined') {
-            // Przekazujemy zmianę motywu do globalnego zarządcy w theme.js
             themeManager.applyTheme(theme);
         } else {
-            // Bezpieczny fallback do starego systemu (jeśli ktoś zapomniał dołączyć pliku theme.js)
             currentTheme = theme; 
             localStorage.setItem('bigos_theme', theme); 
             const sel = document.getElementById('system-theme-select');
             if (sel) sel.value = theme; 
             
-            if(theme === 'dark') {
-                document.documentElement.classList.add('dark'); 
-            } else {
-                document.documentElement.classList.remove('dark'); 
-            }
+            if(theme === 'dark') document.documentElement.classList.add('dark'); 
+            else document.documentElement.classList.remove('dark'); 
         }
     }
 };
 
-// Zgodność wsteczna z plikiem index.html oraz ładowanie interfejsu motywów
 setTimeout(() => {
     if(typeof apps !== 'undefined') {
         apps.renderWallpaperGallery = kombinatorApp.renderWallpaperGallery;

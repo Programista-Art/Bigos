@@ -1,5 +1,6 @@
-// Aplikacja Zadaniowiec - Kanban)
-
+// ======================================================================
+// PLIK: js/aplikacje/zadaniowiec.js (Aplikacja Zadaniowiec - Kanban)
+// ======================================================================
 
 const zadaniowiecApp = {
     tasks: [],
@@ -20,10 +21,10 @@ const zadaniowiecApp = {
         
         zadaniowiecApp.tasks.forEach(t => {
             cols[t.status] += `
-                <div id="${t.id}" class="bg-yellow-100 dark:bg-yellow-800/40 p-3 mb-2 rounded shadow text-sm cursor-grab border border-yellow-300 dark:border-yellow-700/50 relative group transition-transform hover:scale-[1.02]"
+                <div id="${t.id}" class="g-panel p-3 mb-2 rounded-lg text-sm cursor-grab border g-border relative group transition-transform hover:scale-[1.02] bg-black/20"
                      draggable="true" ondragstart="zadaniowiecApp.dragStart(event)" ondragend="zadaniowiecApp.dragEnd(event)">
-                    <div class="pr-6 text-gray-800 dark:text-gray-200 font-medium">${desktop.escapeHTML(t.text)}</div>
-                    <button onclick="zadaniowiecApp.deleteTask('${t.id}')" class="absolute top-1 right-2 text-red-500 font-bold opacity-0 group-hover:opacity-100 transition hover:text-red-700">✖</button>
+                    <div class="pr-6 g-text font-medium break-words">${typeof desktop !== 'undefined' ? desktop.escapeHTML(t.text) : t.text}</div>
+                    <button onclick="zadaniowiecApp.deleteTask('${t.id}')" class="absolute top-1 right-2 text-red-500 font-bold opacity-0 group-hover:opacity-100 transition hover:text-red-400">✖</button>
                 </div>`;
         });
         
@@ -33,7 +34,7 @@ const zadaniowiecApp = {
                 el.innerHTML = cols[status];
                 // Wizualny efekt braku zadań
                 if(cols[status] === '') {
-                    el.innerHTML = '<div class="text-center text-gray-400 dark:text-gray-500 text-xs mt-4">Brak zadań</div>';
+                    el.innerHTML = '<div class="text-center g-text-muted text-xs mt-4">Brak zadań</div>';
                 }
             }
         });
@@ -67,26 +68,26 @@ const zadaniowiecApp = {
     dragEnd: (e) => {
         e.target.classList.remove('opacity-40');
         zadaniowiecApp.draggedTaskId = null;
-        document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-300'));
+        document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('border-blue-500', 'bg-black/20'));
     },
     
     allowDrop: (e) => { 
         e.preventDefault(); 
         // Efekt podświetlenia kolumny, nad którą aktualnie przebywamy
         if(e.currentTarget.classList.contains('kanban-col')) {
-            e.currentTarget.classList.add('bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-300');
+            e.currentTarget.classList.add('border-blue-500', 'bg-black/20');
         }
     },
     
     leaveDrop: (e) => {
         if(e.currentTarget.classList.contains('kanban-col')) {
-            e.currentTarget.classList.remove('bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-300');
+            e.currentTarget.classList.remove('border-blue-500', 'bg-black/20');
         }
     },
     
     drop: (e, status) => {
         e.preventDefault();
-        e.currentTarget.classList.remove('bg-blue-50', 'dark:bg-blue-900/20', 'border-blue-300');
+        e.currentTarget.classList.remove('border-blue-500', 'bg-black/20');
         
         if(zadaniowiecApp.draggedTaskId) {
             const task = zadaniowiecApp.tasks.find(t => t.id === zadaniowiecApp.draggedTaskId);

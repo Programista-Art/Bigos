@@ -35,7 +35,7 @@ const defaultApps = [
     { id: 'app-rachmistrz-kodu', type: 'app', name: 'Rachmistrz Kodu', icon: '👨‍💻', appId: 'rachmistrz-kodu' },
     { id: 'app-kasiarz', type: 'app', name: 'Kasiarz', icon: '💰', appId: 'kasiarz' },
     { id: 'app_przelicznik', type: 'app', name: 'Przelicznik', icon: '🔄', appId: 'przelicznik' },
-    { id: 'app_kompresor', type: 'app', name: 'Ziper PRO', icon: '🗜️', appId: 'kompresor' },
+    { id: 'app_kompresor', type: 'app', name: 'Upychacz ZIP', icon: '🗜️', appId: 'kompresor' },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 

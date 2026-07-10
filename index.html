@@ -27,10 +27,6 @@
         </div>
     </div>
 
-
-
- 
-     <!-- EKRAN LOGOWANIA / BLOKADY -->
    <!-- EKRAN LOGOWANIA / BLOKADY -->
     <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9999] flex flex-col items-center justify-center text-white bg-cover bg-center transition-opacity duration-500" style="background-image: url('tapety/bigos.jpg');">
         <!-- Ciemna nakładka z rozmyciem tła -->
@@ -202,36 +198,40 @@
     </div>
 
    <!-- Zadaniowiec -->
-    <div id="app-zadaniowiec" class="window w-[650px] h-[480px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
-        <div class="title-bar bg-yellow-600 dark:bg-yellow-800 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-zadaniowiec')" ontouchstart="winManager.startDrag(event, 'app-zadaniowiec')">
-            <span class="text-sm font-bold">📋 Zadaniowiec</span>
+    <div id="app-zadaniowiec" class="window w-[650px] h-[480px] themed-app g-panel">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-zadaniowiec')" ontouchstart="winManager.startDrag(event, 'app-zadaniowiec')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">📋 Zadaniowiec</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('zadaniowiec')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.maximize('app-zadaniowiec')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('zadaniowiec')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+                <button onclick="winManager.minimize('zadaniowiec')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.maximize('app-zadaniowiec')" class="g-icon-btn px-1 hover:text-white transition">□</button>
+                <button onclick="winManager.close('zadaniowiec')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
         </div>
-        <div class="p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-            <button onclick="zadaniowiecApp.addTask()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded text-sm font-bold shadow transition">➕ Dodaj Nowe Zadanie</button>
+        
+        <div class="p-2 border-b g-border bg-black/20 shrink-0">
+            <button onclick="zadaniowiecApp.addTask()" class="g-btn px-4 py-1.5 rounded text-sm font-bold shadow-md transition">➕ Dodaj Nowe Zadanie</button>
         </div>
-        <div class="flex-grow p-3 grid grid-cols-3 gap-3 bg-gray-200 dark:bg-[#111] overflow-hidden">
+        
+        <div class="flex-grow p-3 grid grid-cols-3 gap-3 bg-black/10 overflow-hidden">
             <!-- Kolumna 1 -->
-            <div class="bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-[#333] rounded flex flex-col shadow-sm">
-                <h3 class="font-bold text-center text-sm py-2 border-b border-black dark:border-black bg-black text-white rounded-t">DO ZROBIENIA</h3>
-                <div id="kanban-col-todo" class="kanban-col flex-grow p-2 overflow-y-auto border-2 border-transparent transition-colors" ondrop="zadaniowiecApp.drop(event, 'todo')" ondragover="zadaniowiecApp.allowDrop(event)" ondragleave="zadaniowiecApp.leaveDrop(event)"></div>
+            <div class="g-bg border g-border rounded-lg flex flex-col shadow-inner overflow-hidden">
+                <h3 class="font-bold text-center text-xs py-2 border-b g-border g-accent bg-black/30 tracking-widest uppercase">Do zrobienia</h3>
+                <div id="kanban-col-todo" class="kanban-col flex-grow p-2 overflow-y-auto custom-scrollbar border-2 border-transparent transition-colors" ondrop="zadaniowiecApp.drop(event, 'todo')" ondragover="zadaniowiecApp.allowDrop(event)" ondragleave="zadaniowiecApp.leaveDrop(event)"></div>
             </div>
             <!-- Kolumna 2 -->
-            <div class="bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-[#333] rounded flex flex-col shadow-sm">
-                <h3 class="font-bold text-center text-sm py-2 border-b border-black dark:border-black bg-black text-white rounded-t">W TRAKCIE</h3>
-                <div id="kanban-col-progress" class="kanban-col flex-grow p-2 overflow-y-auto border-2 border-transparent transition-colors" ondrop="zadaniowiecApp.drop(event, 'progress')" ondragover="zadaniowiecApp.allowDrop(event)" ondragleave="zadaniowiecApp.leaveDrop(event)"></div>
+            <div class="g-bg border g-border rounded-lg flex flex-col shadow-inner overflow-hidden">
+                <h3 class="font-bold text-center text-xs py-2 border-b g-border g-accent bg-black/30 tracking-widest uppercase">W trakcie</h3>
+                <div id="kanban-col-progress" class="kanban-col flex-grow p-2 overflow-y-auto custom-scrollbar border-2 border-transparent transition-colors" ondrop="zadaniowiecApp.drop(event, 'progress')" ondragover="zadaniowiecApp.allowDrop(event)" ondragleave="zadaniowiecApp.leaveDrop(event)"></div>
             </div>
             <!-- Kolumna 3 -->
-            <div class="bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-[#333] rounded flex flex-col shadow-sm">
-                <h3 class="font-bold text-center text-sm py-2 border-b border-black dark:border-black bg-black text-white rounded-t">ZROBIONE</h3>
-                <div id="kanban-col-done" class="kanban-col flex-grow p-2 overflow-y-auto border-2 border-transparent transition-colors" ondrop="zadaniowiecApp.drop(event, 'done')" ondragover="zadaniowiecApp.allowDrop(event)" ondragleave="zadaniowiecApp.leaveDrop(event)"></div>
+            <div class="g-bg border g-border rounded-lg flex flex-col shadow-inner overflow-hidden">
+                <h3 class="font-bold text-center text-xs py-2 border-b g-border g-accent bg-black/30 tracking-widest uppercase">Zrobione</h3>
+                <div id="kanban-col-done" class="kanban-col flex-grow p-2 overflow-y-auto custom-scrollbar border-2 border-transparent transition-colors" ondrop="zadaniowiecApp.drop(event, 'done')" ondragover="zadaniowiecApp.allowDrop(event)" ondragleave="zadaniowiecApp.leaveDrop(event)"></div>
             </div>
         </div>
     </div>
+
+
 
 <!-- Tabelarz -->
     <div id="app-tabelarz" class="window w-[800px] h-[600px] bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333] resize overflow-hidden">
@@ -373,35 +373,41 @@
     </div>
 
     <!-- Narzędzia: Nadzorca, Pogodynka, Czasomierz -->
-    <div id="app-nadzorca" class="window w-[500px] h-[400px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
-        <div class="title-bar bg-slate-700 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-slate-800 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-nadzorca')" ontouchstart="winManager.startDrag(event, 'app-nadzorca')">
-            <span class="text-sm font-bold">📊 Nadzorca Systemu</span>
+
+    <!-- Nadzorca Systemu (Menedżer zadań) -->
+    <div id="app-nadzorca" class="window w-[500px] h-[420px] themed-app g-panel">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-nadzorca')" ontouchstart="winManager.startDrag(event, 'app-nadzorca')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">📊 Nadzorca Systemu</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('nadzorca')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.close('nadzorca')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+                <button onclick="winManager.minimize('nadzorca')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="nadzorcaApp.stop(); winManager.close('nadzorca')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
         </div>
-        <div class="p-4 flex flex-col flex-grow bg-gray-50 dark:bg-[#151515] overflow-hidden">
-            <div class="grid grid-cols-3 gap-2 mb-4">
-                <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded border border-blue-200 dark:border-blue-800/50">
-                    <div class="text-[10px] text-blue-600 dark:text-blue-400 font-bold mb-1">CPU (Wirtualne)</div>
-                    <div class="text-xl font-mono text-gray-800 dark:text-gray-200" id="nadzorca-cpu">0%</div>
+        
+        <div class="p-4 flex flex-col flex-grow bg-black/10 overflow-hidden">
+            <!-- Wykresy Zasobów -->
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <div class="g-bg border g-border p-3 rounded-xl shadow-inner text-center">
+                    <div class="text-[10px] text-blue-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">CPU (Wirt.)</div>
+                    <div class="text-2xl font-mono g-text font-bold" id="nadzorca-cpu">0%</div>
                 </div>
-                <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded border border-green-200 dark:border-green-800/50">
-                    <div class="text-[10px] text-green-600 dark:text-green-400 font-bold mb-1">RAM (Prawdziwy)</div>
-                    <div class="text-xl font-mono text-gray-800 dark:text-gray-200" id="nadzorca-ram">0 MB</div>
+                <div class="g-bg border g-border p-3 rounded-xl shadow-inner text-center">
+                    <div class="text-[10px] text-emerald-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">RAM (Przegl.)</div>
+                    <div class="text-xl font-mono g-text font-bold mt-1" id="nadzorca-ram">0 MB</div>
                 </div>
-                <div class="bg-purple-100 dark:bg-purple-900/30 p-2 rounded border border-purple-200 dark:border-purple-800/50">
-                    <div class="text-[10px] text-purple-600 dark:text-purple-400 font-bold mb-1">Dysk (Dane OS)</div>
-                    <div class="text-xl font-mono text-gray-800 dark:text-gray-200" id="nadzorca-disk">0 KB</div>
+                <div class="g-bg border g-border p-3 rounded-xl shadow-inner text-center">
+                    <div class="text-[10px] text-purple-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">Dysk (OS)</div>
+                    <div class="text-xl font-mono g-text font-bold mt-1" id="nadzorca-disk">0 KB</div>
                 </div>
             </div>
-            <div class="flex-grow border border-gray-300 dark:border-[#333] bg-white dark:bg-[#1a1a1a] rounded overflow-hidden flex flex-col">
-                <div class="bg-gray-200 dark:bg-[#222] p-2 text-xs font-bold border-b border-gray-300 dark:border-[#333] grid grid-cols-3">
+            
+            <!-- Lista Procesów -->
+            <div class="flex-grow g-bg border g-border rounded-xl overflow-hidden flex flex-col shadow-inner">
+                <div class="bg-black/30 p-2 px-3 text-[10px] font-bold border-b g-border grid grid-cols-3 uppercase tracking-widest g-text-muted">
                     <span class="col-span-2">Aplikacja</span>
                     <span class="text-right">Akcja</span>
                 </div>
-                <div id="nadzorca-list" class="flex-grow overflow-y-auto"></div>
+                <div id="nadzorca-list" class="flex-grow overflow-y-auto custom-scrollbar"></div>
             </div>
         </div>
     </div>
@@ -431,35 +437,39 @@
         </div>
     </div>
 
-    <div id="app-czasomierz" class="window w-[350px] h-[350px] bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333]">
-        <div class="title-bar bg-rose-600 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-rose-700 dark:border-[#222]" onmousedown="winManager.startDrag(event, 'app-czasomierz')" ontouchstart="winManager.startDrag(event, 'app-czasomierz')">
-            <span class="text-sm font-bold">⏱️ Czasomierz</span>
+
+  <div id="app-czasomierz" class="window w-[350px] h-[350px] themed-app g-panel">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-czasomierz')" ontouchstart="winManager.startDrag(event, 'app-czasomierz')">
+            <span class="text-sm font-bold g-accent">⏱️ Czasomierz</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('czasomierz')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.close('czasomierz')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+                <button onclick="winManager.minimize('czasomierz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.close('czasomierz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
         </div>
-        <div class="flex text-sm bg-gray-100 dark:bg-[#222] border-b border-gray-300 dark:border-[#333]">
-            <button class="flex-1 py-2 font-bold bg-white dark:bg-[#1a1a1a] border-b-2 border-rose-500" id="tab-stoper-btn" onclick="czasomierzApp.switchTab('stoper')">Stoper</button>
-            <button class="flex-1 py-2 font-bold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white border-b-2 border-transparent" id="tab-minutnik-btn" onclick="czasomierzApp.switchTab('minutnik')">Minutnik</button>
+        
+        <div class="flex text-sm bg-black/20 border-b g-border shrink-0">
+            <button class="flex-1 py-3 font-bold g-tab active uppercase tracking-widest text-xs" id="tab-stoper-btn" onclick="czasomierzApp.switchTab('stoper')">Stoper</button>
+            <button class="flex-1 py-3 font-bold g-tab uppercase tracking-widest text-xs" id="tab-minutnik-btn" onclick="czasomierzApp.switchTab('minutnik')">Minutnik</button>
         </div>
-        <div class="p-4 flex-grow relative overflow-hidden">
-            <div id="tab-stoper" class="absolute inset-0 p-4 flex flex-col items-center">
-                <div class="text-5xl font-mono font-light mt-4 mb-8 text-gray-800 dark:text-white" id="stoper-display">00:00.00</div>
-                <div class="flex gap-4">
-                    <button onclick="czasomierzApp.stoperToggle()" class="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-800 shadow" id="stoper-toggle">Start</button>
-                    <button onclick="czasomierzApp.stoperReset()" class="w-16 h-16 rounded-full bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400 font-bold border border-gray-200 dark:border-[#333] shadow">Reset</button>
+        
+        <div class="flex-grow relative overflow-hidden bg-black/10">
+            <div id="tab-stoper" class="absolute inset-0 p-4 flex flex-col items-center justify-center transition-transform">
+                <div class="text-5xl font-mono font-bold mt-2 mb-8 g-text tracking-wider" id="stoper-display">00:00.00</div>
+                <div class="flex gap-6">
+                    <button onclick="czasomierzApp.stoperToggle()" class="w-16 h-16 rounded-full g-btn font-bold border-2 g-accent hover:scale-105 transition-transform flex items-center justify-center text-sm" id="stoper-toggle">Start</button>
+                    <button onclick="czasomierzApp.stoperReset()" class="w-16 h-16 rounded-full g-btn font-bold border-2 hover:scale-105 transition-transform flex items-center justify-center text-sm">Reset</button>
                 </div>
             </div>
-            <div id="tab-minutnik" class="absolute inset-0 p-4 flex flex-col items-center hidden translate-x-full transition-transform">
-                <div class="flex gap-2 items-center justify-center mt-2 mb-6">
-                    <input type="number" id="minutnik-m" value="05" min="0" max="99" class="w-20 h-20 text-center text-5xl font-light bg-gray-50 dark:bg-[#222] border border-gray-300 dark:border-[#444] rounded outline-none text-gray-800 dark:text-white">
-                    <span class="text-4xl text-gray-800 dark:text-white">:</span>
-                    <input type="number" id="minutnik-s" value="00" min="0" max="59" class="w-20 h-20 text-center text-5xl font-light bg-gray-50 dark:bg-[#222] border border-gray-300 dark:border-[#444] rounded outline-none text-gray-800 dark:text-white">
+            
+            <div id="tab-minutnik" class="absolute inset-0 p-4 flex flex-col items-center justify-center hidden translate-x-full transition-transform">
+                <div class="flex gap-3 items-center justify-center mt-2 mb-8">
+                    <input type="number" id="minutnik-m" value="05" min="0" max="99" class="w-20 h-20 text-center text-5xl font-mono font-bold g-bg g-text border g-border rounded-xl outline-none focus:border-blue-500">
+                    <span class="text-4xl g-text font-bold pb-2">:</span>
+                    <input type="number" id="minutnik-s" value="00" min="0" max="59" class="w-20 h-20 text-center text-5xl font-mono font-bold g-bg g-text border g-border rounded-xl outline-none focus:border-blue-500">
                 </div>
-                <div class="flex gap-4">
-                    <button onclick="czasomierzApp.minutnikToggle()" class="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-bold border border-rose-200 dark:border-rose-800 shadow" id="minutnik-toggle">Start</button>
-                    <button onclick="czasomierzApp.minutnikReset()" class="w-16 h-16 rounded-full bg-gray-100 dark:bg-[#222] text-gray-600 dark:text-gray-400 font-bold border border-gray-200 dark:border-[#333] shadow">Reset</button>
+                <div class="flex gap-6">
+                    <button onclick="czasomierzApp.minutnikToggle()" class="w-16 h-16 rounded-full g-btn font-bold border-2 g-accent hover:scale-105 transition-transform flex items-center justify-center text-sm" id="minutnik-toggle">Start</button>
+                    <button onclick="czasomierzApp.minutnikReset()" class="w-16 h-16 rounded-full g-btn font-bold border-2 hover:scale-105 transition-transform flex items-center justify-center text-sm">Reset</button>
                 </div>
             </div>
         </div>
@@ -646,38 +656,46 @@
         </div>
     </div>
 
-    <!-- 4. Tapeciak / Kombinator -->
-    <div id="app-tapeciak" class="window w-[450px] h-[550px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
-        <div class="title-bar bg-purple-700 dark:bg-purple-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-tapeciak')" ontouchstart="winManager.startDrag(event, 'app-tapeciak')">
-            <span class="text-sm font-bold">⚙️ Kombinator</span>
-            <button onclick="winManager.close('tapeciak')" class="hover:bg-red-600 px-2 rounded">✖</button>
+ <!-- 4. Tapeciak / Kombinator -->
+    <div id="app-tapeciak" class="window w-[450px] h-[700px] themed-app g-panel">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-tapeciak')" ontouchstart="winManager.startDrag(event, 'app-tapeciak')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">⚙️ Kombinator</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('tapeciak')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.close('tapeciak')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+            </div>
         </div>
-        <div class="p-4 flex flex-col gap-4 flex-grow overflow-y-auto">
-            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 shadow-sm">
-                <label class="block text-sm font-bold mb-2">Motyw Systemu</label>
-                <select id="system-theme-select" class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none" onchange="apps.setTheme(this.value)">
-                    <option value="dark">Ciemny (Carbon)</option>
-                    <option value="light">Jasny</option>
+        
+        <div class="p-4 flex flex-col gap-4 flex-grow overflow-y-auto custom-scrollbar bg-black/10">
+            <!-- Tutaj theme.js wstrzykuje swój zaawansowany wybór motywów (Kolory, Szkło, Efekty) -->
+            <div class="g-bg border g-border p-4 rounded-xl shadow-inner flex flex-col gap-2">
+                <label class="block text-xs font-bold g-text-muted uppercase tracking-wider mb-1">Motyw Systemu</label>
+                <select id="system-theme-select" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-sm cursor-pointer shadow-inner" onchange="apps.setTheme(this.value)">
+                    <option value="color-dark">Ciemny (Carbon)</option>
+                    <option value="color-light">Jasny</option>
                 </select>
             </div>
             
-            <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 shadow-sm">
-                <label class="block text-sm font-bold mb-2">Wybór Tapety</label>
+            <div class="g-bg border g-border p-4 rounded-xl shadow-inner flex flex-col gap-2">
+                <label class="block text-xs font-bold g-text-muted uppercase tracking-wider mb-1">Wybór Tapety</label>
                 <div class="mb-3">
-                    <select id="wallpaper-target" class="w-full p-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 outline-none text-sm mb-2">
+                    <select id="wallpaper-target" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-sm cursor-pointer shadow-inner">
                         <option value="desktop">Pulpit (Tło Systemu)</option>
                         <option value="login">Ekran Logowania</option>
                     </select>
                 </div>
-                <div class="grid grid-cols-2 gap-2 mb-3" id="wallpaper-gallery"></div>
-                <div class="border-t border-gray-300 dark:border-gray-600 pt-3">
-                    <label class="block text-xs font-bold mb-1">Otwórz</label>
-                    <input type="file" accept="image/*" class="text-xs w-full file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:bg-purple-100 file:text-purple-700 dark:file:bg-gray-600 dark:file:text-white" onchange="apps.setWallpaperFile(event)">
+                
+                <div class="grid grid-cols-2 gap-3 mb-3" id="wallpaper-gallery"></div>
+                
+                <div class="border-t g-border pt-4 mt-2">
+                    <label class="block text-[10px] font-bold g-text-muted uppercase tracking-wider mb-2">Otwórz z dysku</label>
+                    <input type="file" accept="image/*" class="w-full text-xs g-text file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-500 cursor-pointer" onchange="apps.setWallpaperFile(event)">
                 </div>
             </div>
-            <button onclick="apps.formatSystem()" class="mt-auto w-full bg-red-600 text-white py-2 rounded font-bold hover:bg-red-700 shadow-md transition text-sm">Formatuj System (Reset)</button>
+            
+            <button onclick="apps.formatSystem()" class="mt-auto w-full py-3 rounded-lg font-bold shadow-lg transition bg-red-600 hover:bg-red-500 text-white border border-red-700">Formatuj System (Reset Fabryczny)</button>
         </div>
-    </div> 
+    </div>
 
     
     <!-- 5. Grajek PRO -->
@@ -795,46 +813,48 @@
         </div>
     </div>
 
-    <!-- 9. Patrzałka (Przeglądarka Zdjęć) -->
-    <div id="app-patrzalka" class="window w-[700px] h-[500px] bg-white dark:bg-[#111] border border-gray-300 dark:border-[#333]">
-        <div class="title-bar bg-pink-700 dark:bg-[#222] text-white p-2 flex justify-between items-center border-b dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-patrzalka')" ontouchstart="winManager.startDrag(event, 'app-patrzalka')">
-            <span class="text-sm font-bold">🖼️ Patrzałka</span>
+
+<!-- 8. Patrzałka (Przeglądarka Zdjęć i Edytor) -->
+    <!-- 8. Patrzałka (Przeglądarka Zdjęć i Edytor) -->
+    <div id="app-patrzalka" class="window w-[850px] h-[600px] themed-app g-panel">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-patrzalka')" ontouchstart="winManager.startDrag(event, 'app-patrzalka')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">👁️ Patrzałka PRO</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('patrzalka')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.maximize('app-patrzalka')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('patrzalka')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+                <button onclick="winManager.minimize('patrzalka')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.maximize('app-patrzalka')" class="g-icon-btn px-1 hover:text-white transition">□</button>
+                <button onclick="winManager.close('patrzalka')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
-        </div>
-        <div class="flex-grow flex items-center justify-center p-2 bg-gray-200 dark:bg-black overflow-hidden relative">
-            <img id="patrzalka-img" src="" class="max-w-full max-h-full object-contain drop-shadow-2xl">
         </div>
     </div>
 
     <!-- 10. Grajacz Filmów -->
-    <div id="app-grajacz" class="window w-[700px] h-[500px] bg-[#0a0a0a] text-white border border-[#333]">
-        <div class="title-bar bg-[#111] text-gray-200 p-2 flex justify-between items-center border-b border-[#222]" onmousedown="winManager.startDrag(event, 'app-grajacz')" ontouchstart="winManager.startDrag(event, 'app-grajacz')">
-            <span class="text-sm font-bold">🎬 Grajacz Filmów</span>
+    <div id="app-grajacz" class="window w-[700px] h-[500px] themed-app g-panel">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-grajacz')" ontouchstart="winManager.startDrag(event, 'app-grajacz')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">🎬 Grajacz Filmów</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('grajacz')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.maximize('app-grajacz')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('grajacz')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+                <button onclick="winManager.minimize('grajacz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.maximize('app-grajacz')" class="g-icon-btn px-1 hover:text-white transition">□</button>
+                <button onclick="grajaczApp.stop(); winManager.close('grajacz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
         </div>
-        <div class="flex-grow bg-black flex items-center justify-center relative overflow-hidden">
+        
+        <div class="flex-grow bg-black flex items-center justify-center relative overflow-hidden shadow-inner">
             <video id="grajacz-video" controls class="w-full h-full object-contain hidden"></video>
             <iframe id="grajacz-yt" class="w-full h-full hidden border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            <div id="grajacz-placeholder" class="text-gray-600 flex flex-col items-center p-4 text-center">
-                <span class="text-6xl mb-4">🎥</span>
-                <p>Wybierz plik wideo lub wklej link z YouTube</p>
+            <div id="grajacz-placeholder" class="g-text-muted flex flex-col items-center p-4 text-center">
+                <span class="text-6xl mb-4 drop-shadow-md opacity-50">🎥</span>
+                <p class="font-bold tracking-wide">Wybierz plik wideo lub wklej link z YouTube</p>
             </div>
         </div>
-        <div class="p-3 bg-[#111] border-t border-[#222] flex gap-2 items-center flex-wrap">
-            <input type="text" id="grajacz-url" placeholder="Wklej link YouTube lub URL pliku wideo..." class="flex-grow bg-[#222] text-xs p-2 text-white border border-[#333] outline-none focus:border-blue-500 rounded min-w-[150px]">
-            <button onclick="grajaczApp.playUrl()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded text-xs font-bold transition">Odtwórz</button>
-            <button onclick="document.getElementById('grajacz-pc').click()" class="bg-[#333] hover:bg-[#444] border border-[#555] text-white px-4 py-2 rounded text-xs font-bold transition">Z PC</button>
-            <input type="file" id="grajacz-pc" class="hidden" accept="video/*" onchange="grajaczApp.loadPC(event)">
+        
+        <div class="p-3 bg-black/20 border-t g-border flex gap-2 items-center flex-wrap shrink-0">
+            <input type="text" id="grajacz-url" placeholder="Wklej link YouTube lub URL pliku wideo..." class="flex-grow g-bg g-text text-xs p-2 border g-border outline-none focus:border-blue-500 rounded-lg min-w-[150px] shadow-inner">
+            <button onclick="grajaczApp.playUrl()" class="g-btn px-5 py-2 rounded-lg text-xs font-bold transition shadow-md">Odtwórz</button>
+            <button onclick="document.getElementById('grajacz-pc').click()" class="g-btn px-5 py-2 rounded-lg text-xs font-bold transition shadow-md">Z PC</button>
+            <input type="file" id="grajacz-pc" class="hidden" accept="video/*,audio/*" onchange="grajaczApp.loadPC(event)">
         </div>
     </div>
+
     
     <!-- MINIGRY -->
    <!-- 11. Pełzacz -->
@@ -1044,22 +1064,22 @@
 
    <div id="app-kompresor" class="window absolute"></div>
 
-    <!-- Kalendarz -->
-    <div id="calendar-widget" class="absolute bottom-14 right-2 w-80 max-w-[90vw] bg-white dark:bg-[#1f1f1f] border border-gray-300 dark:border-[#333] rounded-lg shadow-2xl hidden-cal flex-col z-[200] select-none overflow-hidden">
-        <div class="p-5 border-b border-gray-200 dark:border-[#333] bg-gray-50 dark:bg-[#1a1a1a]">
-            <div class="text-4xl font-light text-gray-800 dark:text-white" id="cal-big-time">00:00:00</div>
-            <div class="text-sm text-blue-600 dark:text-blue-400 font-semibold mt-1" id="cal-big-date">Data</div>
+<!-- Kalendarz -->
+    <div id="calendar-widget" class="absolute bottom-14 right-2 w-80 max-w-[90vw] themed-app g-panel hidden-cal flex-col z-[200] select-none overflow-hidden">
+        <div class="p-5 border-b g-border bg-black/10">
+            <div class="text-4xl font-light g-text drop-shadow-md" id="cal-big-time">00:00:00</div>
+            <div class="text-sm g-accent font-bold mt-1 tracking-wide" id="cal-big-date">Data</div>
         </div>
-        <div class="p-4">
+        <div class="p-4 bg-black/20">
             <div class="flex justify-between items-center mb-4">
-                <button onclick="apps.changeCalendarMonth(-1); event.stopPropagation();" class="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition font-bold text-gray-600 dark:text-gray-300">❮</button>
-                <div class="text-center font-bold text-md text-gray-800 dark:text-gray-200 capitalize" id="cal-month-year"></div>
-                <button onclick="apps.changeCalendarMonth(1); event.stopPropagation();" class="hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full w-8 h-8 flex items-center justify-center transition font-bold text-gray-600 dark:text-gray-300">❯</button>
+                <button onclick="apps.changeCalendarMonth(-1); event.stopPropagation();" class="g-icon-btn rounded-full w-8 h-8 flex items-center justify-center transition font-bold hover:bg-white/10">❮</button>
+                <div class="text-center font-bold text-md g-text capitalize drop-shadow-md tracking-wide" id="cal-month-year"></div>
+                <button onclick="apps.changeCalendarMonth(1); event.stopPropagation();" class="g-icon-btn rounded-full w-8 h-8 flex items-center justify-center transition font-bold hover:bg-white/10">❯</button>
             </div>
-            <div class="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-500 dark:text-gray-400 font-bold">
-                <div>Pn</div><div>Wt</div><div>Śr</div><div>Cz</div><div>Pt</div><div>Sb</div><div class="text-red-500 dark:text-red-400">Nd</div>
+            <div class="grid grid-cols-7 gap-1 text-center text-[10px] mb-2 g-text-muted font-bold uppercase tracking-widest border-b g-border pb-2">
+                <div>Pn</div><div>Wt</div><div>Śr</div><div>Cz</div><div>Pt</div><div>Sb</div><div class="text-red-500">Nd</div>
             </div>
-            <div id="cal-days" class="grid grid-cols-7 gap-1 text-center text-sm font-medium"></div>
+            <div id="cal-days" class="grid grid-cols-7 gap-y-2 gap-x-1 text-center text-sm font-medium mt-3"></div>
         </div>
     </div>
 

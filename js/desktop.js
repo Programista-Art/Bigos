@@ -70,6 +70,12 @@ const desktop = {
         if (item.type === 'app') {
             if (item.appId === 'wasm' && typeof wasmEngineApp !== 'undefined') {
                 wasmEngineApp.open(null); 
+            } else if (item.appId === 'format') {
+                // Gdy klikniemy formatuj, zamiast szukać okienka wywołujemy nową funkcję
+                if(typeof apps !== 'undefined') {
+                    apps.toggleStartMenu(); // Zwijamy szufladę jeśli z niej kliknięto
+                    apps.formatSystem();
+                }
             } else {
                 winManager.open(item.appId);
             }
@@ -84,6 +90,8 @@ const desktop = {
                 tabelarzApp.openFromFS(item);
             } else if (item.name.endsWith('.wasm') && typeof wasmEngineApp !== 'undefined') {
                 wasmEngineApp.open(item);
+            } else if (item.name.endsWith('.zip') && typeof kompresorApp !== 'undefined') {
+                kompresorApp.openWithItem(item.id);
             } else {
                 if(typeof skrybaApp !== 'undefined') skrybaApp.open(item); 
             }
@@ -299,16 +307,18 @@ const desktop = {
             menu.innerHTML += `<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); if(typeof apps !== 'undefined') apps.showToast('Właściwości', 'Informacje o pliku: ${desktop.escapeHTML(fileSystem.find(i=>i.id===id)?.name||id)}', 'info')">Właściwości</div>`;
             
             if(targetType === 'file') {
-                const f = fileSystem.find(i=>i.id===id);
-                if (f && f.name.endsWith('.csv')) {
-                    menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-emerald-600" onclick="document.getElementById('context-menu').classList.remove('active'); tabelarzApp.openFromFS(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Tabelarz</div>`;
-                } else if (f && f.name.endsWith('.wasm')) {
-                    menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-red-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof wasmEngineApp !== 'undefined') wasmEngineApp.open(fileSystem.find(i=>i.id==='${id}'))">Otwórz w WASM Engine</div>`;
-                } else {
-                    menu.innerHTML += `${sep}<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); desktop.executeItem(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Skryba</div>`;
-                }
+            const f = fileSystem.find(i=>i.id===id);
+            if (f && f.name.endsWith('.csv')) {
+                menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-emerald-600" onclick="document.getElementById('context-menu').classList.remove('active'); tabelarzApp.openFromFS(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Tabelarz</div>`;
+            } else if (f && f.name.endsWith('.wasm')) {
+                menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-red-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof wasmEngineApp !== 'undefined') wasmEngineApp.open(fileSystem.find(i=>i.id==='${id}'))">Otwórz w WASM Engine</div>`;
+            } else if (f && f.name.endsWith('.zip')) {
+                menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-blue-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof kompresorApp !== 'undefined') kompresorApp.openWithItem('${id}')">Otwórz w Upychaczu</div>`;
+            } else {
+                menu.innerHTML += `${sep}<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); desktop.executeItem(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Skryba</div>`;
             }
-            if(targetType === 'image') {
+        }
+        if(targetType === 'image') {
                 menu.innerHTML += `${sep}<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); desktop.executeItem(fileSystem.find(i=>i.id==='${id}'))">Otwórz -> Patrzałka</div>`;
                 menu.innerHTML += `<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); winManager.open('szkicownik'); setTimeout(()=>paintOpenFromFS('${id}'), 200);">Edytuj -> Szkicownik</div>`;
             }
