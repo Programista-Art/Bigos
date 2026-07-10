@@ -32,6 +32,10 @@ const defaultApps = [
     { id: 'app_tabelarz', type: 'app', name: 'Tabelarz', icon: '📈', appId: 'tabelarz' },
     { id: 'app_zadaniowiec', type: 'app', name: 'Zadaniowiec', icon: '📋', appId: 'zadaniowiec' },
     { id: 'app_wasm', type: 'app', name: 'WASM Engine', icon: '🎮', appId: 'wasm' },
+    { id: 'app-rachmistrz-kodu', type: 'app', name: 'Rachmistrz Kodu', icon: '👨‍💻', appId: 'rachmistrz-kodu' },
+    { id: 'app-kasiarz', type: 'app', name: 'Kasiarz', icon: '💰', appId: 'kasiarz' },
+    { id: 'app_przelicznik', type: 'app', name: 'Przelicznik', icon: '🔄', appId: 'przelicznik' },
+    { id: 'app_kompresor', type: 'app', name: 'Ziper PRO', icon: '🗜️', appId: 'kompresor' },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 

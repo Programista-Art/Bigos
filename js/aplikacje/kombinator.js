@@ -8,6 +8,53 @@ const kombinatorApp = {
         { name: 'Natura', url: 'tapety/bigos.webp' }
     ],
 
+    // NOWOŚĆ: Inicjalizacja nowych motywów w interfejsie Kombinatora
+    initThemesUI: () => {
+        // Dodanie stylów naprawiających widoczność pól wyboru (Eleganckie ciemne barwy)
+        if (!document.getElementById('kombinator-select-styles')) {
+            const style = document.createElement('style');
+            style.id = 'kombinator-select-styles';
+            style.innerHTML = `
+                #system-theme-select, #wallpaper-target {
+                    color: #e5e7eb !important; /* Jasny tekst w spoczynku */
+                    background-color: #374151 !important; /* Szare, przyjemne tło w spoczynku */
+                    border: 1px solid #4b5563 !important;
+                    transition: all 0.2s;
+                }
+                #system-theme-select:focus, #wallpaper-target:focus {
+                    color: #ffffff !important; /* Całkowicie biały tekst gdy pole jest aktywne */
+                    background-color: #1f2937 !important; /* Ciemniejsze, grafitowe tło dla focusa */
+                    border-color: #3b82f6 !important; /* Niebieska obwódka */
+                    outline: none !important;
+                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5) !important; /* Efekt poświaty Focus */
+                }
+                #system-theme-select option, #wallpaper-target option {
+                    color: #ffffff !important; /* Biały tekst opcji */
+                    background-color: #1f2937 !important; /* Ciemne tło rozwijanej listy */
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const sel = document.getElementById('system-theme-select');
+        // Jeśli znaleźliśmy dropdown i mamy załadowany silnik themeManager z theme.js
+        if (sel && typeof themeManager !== 'undefined') {
+            sel.innerHTML = ''; // Czyścimy stare opcje (tylko jasny/ciemny)
+            
+            // Dodajemy wszystkie nowoczesne motywy do listy
+            themeManager.themesList.forEach(t => {
+                const opt = document.createElement('option');
+                opt.value = t.id;
+                opt.innerText = t.name;
+                if (themeManager.settings.activeTheme === t.id) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            
+            // Podpinamy nową funkcję zmieniającą motyw globalnie
+            sel.onchange = (e) => kombinatorApp.setTheme(e.target.value);
+        }
+    },
+
     renderWallpaperGallery: () => {
         const gallery = document.getElementById('wallpaper-gallery');
         if(!gallery) return;
@@ -142,21 +189,28 @@ const kombinatorApp = {
         if(typeof apps !== 'undefined') apps.showToast('Kombinator', 'Przywrócono tapetę domyślną', 'info'); 
     },
 
+    // Zaktualizowana funkcja setTheme korzystająca z Globalnego Silnika Motywów
     setTheme: (theme) => { 
-        currentTheme = theme; 
-        localStorage.setItem('bigos_theme', theme); 
-        const sel = document.getElementById('system-theme-select');
-        if (sel) sel.value = theme; 
-        
-        if(theme === 'dark') {
-            document.documentElement.classList.add('dark'); 
+        if (typeof themeManager !== 'undefined') {
+            // Przekazujemy zmianę motywu do globalnego zarządcy w theme.js
+            themeManager.applyTheme(theme);
         } else {
-            document.documentElement.classList.remove('dark'); 
+            // Bezpieczny fallback do starego systemu (jeśli ktoś zapomniał dołączyć pliku theme.js)
+            currentTheme = theme; 
+            localStorage.setItem('bigos_theme', theme); 
+            const sel = document.getElementById('system-theme-select');
+            if (sel) sel.value = theme; 
+            
+            if(theme === 'dark') {
+                document.documentElement.classList.add('dark'); 
+            } else {
+                document.documentElement.classList.remove('dark'); 
+            }
         }
     }
 };
 
-// Zgodność wsteczna z plikiem index.html
+// Zgodność wsteczna z plikiem index.html oraz ładowanie interfejsu motywów
 setTimeout(() => {
     if(typeof apps !== 'undefined') {
         apps.renderWallpaperGallery = kombinatorApp.renderWallpaperGallery;
@@ -165,4 +219,5 @@ setTimeout(() => {
         apps.resetWallpaper = kombinatorApp.resetWallpaper;
         apps.setTheme = kombinatorApp.setTheme;
     }
+    kombinatorApp.initThemesUI();
 }, 100);
