@@ -1,3 +1,8 @@
+// ======================================================================
+// PLIK: js/globals.js (Zmienne Globalne i Główny Rozruch Systemu BigOS)
+// ======================================================================
+
+// --- 1. GLOBALNE ZMIENNE SYSTEMOWE (NIE USUWAĆ!) ---
 const GRID = 90;
 let highestZ = 100;
 let fileSystem = []; 
@@ -5,6 +10,7 @@ let openAppsList = new Set();
 let clipboard = { action: null, item: null };
 let currentTheme = 'dark'; 
 
+// --- 2. BAZA DOMYŚLNYCH APLIKACJI ---
 const defaultApps = [
     { id: 'app_skryba', type: 'app', name: 'Skryba', icon: '📝', appId: 'skryba' },
     { id: 'app_szkicownik', type: 'app', name: 'Szkicownik', icon: '🎨', appId: 'szkicownik' },
@@ -31,7 +37,7 @@ const defaultApps = [
     { id: 'app_powitanie', type: 'app', name: 'Powitanie', icon: '👋', appId: 'powitanie' },
     { id: 'app_tabelarz', type: 'app', name: 'Tabelarz', icon: '📈', appId: 'tabelarz' },
     { id: 'app_zadaniowiec', type: 'app', name: 'Zadaniowiec', icon: '📋', appId: 'zadaniowiec' },
-    { id: 'app_wasm', type: 'app', name: 'WASM Engine', icon: '🎮', appId: 'wasm' },
+    { id: 'app_wasm', type: 'app', name: 'WASM Engine', icon: '👾', appId: 'wasm' },
     { id: 'app-rachmistrz-kodu', type: 'app', name: 'Rachmistrz Kodu', icon: '👨‍💻', appId: 'rachmistrz-kodu' },
     { id: 'app-kasiarz', type: 'app', name: 'Kasiarz', icon: '💰', appId: 'kasiarz' },
     { id: 'app_przelicznik', type: 'app', name: 'Przelicznik', icon: '🔄', appId: 'przelicznik' },
@@ -39,26 +45,44 @@ const defaultApps = [
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 
-
+// --- 3. SYSTEM ŚLEDZENIA KLAWISZY (DLA GIER) ---
 const GLOBAL_KEYS = {};
 window.addEventListener('keydown', e => GLOBAL_KEYS[e.code] = true);
 window.addEventListener('keyup', e => GLOBAL_KEYS[e.code] = false);
 
+// --- 4. FUNKCJA OBLICZAJĄCA POZYCJĘ MYSZKI / DOTYKU ---
 function getEventPos(e) {
     if (e.touches && e.touches.length > 0) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
     else if (e.changedTouches && e.changedTouches.length > 0) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
     return { x: e.clientX, y: e.clientY };
 }
+
+// --- 5. GŁÓWNY ROZRUCH SYSTEMU (ONLOAD) ---
 window.onload = () => {
+    // A) Uruchomienie systemowego zegara
     setInterval(() => {
-        const clock = document.getElementById('taskbar-clock');
-        if(clock) clock.innerText = new Date().toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
+        const now = new Date();
+        const clockEl = document.getElementById('taskbar-clock');
+        if (clockEl) {
+            clockEl.innerText = now.toLocaleTimeString('pl-PL', {hour: '2-digit', minute:'2-digit'});
+        }
+
+        // Odświeżanie dużego zegara w widgecie kalendarza
+        const calBigTime = document.getElementById('cal-big-time');
+        const calWidget = document.getElementById('calendar-widget');
+        if (calBigTime && calWidget && !calWidget.classList.contains('hidden-cal')) {
+            calBigTime.innerText = now.toLocaleTimeString('pl-PL');
+            document.getElementById('cal-big-date').innerText = now.toLocaleDateString('pl-PL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
     }, 1000);
     
-    if (typeof fsManager !== 'undefined') fsManager.init();
-    if (typeof auth !== 'undefined') auth.check();
+    // B) Rozruch najważniejszych modułów
+    if (typeof fsManager !== 'undefined') fsManager.init();  // Inicjuje bazę plików IndexedDB
+    if (typeof auth !== 'undefined') auth.check();           // Odpala sprawdzanie hasła
+    
+    // C) Rozruch pomocniczy
     if (typeof apps !== 'undefined') {
-        apps.loadStickyNotes();
-        apps.generateCalendar();
+        if (apps.loadStickyNotes) apps.loadStickyNotes();
+        if (apps.generateCalendar) apps.generateCalendar();
     }
 };

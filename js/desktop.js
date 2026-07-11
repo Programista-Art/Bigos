@@ -271,9 +271,14 @@ const desktop = {
         const pos = getEventPos(e);
         desktop.lastContextX = pos.x; desktop.lastContextY = pos.y;
         
-        const menu = document.getElementById('context-menu'); menu.innerHTML = '';
-        const btnClass = "px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition";
-        const sep = "<div class='border-t border-gray-200 dark:border-[#444] my-1'></div>";
+        const menu = document.getElementById('context-menu'); 
+        menu.innerHTML = '';
+        
+        // NOWOŚĆ: Dodanie klas motywów (Szkło, obramowania, tło) do menu kontekstowego
+        menu.className = 'g-panel border g-border shadow-2xl rounded-xl py-1 flex flex-col z-[10000] absolute min-w-[180px]';
+        
+        const btnClass = "px-4 py-2 hover:bg-blue-600 hover:text-white cursor-pointer transition text-sm g-text font-medium";
+        const sep = "<div class='border-t g-border my-1'></div>";
 
         if(typeof fsManager !== 'undefined' && fsManager.currentFolder === 'hasiok') {
             if(targetType !== 'desktop' && targetType !== 'folder_bg' && id !== 'hasiok') {
@@ -307,18 +312,18 @@ const desktop = {
             menu.innerHTML += `<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); if(typeof apps !== 'undefined') apps.showToast('Właściwości', 'Informacje o pliku: ${desktop.escapeHTML(fileSystem.find(i=>i.id===id)?.name||id)}', 'info')">Właściwości</div>`;
             
             if(targetType === 'file') {
-            const f = fileSystem.find(i=>i.id===id);
-            if (f && f.name.endsWith('.csv')) {
-                menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-emerald-600" onclick="document.getElementById('context-menu').classList.remove('active'); tabelarzApp.openFromFS(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Tabelarz</div>`;
-            } else if (f && f.name.endsWith('.wasm')) {
-                menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-red-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof wasmEngineApp !== 'undefined') wasmEngineApp.open(fileSystem.find(i=>i.id==='${id}'))">Otwórz w WASM Engine</div>`;
-            } else if (f && f.name.endsWith('.zip')) {
-                menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-blue-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof kompresorApp !== 'undefined') kompresorApp.openWithItem('${id}')">Otwórz w Upychaczu</div>`;
-            } else {
-                menu.innerHTML += `${sep}<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); desktop.executeItem(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Skryba</div>`;
+                const f = fileSystem.find(i=>i.id===id);
+                if (f && f.name.endsWith('.csv')) {
+                    menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-emerald-600" onclick="document.getElementById('context-menu').classList.remove('active'); tabelarzApp.openFromFS(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Tabelarz</div>`;
+                } else if (f && f.name.endsWith('.wasm')) {
+                    menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-red-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof wasmEngineApp !== 'undefined') wasmEngineApp.open(fileSystem.find(i=>i.id==='${id}'))">Otwórz w WASM Engine</div>`;
+                } else if (f && f.name.endsWith('.zip')) {
+                    menu.innerHTML += `${sep}<div class="${btnClass} font-bold text-blue-500" onclick="document.getElementById('context-menu').classList.remove('active'); if (typeof kompresorApp !== 'undefined') kompresorApp.openWithItem('${id}')">Otwórz w Upychaczu</div>`;
+                } else {
+                    menu.innerHTML += `${sep}<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); desktop.executeItem(fileSystem.find(i=>i.id==='${id}'))">Otwórz za pomocą -> Skryba</div>`;
+                }
             }
-        }
-        if(targetType === 'image') {
+            if(targetType === 'image') {
                 menu.innerHTML += `${sep}<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); desktop.executeItem(fileSystem.find(i=>i.id==='${id}'))">Otwórz -> Patrzałka</div>`;
                 menu.innerHTML += `<div class="${btnClass}" onclick="document.getElementById('context-menu').classList.remove('active'); winManager.open('szkicownik'); setTimeout(()=>paintOpenFromFS('${id}'), 200);">Edytuj -> Szkicownik</div>`;
             }

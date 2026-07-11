@@ -2,6 +2,55 @@
 // PLIK: js/fs.js (System Plików, Pamięć i Eksplorator Aktówka PRO)
 // ======================================================================
 
+const bigosDB = {
+    dbName: 'BigOS_DB',
+    storeName: 'fs_store',
+    _db: null, // NOWOŚĆ: Trzymamy jedno aktywne połączenie, by nie zapychać RAM-u
+    open() {
+        return new Promise((resolve, reject) => {
+            if (this._db) { resolve(this._db); return; }
+            const req = indexedDB.open(this.dbName, 1);
+            req.onupgradeneeded = e => { e.target.result.createObjectStore(this.storeName); };
+            req.onsuccess = e => { this._db = e.target.result; resolve(this._db); };
+            req.onerror = e => reject(e.target.error);
+        });
+    },
+    async get(key) {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readonly');
+            const req = tx.objectStore(this.storeName).get(key);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    },
+    async set(key, value) {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const req = tx.objectStore(this.storeName).put(value, key);
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    },
+    async clear() {
+        const db = await this.open();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(this.storeName, 'readwrite');
+            const req = tx.objectStore(this.storeName).clear();
+            req.onsuccess = () => resolve();
+            req.onerror = () => reject(req.error);
+        });
+    },
+    // NOWOŚĆ: Funkcja zwalniająca plik bazy przed usunięciem
+    close() {
+        if (this._db) { 
+            this._db.close(); 
+            this._db = null; 
+        }
+    }
+};
+
 const fsManager = {
     currentFolder: 'root',
     searchQuery: '',
@@ -10,15 +59,33 @@ const fsManager = {
     favorites: ['root', 'hasiok'],
     opHistory: [],
     
-    init: () => {
-        const saved = localStorage.getItem('bigos_fs');
+    init: async () => {
         try {
-            if (saved && saved !== 'undefined' && saved !== 'null') {
-                fileSystem = JSON.parse(saved);
-                if (!Array.isArray(fileSystem) || fileSystem.length === 0) throw new Error("Pusta pamięć");
-            } else {
-                throw new Error("Brak zapisanych danych");
+            let saved = await bigosDB.get('bigos_fs');
+            let savedFavs = await bigosDB.get('bigos_fs_favs');
+            let savedHist = await bigosDB.get('bigos_fs_history');
+
+            // MIGRACJA Z LOCALSTORAGE DO INDEXEDDB (Automatyczne przeniesienie starych plików)
+            if (!saved && localStorage.getItem('bigos_fs')) {
+                console.log("Migracja systemu plików z LocalStorage do IndexedDB...");
+                saved = JSON.parse(localStorage.getItem('bigos_fs'));
+                savedFavs = JSON.parse(localStorage.getItem('bigos_fs_favs') || '[]');
+                savedHist = JSON.parse(localStorage.getItem('bigos_fs_history') || '[]');
+                
+                await bigosDB.set('bigos_fs', saved);
+                await bigosDB.set('bigos_fs_favs', savedFavs);
+                await bigosDB.set('bigos_fs_history', savedHist);
             }
+
+            if (saved && Array.isArray(saved) && saved.length > 0) {
+                fileSystem = saved;
+            } else {
+                throw new Error("Brak zapisanych danych w IndexedDB");
+            }
+
+            if (savedFavs) fsManager.favorites = savedFavs;
+            if (savedHist) fsManager.opHistory = savedHist;
+
         } catch (error) {
             fileSystem = [];
             if (typeof defaultApps !== 'undefined') {
@@ -32,11 +99,6 @@ const fsManager = {
             fsManager.save();
         }
 
-        const savedFavs = localStorage.getItem('bigos_fs_favs');
-        if(savedFavs) try { fsManager.favorites = JSON.parse(savedFavs); } catch(e){}
-        const savedHist = localStorage.getItem('bigos_fs_history');
-        if(savedHist) try { fsManager.opHistory = JSON.parse(savedHist); } catch(e){}
-        
         const savedBg = localStorage.getItem('bigos_bg');
         if(savedBg && savedBg !== 'undefined' && savedBg !== 'null' && savedBg.trim() !== '') {
             document.getElementById('desktop-bg').style.backgroundImage = `url('${savedBg}')`;
@@ -60,15 +122,15 @@ const fsManager = {
         fsManager.upgradeUI();
     },
     
-    save: () => {
+    save: async () => {
         try {
-            localStorage.setItem('bigos_fs', JSON.stringify(fileSystem));
-            localStorage.setItem('bigos_fs_favs', JSON.stringify(fsManager.favorites));
-            localStorage.setItem('bigos_fs_history', JSON.stringify(fsManager.opHistory));
+            await bigosDB.set('bigos_fs', fileSystem);
+            await bigosDB.set('bigos_fs_favs', fsManager.favorites);
+            await bigosDB.set('bigos_fs_history', fsManager.opHistory);
         } catch (error) {
-            console.error("Błąd zapisu fsManager: Brak pamięci!", error);
+            console.error("Błąd zapisu fsManager do IndexedDB:", error);
             if (typeof apps !== 'undefined' && apps.showToast) {
-                apps.showToast('Błąd Pamięci', 'Brak miejsca w pamięci by zapisać pliki!', 'error');
+                apps.showToast('Błąd Pamięci', 'Nie udało się zapisać danych (błąd IndexedDB)!', 'error');
             }
         }
     },

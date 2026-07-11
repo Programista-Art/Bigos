@@ -59,13 +59,13 @@ const apps = {
             modal.id = 'format-confirm-modal';
             modal.className = 'fixed inset-0 bg-black/70 z-[10000] flex items-center justify-center backdrop-blur-sm transition-all duration-200 opacity-0 pointer-events-none';
             modal.innerHTML = `
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl max-w-md w-[90%] border border-red-500/30 transform scale-95 transition-transform duration-200" id="format-modal-box">
-                    <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">⚠️</div>
-                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">Formatowanie Systemu</h2>
-                    <p class="text-gray-600 dark:text-gray-400 text-sm mb-6 text-center">Czy na pewno chcesz sformatować system BigOS?<br><br>Wszystkie Twoje pliki, mapy, tapety i ustawienia zostaną <b class="text-red-500">bezpowrotnie usunięte</b>!</p>
+                <div class="g-panel p-6 rounded-2xl shadow-2xl max-w-md w-[90%] border g-border transform scale-95 transition-transform duration-200" id="format-modal-box">
+                    <div class="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner border border-red-500/50">⚠️</div>
+                    <h2 class="text-xl font-bold g-text mb-2 text-center">Formatowanie Systemu</h2>
+                    <p class="g-text-muted text-sm mb-6 text-center">Czy na pewno chcesz sformatować system BigOS?<br><br>Wszystkie Twoje pliki, mapy, tapety i ustawienia zostaną <b class="text-red-500">bezpowrotnie usunięte</b>!</p>
                     <div class="flex gap-3 justify-center">
-                        <button id="format-btn-cancel" class="px-5 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white rounded-xl font-medium transition cursor-pointer flex-1 border border-transparent dark:border-gray-600">Anuluj</button>
-                        <button id="format-btn-confirm" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium shadow-lg shadow-red-600/30 transition cursor-pointer flex-1">Formatuj</button>
+                        <button id="format-btn-cancel" class="px-5 py-2.5 g-bg g-text hover:bg-white/10 rounded-xl font-medium transition cursor-pointer flex-1 border g-border shadow-sm">Anuluj</button>
+                        <button id="format-btn-confirm" class="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-medium shadow-lg shadow-red-600/30 transition cursor-pointer flex-1 border border-red-800">Formatuj</button>
                     </div>
                 </div>
             `;

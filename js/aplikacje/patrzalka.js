@@ -1,36 +1,36 @@
 // ======================================================================
-// PLIK: js/aplikacje/patrzalka.js (Patrzałka PRO - Przeglądarka i Edytor Ultimate)
+// PLIK: js/aplikacje/patrzalka.js (Patrzałka PRO - Lightroom / Photoshop Edition)
 // ======================================================================
 
 const patrzalkaApp = {
     currentImageId: null,
     currentTab: 'gallery', 
-    currentAlbum: 'all', // 'all', 'favorites', 'wakacje', 'rodzina', 'projekty', 'private'
+    currentAlbum: 'all', 
     
-    // Stany obrazu
+    // Stany podglądu (Nie zapisywane w historii)
     zoom: 1, panX: 0, panY: 0,
-    rotate: 0, flipX: 1, flipY: 1,
     isDragging: false, startMouseX: 0, startMouseY: 0, startPanX: 0, startPanY: 0,
     
-    // Filtry
+    // Stany Transformacji i Filtrów (Zapisywane w historii)
+    rotate: 0, flipX: 1, flipY: 1,
     filters: { brightness: 100, contrast: 100, saturate: 100, sepia: 0, grayscale: 0, invert: 0, blur: 0, hue: 0 },
 
-    // Metadane zdjęć (oceny, tagi, komentarze)
-    metaDB: {},
+    // HISTORIA EDYCJI W STYLU PHOTOSHOP
+    editHistory: [],
+    historyIndex: -1,
 
-    // Pokaz slajdów
+    // Metadane zdjęć
+    metaDB: {},
     slideshowTimer: null,
     slideshowList: [],
     slideshowIndex: 0,
 
     init: () => {
-        // Wczytywanie bazy metadanych z IndexedDB / LocalStorage (Uproszczone dla BigOS)
         try {
             const savedMeta = localStorage.getItem('bigos_patrzalka_meta');
             if (savedMeta) patrzalkaApp.metaDB = JSON.parse(savedMeta);
         } catch(e) {}
 
-        // Wczytanie biblioteki EXIF.js do czytania prawdziwych danych z aparatów
         if (!window.EXIF) {
             const script = document.createElement('script');
             script.src = "https://cdn.jsdelivr.net/npm/exif-js";
@@ -41,7 +41,6 @@ const patrzalkaApp = {
         patrzalkaApp.renderGallery();
         patrzalkaApp.renderAlbumsSidebar();
         
-        // Zoptymalizowane gesty myszy (Pan & Zoom)
         const container = document.getElementById('pat-img-container');
         if (container) {
             container.addEventListener('wheel', (e) => {
@@ -75,7 +74,6 @@ const patrzalkaApp = {
             });
         }
 
-        // Klawisze do pokazu slajdów i galerii
         window.addEventListener('keydown', (e) => {
             const win = document.getElementById('app-patrzalka');
             if(win && win.classList.contains('active') && patrzalkaApp.currentTab === 'viewer') {
@@ -91,21 +89,161 @@ const patrzalkaApp = {
     },
 
     getMeta: (id) => {
-        if(!patrzalkaApp.metaDB[id]) {
-            patrzalkaApp.metaDB[id] = { rating: 0, tags: '', desc: '', album: 'none', isFav: false };
-        }
+        if(!patrzalkaApp.metaDB[id]) { patrzalkaApp.metaDB[id] = { rating: 0, tags: '', desc: '', album: 'none', isFav: false }; }
         return patrzalkaApp.metaDB[id];
     },
 
+    // ==================================================================
+    // HISTORIA EDYCJI (PHOTOSHOP STYLE)
+    // ==================================================================
+    pushHistory: (actionName, overrideSrc = null) => {
+        // Usuwanie kroków, jeśli jesteśmy w połowie historii i zrobimy nowy krok
+        if (patrzalkaApp.historyIndex < patrzalkaApp.editHistory.length - 1) {
+            patrzalkaApp.editHistory = patrzalkaApp.editHistory.slice(0, patrzalkaApp.historyIndex + 1);
+        }
+
+        const state = {
+            name: actionName,
+            src: overrideSrc || document.getElementById('pat-main-img').src,
+            filters: JSON.parse(JSON.stringify(patrzalkaApp.filters)),
+            transform: { rotate: patrzalkaApp.rotate, flipX: patrzalkaApp.flipX, flipY: patrzalkaApp.flipY }
+        };
+
+        patrzalkaApp.editHistory.push(state);
+        patrzalkaApp.historyIndex = patrzalkaApp.editHistory.length - 1;
+        
+        patrzalkaApp.renderHistoryUI();
+        patrzalkaApp.drawHistogram();
+    },
+
+    restoreHistory: (index) => {
+        if (index < 0 || index >= patrzalkaApp.editHistory.length) return;
+        
+        const state = patrzalkaApp.editHistory[index];
+        patrzalkaApp.historyIndex = index;
+        
+        patrzalkaApp.filters = JSON.parse(JSON.stringify(state.filters));
+        patrzalkaApp.rotate = state.transform.rotate;
+        patrzalkaApp.flipX = state.transform.flipX;
+        patrzalkaApp.flipY = state.transform.flipY;
+        
+        const img = document.getElementById('pat-main-img');
+        
+        if (img.src !== state.src) {
+            img.src = state.src;
+            img.onload = () => {
+                patrzalkaApp.updateSliderUI();
+                patrzalkaApp.updateTransform();
+                patrzalkaApp.renderHistoryUI();
+            };
+        } else {
+            patrzalkaApp.updateSliderUI();
+            patrzalkaApp.updateTransform();
+            patrzalkaApp.renderHistoryUI();
+        }
+    },
+
+    renderHistoryUI: () => {
+        const list = document.getElementById('pat-history-list');
+        if (!list) return;
+        list.innerHTML = '';
+
+        patrzalkaApp.editHistory.forEach((h, i) => {
+            const isActive = i === patrzalkaApp.historyIndex;
+            const isFuture = i > patrzalkaApp.historyIndex;
+            const icon = i === 0 ? '🖼️' : (h.name.includes('Kadrowanie') || h.name.includes('Rozmiar') ? '✂️' : '✨');
+            
+            list.innerHTML += `
+                <div class="px-3 py-1.5 text-[10px] rounded cursor-pointer flex justify-between items-center transition-all ${isActive ? 'bg-blue-500 text-white font-bold shadow-md scale-100' : (isFuture ? 'text-gray-500 hover:bg-white/5 opacity-50 scale-95' : 'g-text hover:bg-white/10 scale-100')}" onclick="patrzalkaApp.restoreHistory(${i})">
+                    <span class="truncate">${icon} ${h.name}</span>
+                </div>
+            `;
+        });
+        
+        const activeEl = list.querySelector('.bg-blue-500');
+        if(activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    },
+
+    updateSliderUI: () => {
+        ['brightness', 'contrast', 'saturate', 'sepia', 'hue', 'blur'].forEach(prop => {
+            const el = document.getElementById(`filter-${prop}`);
+            const lbl = document.getElementById(`filter-${prop}-lbl`);
+            if (el && lbl) {
+                el.value = patrzalkaApp.filters[prop];
+                const unit = prop === 'hue' ? 'deg' : (prop === 'blur' ? 'px' : '%');
+                lbl.innerText = patrzalkaApp.filters[prop] + unit;
+            }
+        });
+    },
+
+    // ==================================================================
+    // HISTOGRAM NA ŻYWO (LIGHTROOM STYLE)
+    // ==================================================================
+    drawHistogram: () => {
+        const histCanvas = document.getElementById('pat-histogram');
+        const img = document.getElementById('pat-main-img');
+        if(!histCanvas || !img || !img.complete || img.naturalWidth === 0) return;
+        
+        const ctx = histCanvas.getContext('2d');
+        
+        // Offscreen canvas do szybkiego przeliczenia filtrowanego obrazu
+        const off = document.createElement('canvas');
+        off.width = 100; off.height = 100; 
+        const oCtx = off.getContext('2d');
+        
+        const f = patrzalkaApp.filters;
+        oCtx.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg) blur(${f.blur}px) grayscale(${f.grayscale}%) invert(${f.invert}%)`;
+        oCtx.drawImage(img, 0, 0, 100, 100);
+        
+        const data = oCtx.getImageData(0,0,100,100).data;
+        let lumFreq = new Array(256).fill(0);
+        let maxFreq = 0;
+        
+        for(let i=0; i<data.length; i+=4) {
+            let r = data[i], g = data[i+1], b = data[i+2];
+            // Obliczanie luminancji ludzkiego oka
+            let lum = Math.round(0.299*r + 0.587*g + 0.114*b);
+            lumFreq[lum]++;
+            if(lumFreq[lum] > maxFreq) maxFreq = lumFreq[lum];
+        }
+        
+        histCanvas.width = histCanvas.clientWidth;
+        histCanvas.height = histCanvas.clientHeight;
+        ctx.clearRect(0, 0, histCanvas.width, histCanvas.height);
+        
+        // Rysowanie wykresu luminancji
+        ctx.fillStyle = 'rgba(156, 163, 175, 0.8)'; // Szary bazowy
+        ctx.beginPath();
+        ctx.moveTo(0, histCanvas.height);
+        
+        const step = histCanvas.width / 256;
+        for(let i=0; i<256; i++) {
+            let h = (lumFreq[i] / maxFreq) * histCanvas.height * 0.95; 
+            ctx.lineTo(i * step, histCanvas.height - h);
+        }
+        ctx.lineTo(histCanvas.width, histCanvas.height);
+        ctx.fill();
+        
+        // Gradientowa ramka dołu
+        const grad = ctx.createLinearGradient(0, 0, histCanvas.width, 0);
+        grad.addColorStop(0, '#000');
+        grad.addColorStop(0.5, '#777');
+        grad.addColorStop(1, '#fff');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, histCanvas.height - 4, histCanvas.width, 4);
+    },
+
+    // ==================================================================
+    // INTERFEJS I ZAKŁADKI
+    // ==================================================================
     upgradeUI: () => {
         let appWindow = document.getElementById('app-patrzalka');
-        if (!appWindow) return; // Skorupa czeka w index.html
+        if (!appWindow) return;
 
         const proUI = document.createElement('div');
         proUI.className = 'flex flex-col overflow-hidden relative w-full h-full';
         
         proUI.innerHTML = `
-            <!-- Główny Pasek Narzędzi -->
             <div class="flex flex-wrap items-center justify-between p-2 border-b g-border bg-black/20 shrink-0 gap-2">
                 <div class="flex bg-black/30 rounded-lg p-1 border g-border shadow-inner">
                     <button onclick="patrzalkaApp.switchTab('gallery')" id="pat-tab-gallery" class="px-3 py-1.5 rounded text-xs font-bold transition g-text">Galeria</button>
@@ -131,14 +269,13 @@ const patrzalkaApp = {
 
                 <div id="pat-tools-file" class="hidden flex gap-2">
                     <button onclick="patrzalkaApp.setAsWallpaper()" class="g-btn text-[10px] px-3 py-1.5 rounded shadow-sm border-purple-500/50 text-purple-400 font-bold bg-purple-500/10 hover:bg-purple-500 hover:text-white hidden md:block">🖥️ Tapeta</button>
-                    <button onclick="patrzalkaApp.showSaveModal()" class="g-btn text-[10px] px-3 py-1.5 rounded shadow-sm border-emerald-500/50 text-emerald-400 font-bold bg-emerald-500/10 hover:bg-emerald-500 hover:text-white">💾 Zapisz / Konwertuj</button>
+                    <button onclick="patrzalkaApp.showSaveModal()" class="g-btn text-[10px] px-3 py-1.5 rounded shadow-sm border-emerald-500/50 text-emerald-400 font-bold bg-emerald-500/10 hover:bg-emerald-500 hover:text-white">💾 Eksportuj</button>
                 </div>
             </div>
 
-            <!-- Przestrzeń Robocza -->
             <div class="flex flex-row flex-grow overflow-hidden relative">
                 
-                <!-- 0. Boczny Pasek Albumów -->
+                <!-- Boczny Pasek Albumów -->
                 <div id="pat-albums-sidebar" class="w-[160px] border-r g-border bg-black/10 flex flex-col shrink-0 overflow-y-auto custom-scrollbar p-2 hidden sm:flex">
                     <div class="text-[10px] g-text-muted font-bold uppercase tracking-widest mb-2 px-2">Biblioteka</div>
                     <button onclick="patrzalkaApp.setAlbum('all')" id="alb-all" class="pat-alb-btn w-full text-left px-3 py-1.5 rounded text-xs font-bold transition flex gap-2 items-center mb-1 g-text hover:bg-white/10"><span>📂</span> Wszystkie</button>
@@ -154,7 +291,7 @@ const patrzalkaApp = {
                     <button onclick="apps.showToast('BigOS Drive', 'Łączenie z chmurą...', 'info')" class="w-full text-left px-3 py-1.5 rounded text-xs font-bold transition flex gap-2 items-center mb-1 text-blue-400 hover:bg-blue-500/20"><span>☁️</span> BigOS Drive</button>
                 </div>
 
-                <!-- 1. GALERIA -->
+                <!-- GALERIA -->
                 <div id="pat-view-gallery" class="w-full h-full flex flex-col bg-black/10">
                     <div class="p-3 border-b g-border bg-black/20 flex gap-3 shrink-0 flex-wrap">
                         <input type="text" id="pat-search" placeholder="Szukaj zdjęć (Nazwa, Tagi)..." class="flex-grow g-bg g-text text-xs p-2 border g-border rounded outline-none shadow-inner" oninput="patrzalkaApp.renderGallery()">
@@ -172,12 +309,10 @@ const patrzalkaApp = {
                     <div id="pat-gallery-list" class="flex-grow overflow-y-auto custom-scrollbar p-4 grid gap-4 content-start"></div>
                 </div>
 
-                <!-- 2. PODGLĄD -->
+                <!-- PODGLĄD / OBSZAR WIDZA -->
                 <div id="pat-view-viewer" class="w-full h-full hidden flex bg-[#050505] overflow-hidden relative" style="background-image: radial-gradient(#333 1px, transparent 1px); background-size: 20px 20px;">
-                    <!-- Przycisk Zakończenia pokazu slajdów -->
                     <button id="pat-slideshow-exit" class="absolute top-4 right-4 z-[100] bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg font-bold shadow-2xl hidden transition" onclick="patrzalkaApp.stopSlideshow()">✖ Zakończ Pokaz (ESC)</button>
 
-                    <!-- Przycisk Poprzednie -->
                     <div class="absolute left-0 top-0 bottom-0 w-16 hover:bg-white/10 z-10 flex items-center justify-center cursor-pointer transition opacity-0 hover:opacity-100" onclick="patrzalkaApp.prevImage()">
                         <span class="text-4xl text-white drop-shadow-lg">❮</span>
                     </div>
@@ -186,45 +321,60 @@ const patrzalkaApp = {
                         <img id="pat-main-img" class="max-w-none max-h-none transition-all duration-300 shadow-2xl" src="" style="transform-origin: center center;">
                     </div>
                     
-                    <!-- Przycisk Następne -->
                     <div class="absolute right-0 top-0 bottom-0 w-16 hover:bg-white/10 z-10 flex items-center justify-center cursor-pointer transition opacity-0 hover:opacity-100" onclick="patrzalkaApp.nextImage()">
                         <span class="text-4xl text-white drop-shadow-lg">❯</span>
                     </div>
                 </div>
 
-                <!-- 3. PANEL BOCZNY EDYTORA -->
-                <div id="pat-sidebar-edit" class="w-[260px] border-l g-border bg-black/40 hidden flex-col shrink-0 overflow-y-auto custom-scrollbar z-20 shadow-2xl">
-                    <div class="p-3 border-b g-border font-bold text-xs g-accent uppercase tracking-widest bg-black/30">Korekcja Barw</div>
-                    <div class="p-4 flex flex-col gap-3">
-                        ${patrzalkaApp.genSlider('filter-brightness', 'Jasność', 0, 200, 100, '%')}
-                        ${patrzalkaApp.genSlider('filter-contrast', 'Kontrast', 0, 200, 100, '%')}
-                        ${patrzalkaApp.genSlider('filter-saturate', 'Nasycenie', 0, 300, 100, '%')}
-                        ${patrzalkaApp.genSlider('filter-sepia', 'Temperatura (Sepia)', 0, 100, 0, '%')}
-                        ${patrzalkaApp.genSlider('filter-hue', 'Odcień (Hue)', -180, 180, 0, 'deg')}
-                        ${patrzalkaApp.genSlider('filter-blur', 'Rozmycie (Blur)', 0, 20, 0, 'px')}
-                    </div>
-                    
-                    <div class="p-3 border-y g-border font-bold text-xs g-accent uppercase tracking-widest bg-black/30">Filtry Szybkie</div>
-                    <div class="p-4 grid grid-cols-2 gap-2">
-                        <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('grayscale')">⚫⚪ C-B</button>
-                        <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('invert')">🌌 Negatyw</button>
-                        <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('vintage')">🎞️ Vintage</button>
-                        <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('hdr')">✨ HDR</button>
-                    </div>
+                <!-- PANEL BOCZNY EDYTORA (LIGHTROOM STYLE) -->
+                <div id="pat-sidebar-edit" class="w-[280px] border-l g-border bg-black/40 hidden flex-col shrink-0 overflow-hidden z-20 shadow-2xl">
+                    <div class="flex-grow overflow-y-auto custom-scrollbar">
+                        <!-- HISTOGRAM -->
+                        <div class="p-3 border-b g-border bg-black/20 pb-2">
+                            <div class="text-[10px] g-text-muted font-bold uppercase tracking-widest mb-2 flex justify-between">
+                                <span>Histogram</span> <span>RGB</span>
+                            </div>
+                            <canvas id="pat-histogram" class="w-full h-16 bg-black/50 rounded shadow-inner border border-gray-700"></canvas>
+                        </div>
 
-                    <div class="p-3 border-y g-border font-bold text-xs g-accent uppercase tracking-widest bg-black/30">Narzędzia PRO</div>
-                    <div class="p-4 flex flex-col gap-3">
-                        <button class="g-btn text-xs py-2 rounded shadow-md border-blue-500/50 flex items-center justify-center gap-2 hover:bg-blue-600/20" onclick="patrzalkaApp.showResizeModal()"><span>📏</span> Zmień Rozmiar</button>
-                        <button class="g-btn text-xs py-2 rounded shadow-md border-emerald-500/50 flex items-center justify-center gap-2 hover:bg-emerald-600/20" onclick="patrzalkaApp.showCropModal()"><span>✂️</span> Kadruj (Crop)</button>
-                        <button class="g-btn text-xs py-2 rounded shadow-md border-red-500/50 flex items-center justify-center gap-2 hover:bg-red-600/20 text-red-400 mt-2" onclick="patrzalkaApp.resetFilters(true)"><span>🔄</span> Reset</button>
+                        <!-- HISTORIA ZMIAN -->
+                        <div class="p-3 border-b g-border font-bold text-[10px] g-accent uppercase tracking-widest bg-black/30 flex justify-between items-center">
+                            <span>Historia Edycji</span>
+                        </div>
+                        <div id="pat-history-list" class="p-2 flex flex-col gap-1 max-h-32 overflow-y-auto custom-scrollbar bg-black/10 border-b g-border">
+                            <!-- JS wstrzykuje historię tutaj -->
+                        </div>
+
+                        <div class="p-3 border-b g-border font-bold text-[10px] g-text-muted uppercase tracking-widest bg-black/20 mt-2">Narzędzia Główne</div>
+                        <div class="p-4 grid grid-cols-2 gap-2">
+                            <button class="g-btn text-[10px] py-2 rounded shadow-md border-blue-500/50 flex flex-col items-center justify-center gap-1 hover:bg-blue-600/20" onclick="patrzalkaApp.showResizeModal()"><span class="text-lg">📏</span> Zmiana Rozmiaru</button>
+                            <button class="g-btn text-[10px] py-2 rounded shadow-md border-emerald-500/50 flex flex-col items-center justify-center gap-1 hover:bg-emerald-600/20" onclick="patrzalkaApp.showCropModal()"><span class="text-lg">✂️</span> Kadrowanie</button>
+                        </div>
+
+                        <div class="p-3 border-y g-border font-bold text-[10px] g-text-muted uppercase tracking-widest bg-black/20">Korekcja Barw</div>
+                        <div class="p-4 flex flex-col gap-3">
+                            ${patrzalkaApp.genSlider('filter-brightness', 'Jasność', 0, 200, 100, '%', 'brightness')}
+                            ${patrzalkaApp.genSlider('filter-contrast', 'Kontrast', 0, 200, 100, '%', 'contrast')}
+                            ${patrzalkaApp.genSlider('filter-saturate', 'Nasycenie', 0, 300, 100, '%', 'saturate')}
+                            ${patrzalkaApp.genSlider('filter-sepia', 'Temperatura (Sepia)', 0, 100, 0, '%', 'sepia')}
+                            ${patrzalkaApp.genSlider('filter-hue', 'Odcień (Hue)', -180, 180, 0, 'deg', 'hue')}
+                            ${patrzalkaApp.genSlider('filter-blur', 'Rozmycie (Blur)', 0, 20, 0, 'px', 'blur')}
+                        </div>
+                        
+                        <div class="p-3 border-y g-border font-bold text-[10px] g-text-muted uppercase tracking-widest bg-black/20">Filtry Szybkie</div>
+                        <div class="p-4 grid grid-cols-2 gap-2">
+                            <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('grayscale')">⚫⚪ C-B</button>
+                            <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('invert')">🌌 Negatyw</button>
+                            <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('vintage')">🎞️ Vintage</button>
+                            <button class="g-btn text-[10px] py-2 rounded" onclick="patrzalkaApp.applyQuickFilter('hdr')">✨ HDR</button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 4. PANEL ORGANIZACJI -->
+                <!-- PANEL ORGANIZACJI -->
                 <div id="pat-sidebar-org" class="w-[260px] border-l g-border bg-black/40 hidden flex-col shrink-0 overflow-y-auto custom-scrollbar z-20 shadow-2xl">
                     <div class="p-3 border-b g-border font-bold text-xs g-accent uppercase tracking-widest bg-black/30">Organizacja Zdjęcia</div>
                     <div class="p-4 flex flex-col gap-4">
-                        
                         <div>
                             <label class="block text-xs font-bold g-text-muted mb-1">Album</label>
                             <select id="pat-meta-album" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-sm cursor-pointer shadow-inner" onchange="patrzalkaApp.updateMeta()">
@@ -238,7 +388,7 @@ const patrzalkaApp = {
 
                         <div>
                             <label class="block text-xs font-bold g-text-muted mb-1">Ocena (1-5)</label>
-                            <div class="flex gap-1 text-lg cursor-pointer" id="pat-meta-rating">
+                            <div class="flex gap-1 text-sm cursor-pointer" id="pat-meta-rating">
                                 <span onclick="patrzalkaApp.setRating(1)">☆</span><span onclick="patrzalkaApp.setRating(2)">☆</span><span onclick="patrzalkaApp.setRating(3)">☆</span><span onclick="patrzalkaApp.setRating(4)">☆</span><span onclick="patrzalkaApp.setRating(5)">☆</span>
                             </div>
                         </div>
@@ -259,11 +409,10 @@ const patrzalkaApp = {
                             <label class="block text-xs font-bold g-text-muted mb-1">Komentarz / Opis</label>
                             <textarea id="pat-meta-desc" rows="4" placeholder="Własny opis zdjęcia..." class="w-full p-2 rounded g-bg g-text border g-border outline-none text-sm shadow-inner custom-scrollbar resize-none" onblur="patrzalkaApp.updateMeta()"></textarea>
                         </div>
-
                     </div>
                 </div>
 
-                <!-- 5. PANEL EXIF / INFO -->
+                <!-- PANEL EXIF / INFO -->
                 <div id="pat-sidebar-info" class="w-[260px] border-l g-border bg-black/40 hidden flex-col shrink-0 overflow-y-auto custom-scrollbar z-20 shadow-2xl">
                     <div class="p-3 border-b g-border font-bold text-xs g-accent uppercase tracking-widest bg-black/30">Dane Pliku</div>
                     <div class="p-4 flex flex-col gap-2 text-xs font-mono g-text-muted border-b g-border pb-4">
@@ -282,7 +431,6 @@ const patrzalkaApp = {
                         <div class="flex justify-between"><strong class="text-blue-400">ISO:</strong> <span id="exif-iso">Brak danych</span></div>
                     </div>
                 </div>
-
             </div>
             
             <!-- Stopka informacyjna -->
@@ -292,7 +440,6 @@ const patrzalkaApp = {
             </div>
         `;
         
-        // Zabezpieczamy oryginalny pasek okna z funkcjami systemowymi
         const existingBar = appWindow.querySelector('.title-bar');
         if (existingBar) {
             const closeBtn = existingBar.querySelector('button[onclick^="winManager.close"]');
@@ -306,11 +453,13 @@ const patrzalkaApp = {
         appWindow.appendChild(proUI);
     },
 
-    genSlider: (id, name, min, max, val, unit) => {
+    genSlider: (id, name, min, max, val, unit, prop) => {
         return `
-        <div class="flex flex-col gap-1 w-full">
+        <div class="flex flex-col gap-1 w-full group">
             <div class="flex justify-between text-[10px] font-bold g-text-muted uppercase"><span>${name}</span><span id="${id}-lbl">${val}${unit}</span></div>
-            <input type="range" id="${id}" min="${min}" max="${max}" value="${val}" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500" oninput="document.getElementById('${id}-lbl').innerText=this.value+'${unit}'; patrzalkaApp.updateTransform()">
+            <input type="range" id="${id}" min="${min}" max="${max}" value="${val}" class="w-full h-1.5 bg-white/20 rounded-lg appearance-none cursor-pointer accent-blue-500 transition shadow-inner group-hover:shadow-[0_0_5px_rgba(59,130,246,0.5)]" 
+                   oninput="document.getElementById('${id}-lbl').innerText=this.value+'${unit}'; patrzalkaApp.filters['${prop}'] = this.value; patrzalkaApp.updateTransform();"
+                   onchange="patrzalkaApp.pushHistory('Korekcja: ${name}')">
         </div>`;
     },
 
@@ -368,7 +517,7 @@ const patrzalkaApp = {
     },
 
     // ==================================================================
-    // ORGANIZACJA, SEJF I METADANE
+    // ORGANIZACJA I SEJF 
     // ==================================================================
     openPrivateVault: () => {
         let savedPin = localStorage.getItem('bigos_patrzalka_pin');
@@ -468,7 +617,7 @@ const patrzalkaApp = {
             let savedPin = localStorage.getItem('bigos_patrzalka_pin');
             if (!savedPin) {
                 if (typeof apps !== 'undefined') apps.showToast('Błąd', 'Najpierw wejdź do Sejfu z paska bocznego i ustaw swój PIN!', 'error');
-                document.getElementById('pat-meta-album').value = meta.album; // Revert
+                document.getElementById('pat-meta-album').value = meta.album;
                 return;
             }
         }
@@ -519,7 +668,6 @@ const patrzalkaApp = {
             document.getElementById('exif-iso').innerText = 'Brak danych';
         };
 
-        // Prawdziwe odczytywanie EXIF z plików graficznych
         if (window.EXIF && fileObj.content && fileObj.content.startsWith('data:image/jpeg')) {
             EXIF.getData(img, function() {
                 const make = EXIF.getTag(this, "Make") || '';
@@ -565,18 +713,16 @@ const patrzalkaApp = {
 
         let images = fileSystem.filter(f => f.parentId !== 'hasiok' && (f.type === 'image' || (f.type === 'file' && f.name.match(/\.(jpg|jpeg|png|webp|gif|bmp|svg|ico|avif)$/i))));
         
-        // Filtrowanie po albumie i uprawnieniach
         images = images.filter(img => {
             const meta = patrzalkaApp.getMeta(img.id);
             if (patrzalkaApp.currentAlbum === 'private') return meta.album === 'private';
-            if (meta.album === 'private') return false; // Ukryj prywatne przed ogólnym widokiem
+            if (meta.album === 'private') return false; 
             
             if (patrzalkaApp.currentAlbum === 'favorites') return meta.isFav;
             if (patrzalkaApp.currentAlbum !== 'all' && meta.album !== patrzalkaApp.currentAlbum) return false;
             return true;
         });
 
-        // Wyszukiwanie (Tytuł i Tagi)
         if(search) {
             images = images.filter(i => {
                 const meta = patrzalkaApp.getMeta(i.id);
@@ -594,7 +740,6 @@ const patrzalkaApp = {
             });
         }
 
-        // Zapisz listę do użycia w podglądzie (następne/poprzednie/slideshow)
         patrzalkaApp.slideshowList = images;
 
         if(images.length === 0) {
@@ -642,7 +787,6 @@ const patrzalkaApp = {
         
         const imgEl = document.getElementById('pat-main-img');
         
-        // Efekt wyłaniania
         imgEl.style.opacity = '0';
         setTimeout(() => {
             imgEl.src = item.content || item.url;
@@ -650,15 +794,22 @@ const patrzalkaApp = {
                 let kbSize = ((item.content ? item.content.length : 0) * 0.75 / 1024).toFixed(1);
                 document.getElementById('pat-info-name').innerText = item.name;
                 document.getElementById('pat-info-res').innerText = `${imgEl.naturalWidth} x ${imgEl.naturalHeight} px | ${kbSize} KB`;
+                
                 patrzalkaApp.centerImage(); 
                 imgEl.style.opacity = '1';
+                
+                // Czysty start dla nowego pliku
+                patrzalkaApp.editHistory = [];
+                patrzalkaApp.filters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, grayscale: 0, invert: 0, blur: 0, hue: 0 };
+                patrzalkaApp.rotate = 0; patrzalkaApp.flipX = 1; patrzalkaApp.flipY = 1;
+                patrzalkaApp.updateSliderUI();
+                patrzalkaApp.pushHistory('Oryginał', imgEl.src);
                 
                 if (patrzalkaApp.currentTab === 'info') patrzalkaApp.loadEXIFToUI();
                 if (patrzalkaApp.currentTab === 'org') patrzalkaApp.loadMetaToUI();
             };
         }, 150);
 
-        patrzalkaApp.resetFilters(true);
         if (patrzalkaApp.currentTab === 'gallery') patrzalkaApp.switchTab('viewer');
         if(typeof winManager !== 'undefined') winManager.open('patrzalka');
     },
@@ -677,7 +828,6 @@ const patrzalkaApp = {
         patrzalkaApp.open(patrzalkaApp.slideshowList[patrzalkaApp.slideshowIndex]);
     },
 
-    // --- SLIDESHOW NAPRAWIONY ---
     startSlideshow: () => {
         if (patrzalkaApp.slideshowList.length <= 1) {
             if (typeof apps !== 'undefined') apps.showToast('Slideshow', 'Za mało zdjęć do pokazu.', 'info');
@@ -732,14 +882,12 @@ const patrzalkaApp = {
         }
     },
 
-    // Procedura czyszcząca przy zamknięciu aplikacji 
     stop: () => {
         if (patrzalkaApp.slideshowTimer) {
             patrzalkaApp.stopSlideshow();
         }
     },
 
-    // --- DRUKOWANIE ---
     printImage: () => {
         if(!patrzalkaApp.currentImageId) return;
         const img = document.getElementById('pat-main-img');
@@ -775,7 +923,6 @@ const patrzalkaApp = {
 
         patrzalkaApp.zoom = bestScale;
         patrzalkaApp.panX = 0; patrzalkaApp.panY = 0;
-        patrzalkaApp.rotate = 0; patrzalkaApp.flipX = 1; patrzalkaApp.flipY = 1;
         
         patrzalkaApp.updateTransform();
     },
@@ -788,11 +935,12 @@ const patrzalkaApp = {
     rotateImg: (deg) => {
         patrzalkaApp.rotate += deg;
         patrzalkaApp.updateTransform();
+        patrzalkaApp.pushHistory(deg > 0 ? 'Obrót w prawo' : 'Obrót w lewo');
     },
 
     flipImg: (axis) => {
-        if(axis === 'x') patrzalkaApp.flipX *= -1;
-        if(axis === 'y') patrzalkaApp.flipY *= -1;
+        if(axis === 'x') { patrzalkaApp.flipX *= -1; patrzalkaApp.pushHistory('Odbicie Poziome'); }
+        if(axis === 'y') { patrzalkaApp.flipY *= -1; patrzalkaApp.pushHistory('Odbicie Pionowe'); }
         patrzalkaApp.updateTransform();
     },
 
@@ -802,49 +950,39 @@ const patrzalkaApp = {
 
         img.style.transform = `translate(${patrzalkaApp.panX}px, ${patrzalkaApp.panY}px) scale(${patrzalkaApp.zoom}) rotate(${patrzalkaApp.rotate}deg) scaleX(${patrzalkaApp.flipX}) scaleY(${patrzalkaApp.flipY})`;
 
-        const b = document.getElementById('filter-brightness')?.value || 100;
-        const c = document.getElementById('filter-contrast')?.value || 100;
-        const s = document.getElementById('filter-saturate')?.value || 100;
-        const sep = document.getElementById('filter-sepia')?.value || 0;
-        const h = document.getElementById('filter-hue')?.value || 0;
-        const bl = document.getElementById('filter-blur')?.value || 0;
-
-        img.style.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%) sepia(${sep}%) hue-rotate(${h}deg) blur(${bl}px) grayscale(${patrzalkaApp.filters.grayscale}%) invert(${patrzalkaApp.filters.invert}%)`;
+        const f = patrzalkaApp.filters;
+        img.style.filter = `brightness(${f.brightness}%) contrast(${f.contrast}%) saturate(${f.saturate}%) sepia(${f.sepia}%) hue-rotate(${f.hue}deg) blur(${f.blur}px) grayscale(${f.grayscale}%) invert(${f.invert}%)`;
+        
+        patrzalkaApp.drawHistogram();
     },
 
     // ==================================================================
     // EDYCJA I FILTRY
     // ==================================================================
     applyQuickFilter: (type) => {
-        if(type === 'grayscale') patrzalkaApp.filters.grayscale = patrzalkaApp.filters.grayscale === 100 ? 0 : 100;
-        if(type === 'invert') patrzalkaApp.filters.invert = patrzalkaApp.filters.invert === 100 ? 0 : 100;
+        if(type === 'grayscale') { patrzalkaApp.filters.grayscale = patrzalkaApp.filters.grayscale === 100 ? 0 : 100; }
+        if(type === 'invert') { patrzalkaApp.filters.invert = patrzalkaApp.filters.invert === 100 ? 0 : 100; }
         if(type === 'vintage') {
-            document.getElementById('filter-sepia').value = 60; document.getElementById('filter-sepia-lbl').innerText = '60%';
-            document.getElementById('filter-contrast').value = 120; document.getElementById('filter-contrast-lbl').innerText = '120%';
-            document.getElementById('filter-brightness').value = 90; document.getElementById('filter-brightness-lbl').innerText = '90%';
+            patrzalkaApp.filters.sepia = 60;
+            patrzalkaApp.filters.contrast = 120;
+            patrzalkaApp.filters.brightness = 90;
         }
         if(type === 'hdr') {
-            document.getElementById('filter-contrast').value = 140; document.getElementById('filter-contrast-lbl').innerText = '140%';
-            document.getElementById('filter-saturate').value = 150; document.getElementById('filter-saturate-lbl').innerText = '150%';
+            patrzalkaApp.filters.contrast = 140;
+            patrzalkaApp.filters.saturate = 150;
         }
+        patrzalkaApp.updateSliderUI();
         patrzalkaApp.updateTransform();
+        patrzalkaApp.pushHistory(`Szybki filtr: ${type}`);
     },
 
     resetFilters: (fullReset = false) => {
-        ['brightness', 'contrast', 'saturate'].forEach(id => {
-            const el = document.getElementById('filter-'+id);
-            if(el) { el.value = 100; document.getElementById(`filter-${id}-lbl`).innerText = '100%'; }
-        });
-        ['sepia', 'hue', 'blur'].forEach(id => {
-            const el = document.getElementById('filter-'+id);
-            const unit = id === 'hue' ? 'deg' : (id === 'blur' ? 'px' : '%');
-            if(el) { el.value = 0; document.getElementById(`filter-${id}-lbl`).innerText = '0' + unit; }
-        });
-        patrzalkaApp.filters.grayscale = 0;
-        patrzalkaApp.filters.invert = 0;
+        patrzalkaApp.filters = { brightness: 100, contrast: 100, saturate: 100, sepia: 0, grayscale: 0, invert: 0, blur: 0, hue: 0 };
+        patrzalkaApp.updateSliderUI();
         
         if (fullReset) { patrzalkaApp.rotate = 0; patrzalkaApp.flipX = 1; patrzalkaApp.flipY = 1; }
         patrzalkaApp.updateTransform();
+        patrzalkaApp.pushHistory(fullReset ? 'Pełen Reset' : 'Reset Barw');
     },
 
     setAsWallpaper: () => {
@@ -860,7 +998,7 @@ const patrzalkaApp = {
     },
 
     // ==================================================================
-    // RĘCZNE KADROWANIE I ZMIANA ROZMIARU
+    // RĘCZNE KADROWANIE I ZMIANA ROZMIARU (Modyfikacja samej warstwy roboczej - nondestructive do czasu zapisu)
     // ==================================================================
     showCropModal: () => {
         if(!patrzalkaApp.currentImageId) return;
@@ -997,15 +1135,15 @@ const patrzalkaApp = {
 
             resCtx.drawImage(img, realX, realY, realW, realH, 0, 0, realW, realH);
 
-            const dataUrl = resCanvas.toDataURL('image/png'); 
-            const fileObj = typeof fileSystem !== 'undefined' ? fileSystem.find(f => f.id === patrzalkaApp.currentImageId) : null;
+            const dataUrl = resCanvas.toDataURL('image/png', 1.0); 
             
-            if (fileObj) {
-                fileObj.content = dataUrl;
-                if(typeof fsManager !== 'undefined') fsManager.save();
-                patrzalkaApp.open(fileObj);
-                if(typeof apps !== 'undefined') apps.showToast('Sukces', 'Wykadrowano obraz!', 'success');
-            }
+            // Zamiast zapisywać do FileSystem, ładujemy tylko do podglądu i dodajemy do Historii! (Non-destructive)
+            img.src = dataUrl;
+            img.onload = () => {
+                patrzalkaApp.pushHistory('Kadrowanie', dataUrl);
+                patrzalkaApp.centerImage();
+            };
+
             modal.remove();
         };
     },
@@ -1027,14 +1165,13 @@ const patrzalkaApp = {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, newW, newH);
                 
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-                const fileObj = typeof fileSystem !== 'undefined' ? fileSystem.find(f => f.id === patrzalkaApp.currentImageId) : null;
-                if (fileObj) {
-                    fileObj.content = dataUrl;
-                    if(typeof fsManager !== 'undefined') fsManager.save();
-                    patrzalkaApp.open(fileObj); 
-                    if(typeof apps !== 'undefined') apps.showToast('Patrzałka', `Zmieniono rozmiar na ${newW}x${newH}`, 'success');
-                }
+                const dataUrl = canvas.toDataURL('image/png', 1.0);
+                
+                img.src = dataUrl;
+                img.onload = () => {
+                    patrzalkaApp.pushHistory('Zmieniono Rozmiar', dataUrl);
+                    patrzalkaApp.centerImage();
+                };
             });
         }
     },
@@ -1138,12 +1275,12 @@ const patrzalkaApp = {
         ctx.rotate(patrzalkaApp.rotate * Math.PI / 180);
         ctx.scale(patrzalkaApp.flipX, patrzalkaApp.flipY);
 
-        const b = document.getElementById('filter-brightness')?.value || 100;
-        const c = document.getElementById('filter-contrast')?.value || 100;
-        const s = document.getElementById('filter-saturate')?.value || 100;
-        const sep = document.getElementById('filter-sepia')?.value || 0;
-        const h = document.getElementById('filter-hue')?.value || 0;
-        const bl = document.getElementById('filter-blur')?.value || 0;
+        const b = patrzalkaApp.filters.brightness;
+        const c = patrzalkaApp.filters.contrast;
+        const s = patrzalkaApp.filters.saturate;
+        const sep = patrzalkaApp.filters.sepia;
+        const h = patrzalkaApp.filters.hue;
+        const bl = patrzalkaApp.filters.blur;
         
         ctx.filter = `brightness(${b}%) contrast(${c}%) saturate(${s}%) sepia(${sep}%) hue-rotate(${h}deg) blur(${bl}px) grayscale(${patrzalkaApp.filters.grayscale}%) invert(${patrzalkaApp.filters.invert}%)`;
 
@@ -1179,7 +1316,7 @@ const patrzalkaApp = {
                 if(aW && aW.classList.contains('active') && typeof fsManager !== 'undefined') {
                     fsManager.renderExplorerContent(fsManager.currentFolder);
                 }
-                if(typeof apps !== 'undefined') apps.showToast('Zapisano', `Zapisano skonwertowany plik: ${finalName}`, 'success');
+                if(typeof apps !== 'undefined') apps.showToast('Zapisano', `Zapisano zmodyfikowany plik: ${finalName}`, 'success');
             }
         }
 
