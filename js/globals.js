@@ -42,6 +42,8 @@ const defaultApps = [
     { id: 'app-kasiarz', type: 'app', name: 'Kasiarz', icon: '💰', appId: 'kasiarz' },
     { id: 'app_przelicznik', type: 'app', name: 'Przelicznik', icon: '🔄', appId: 'przelicznik' },
     { id: 'app_kompresor', type: 'app', name: 'Upychacz ZIP', icon: '🗜️', appId: 'kompresor' },
+    // { id: 'app-bigcut', type: 'app', name: 'BigCut', icon: '🎬', appId: 'bigcut' },
+    { id: 'app-bigcut', type: 'app', name: 'BigCut', icon: '🎬', appId: 'bigcut', action: () => { BigCut.init(); winManager.open('app-bigcut'); } },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 

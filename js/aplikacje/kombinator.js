@@ -120,6 +120,7 @@ const kombinatorApp = {
         `;
 
         appWindow.appendChild(proUI);
+
         kombinatorApp.switchTab('wallpapers');
     },
 
@@ -131,11 +132,13 @@ const kombinatorApp = {
         const activeBtn = document.getElementById('komb-tab-' + tabId);
         if (activeBtn) {
             activeBtn.classList.remove('g-text-muted');
+            // Zawsze systemowy niebieski
             activeBtn.classList.add('bg-blue-500', 'text-white', 'dark:bg-blue-600');
         }
 
-        document.getElementById('komb-content-wallpapers').classList.add('hidden');
-        document.getElementById('komb-content-themes').classList.add('hidden');
+        ['wallpapers', 'themes'].forEach(id => {
+            document.getElementById('komb-content-' + id).classList.add('hidden');
+        });
         document.getElementById('komb-content-' + tabId).classList.remove('hidden');
     },
 
@@ -216,14 +219,14 @@ const kombinatorApp = {
                 nameLabel.className = 'absolute bottom-0 left-0 right-0 bg-black/70 text-white text-[10px] font-bold p-1 truncate text-center backdrop-blur-sm pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity';
                 nameLabel.innerText = typeof desktop !== 'undefined' ? desktop.escapeHTML(imgItem.name) : imgItem.name;
 
-                // Przycisk "Usuń" dla wgranych obrazów przenosi je płynnie do Kosza
+                // Przycisk "Usuń" dla wgranych obrazów
                 const delBtn = document.createElement('button');
                 delBtn.innerHTML = '✖';
                 delBtn.className = 'absolute top-1 right-1 bg-red-500 hover:bg-red-400 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm opacity-0 group-hover:opacity-100 transition shadow-lg z-10';
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
                     imgItem.parentId = 'hasiok'; // Do kosza!
-                    if(typeof fsManager !== 'undefined') fsManager.save(); // Zapis zmian w IndexedDB
+                    if(typeof fsManager !== 'undefined') fsManager.save(); 
                     if(typeof desktop !== 'undefined') desktop.render();
                     kombinatorApp.renderWallpaperGallery();
                     if(typeof apps !== 'undefined') apps.showToast('Usunięto', 'Tapeta przeniesiona do Kosza.', 'info');
@@ -263,7 +266,7 @@ const kombinatorApp = {
     },
 
     // ==================================================================
-    // WGRYWANIE WŁASNEJ TAPETY DO INDEXEDDB Z OPTYMALIZACJĄ WEBP DO 4K
+    // WGRYWANIE WŁASNEJ TAPETY Z PC DO INDEXEDDB (OPTYMALIZACJA DO 4K)
     // ==================================================================
     setWallpaperFile: (e) => { 
         const f = e.target.files[0]; 
