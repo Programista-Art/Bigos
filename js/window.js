@@ -112,31 +112,56 @@ const winManager = {
         if(document.activeElement && !el.contains(document.activeElement)) document.activeElement.blur();
     },
     
+    // renderTaskbar: () => {
+    //     const c = document.getElementById('taskbar-apps'); 
+    //     if(!c) return;
+    //     c.innerHTML = '';
+    //     openAppsList.forEach(id => {
+    //         const info = defaultApps.find(a => a.appId === id);
+    //         const btn = document.createElement('button');
+    //         btn.id = `tb-btn-${id}`;
+    //         btn.className = `px-3 h-9 bg-gray-800/60 hover:bg-white/20 text-white rounded transition flex items-center gap-1 sm:gap-2 shrink-0 font-semibold text-xs sm:text-sm border-b-2 border-transparent`;
+    //         btn.innerHTML = `<span>${info ? info.icon : '🔲'}</span> <span class="truncate hidden sm:inline max-w-[100px]">${info ? info.name : id}</span>`;
+    //         btn.onclick = () => winManager.toggleMin(id);
+    //         c.appendChild(btn);
+    //     });
+    // },
+    
+    // updateTaskbarState: (id) => {
+    //     document.querySelectorAll('#taskbar-apps button').forEach(b => { 
+    //         b.classList.remove('bg-white/30', 'border-blue-400'); 
+    //         b.classList.add('bg-gray-800/60'); 
+    //     });
+    //     if(id) { 
+    //         const b = document.getElementById(`tb-btn-${id}`); 
+    //         if(b) { 
+    //             b.classList.remove('bg-gray-800/60'); 
+    //             b.classList.add('bg-white/30', 'border-blue-400'); 
+    //         } 
+    //     }
+    // },
     renderTaskbar: () => {
-        const c = document.getElementById('taskbar-apps'); 
-        if(!c) return;
-        c.innerHTML = '';
+        const c = document.getElementById('taskbar-apps'); c.innerHTML = '';
         openAppsList.forEach(id => {
             const info = defaultApps.find(a => a.appId === id);
             const btn = document.createElement('button');
             btn.id = `tb-btn-${id}`;
-            btn.className = `px-3 h-9 bg-gray-800/60 hover:bg-white/20 text-white rounded transition flex items-center gap-1 sm:gap-2 shrink-0 font-semibold text-xs sm:text-sm border-b-2 border-transparent`;
-            btn.innerHTML = `<span>${info ? info.icon : '🔲'}</span> <span class="truncate hidden sm:inline max-w-[100px]">${info ? info.name : id}</span>`;
+            btn.className = `px-3 h-9 g-text hover:bg-white/10 rounded transition flex items-center gap-2 truncate max-w-[150px] font-bold text-sm border-b-2 border-transparent`;
+            btn.innerHTML = `<span>${info?info.icon:'🔲'}</span> <span class="truncate">${info?info.name:id}</span>`;
             btn.onclick = () => winManager.toggleMin(id);
             c.appendChild(btn);
         });
     },
-    
     updateTaskbarState: (id) => {
         document.querySelectorAll('#taskbar-apps button').forEach(b => { 
-            b.classList.remove('bg-white/30', 'border-blue-400'); 
-            b.classList.add('bg-gray-800/60'); 
+            b.classList.remove('bg-white/20'); 
+            b.style.borderColor = 'transparent';
         });
         if(id) { 
             const b = document.getElementById(`tb-btn-${id}`); 
             if(b) { 
-                b.classList.remove('bg-gray-800/60'); 
-                b.classList.add('bg-white/30', 'border-blue-400'); 
+                b.classList.add('bg-white/20'); 
+                b.style.borderColor = 'var(--primary)';
             } 
         }
     },

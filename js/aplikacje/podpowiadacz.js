@@ -4,12 +4,12 @@
 
 const MODELS_DB = {
     gemini_free: [
-        { id: 'gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash (Darmowy)' }
+        { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite (Darmowy)' }
     ],
     gemini_api: [
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Szybki)' },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Mądry)' },
-        { id: 'gemini-2.5-flash-preview-09-2025', name: 'Gemini 2.5 Flash (Najnowszy)' }
+        { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite (Szybki)' },
+        { id: 'gemini-3.5-flash', name: 'gemini-3.5-flash (Mądry)' },
+        { id: 'gemini-3.1-flash-live-preview', name: 'gemini-3.1-flash-live-preview (Audio)' }
     ],
     openai: [
         { id: 'gpt-4o-mini', name: 'GPT-4o Mini (Szybki i tani)' },
@@ -36,6 +36,22 @@ const MODELS_DB = {
 const VOICES_DB = {
     native: [
         { id: '', name: 'Domyślny Systemowy' }
+    ],
+    gemini: [
+        { id: 'Kore', name: 'Kore (Stanowczy)' },
+        { id: 'Aoede', name: 'Aoede (Przyjazny)' },
+        { id: 'Puck', name: 'Puck (Energiczny)' },
+        { id: 'Charon', name: 'Charon (Informacyjny)' },
+        { id: 'Fenrir', name: 'Fenrir (Ekscytujący)' },
+        { id: 'Leda', name: 'Leda (Młodzieńczy)' },
+        { id: 'Zephyr', name: 'Zephyr (Jasny)' },
+        { id: 'Orus', name: 'Orus (Pewny siebie)' },
+        { id: 'Callirrhoe', name: 'Callirrhoe (Wyluzowany)' },
+        { id: 'Enceladus', name: 'Enceladus (Głęboki)' },
+        { id: 'Algieba', name: 'Algieba (Gładki)' },
+        { id: 'Algenib', name: 'Algenib (Chropowaty)' },
+        { id: 'Achernar', name: 'Achernar (Miękki)' },
+        { id: 'Gacrux', name: 'Gacrux (Dojrzały)' }
     ],
     openai: [
         { id: 'alloy', name: 'Alloy (Neutralny)' },
@@ -69,9 +85,10 @@ const podpowiadaczApp = {
     isRecording: false,
     isListeningBackground: false,
     
-    // Zmienne do TTS
+    // Zmienne do TTS i Wykonywania Akcji
     activeAudio: null, 
     currentTTSButton: null,
+    pendingActionCallback: null, // Przechowuje logikę otwierania aplikacji czekającą na koniec wypowiedzi AI
     
     // Baza sugestii komend (Autocomplete)
     suggestionsDB: [
@@ -86,7 +103,7 @@ const podpowiadaczApp = {
     settings: {
         provider: 'gemini_free',
         apiKey: '',
-        model: 'gemini-2.5-flash-preview-09-2025',
+        model: 'gemini-3.1-flash-lite',
         customModel: '',
         isCustomModel: false,
         
@@ -102,20 +119,28 @@ const podpowiadaczApp = {
         wakeWordActive: false 
     },
 
-    init: () => {
+    init: async () => {
         try {
-            const savedSettings = localStorage.getItem('bigos_bigai_settings');
-            if (savedSettings) podpowiadaczApp.settings = {...podpowiadaczApp.settings, ...JSON.parse(savedSettings)};
+            const savedSettings = await bigosDB.get('bigos_bigai_settings');
+            if (savedSettings) {
+                let parsedSettings = typeof savedSettings === 'string' ? JSON.parse(savedSettings) : savedSettings;
+                podpowiadaczApp.settings = {...podpowiadaczApp.settings, ...parsedSettings};
+            }
             
-            const savedChat = localStorage.getItem('bigos_bigai_chat');
-            if (savedChat) podpowiadaczApp.messages = JSON.parse(savedChat);
-        } catch(e) {}
+            const savedChat = await bigosDB.get('bigos_bigai_chat');
+            if (savedChat) {
+                podpowiadaczApp.messages = typeof savedChat === 'string' ? JSON.parse(savedChat) : savedChat;
+            }
+        } catch(e) {
+            console.warn("Błąd ładowania danych BigAI z IndexedDB:", e);
+        }
 
         if (podpowiadaczApp.messages.length === 0) {
             podpowiadaczApp.messages.push({
                 role: 'assistant',
                 text: 'Cześć! Jestem Twoim osobistym asystentem wbudowanym w **BigOS**. \n\nSpróbuj napisać lub powiedzieć:\n* *"Otwórz Kombinator i włącz ciemny motyw"* \n* *"Zmień tapetę na kosmos"*\n* *"Otwórz plik o nazwie BigOS"*\n\nW czym mogę pomóc?'
             });
+            podpowiadaczApp.saveData(); // Gwarancja zapisu stanu początkowego
         }
 
         podpowiadaczApp.initSpeechRecognition();
@@ -134,31 +159,26 @@ const podpowiadaczApp = {
     },
 
     saveData: () => {
-        localStorage.setItem('bigos_bigai_settings', JSON.stringify(podpowiadaczApp.settings));
-        localStorage.setItem('bigos_bigai_chat', JSON.stringify(podpowiadaczApp.messages));
+        bigosDB.set('bigos_bigai_settings', podpowiadaczApp.settings);
+        bigosDB.set('bigos_bigai_chat', podpowiadaczApp.messages);
         podpowiadaczApp.renderWidget();
     },
 
     // ==================================================================
     // WIDGET NA PULPICIE (PRZESUWALNY)
     // ==================================================================
-    renderWidget: () => {
+    renderWidget: async () => {
         let w = document.getElementById('bigai-widget');
+        let isNew = false;
+        
         if (!w) {
             w = document.createElement('div');
             w.id = 'bigai-widget';
-            w.className = 'fixed z-[9990] g-panel border g-border rounded-full p-2 shadow-lg flex items-center gap-2 cursor-pointer transition-transform backdrop-blur-md themed-app overflow-hidden group select-none';
+            // WAŻNE: Od razu przypinamy klasę ukrycia (opacity-0) i natychmiast umieszczamy w DOM
+            w.className = 'fixed z-[9990] g-panel border g-border rounded-full p-2 shadow-lg flex items-center gap-2 cursor-pointer transition-transform backdrop-blur-md themed-app overflow-hidden group select-none opacity-0';
             
-            let savedPos = { top: '20px', left: (window.innerWidth - 130) + 'px' };
-            try {
-                const p = localStorage.getItem('bigos_bigai_widget_pos');
-                if (p) savedPos = JSON.parse(p);
-            } catch(e) {}
-            
-            w.style.top = savedPos.top;
-            w.style.left = savedPos.left;
-
-            document.body.appendChild(w);
+            document.body.appendChild(w); // Blokujemy duplikację (Klonowanie)!
+            isNew = true;
 
             let isDragging = false;
             let startX, startY, shiftX, shiftY;
@@ -183,7 +203,7 @@ const podpowiadaczApp = {
                     document.removeEventListener('mouseup', up);
                     w.style.transition = ''; 
                     if (isDragging) {
-                        localStorage.setItem('bigos_bigai_widget_pos', JSON.stringify({left: w.style.left, top: w.style.top}));
+                        bigosDB.set('bigos_bigai_widget_pos', {left: w.style.left, top: w.style.top});
                     }
                 };
 
@@ -212,7 +232,7 @@ const podpowiadaczApp = {
                     document.removeEventListener('touchend', up);
                     w.style.transition = '';
                     if (isDragging) {
-                        localStorage.setItem('bigos_bigai_widget_pos', JSON.stringify({left: w.style.left, top: w.style.top}));
+                        bigosDB.set('bigos_bigai_widget_pos', {left: w.style.left, top: w.style.top});
                     }
                 };
 
@@ -229,6 +249,7 @@ const podpowiadaczApp = {
         
         let isListening = podpowiadaczApp.settings.wakeWordActive && podpowiadaczApp.isListeningBackground;
         
+        // Synchroniczna aktualizacja zawartości UI
         w.innerHTML = `
             <div class="absolute inset-0 ${isListening ? 'bg-emerald-500/20' : 'bg-purple-500/10'} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
             <div class="text-2xl drop-shadow-md relative z-10 pointer-events-none ${isListening ? 'animate-pulse' : ''}">🤖</div>
@@ -238,6 +259,19 @@ const podpowiadaczApp = {
             </div>
             ${isListening ? `<button onclick="event.stopPropagation(); podpowiadaczApp.toggleWakeWord(false)" class="text-xs text-red-500 hover:text-red-400 bg-black/30 rounded-full w-5 h-5 flex items-center justify-center font-bold relative z-20 ml-1" title="Zatrzymaj nasłuch">✖</button>` : ''}
         `;
+
+        // Pobieranie pozycji uruchamiamy asynchronicznie TYLKO gdy widget rysuje się po raz pierwszy
+        if (isNew) {
+            let savedPos = { top: '20px', left: (window.innerWidth - 130) + 'px' };
+            try {
+                const p = await bigosDB.get('bigos_bigai_widget_pos');
+                if (p) savedPos = typeof p === 'string' ? JSON.parse(p) : p;
+            } catch(e) {}
+            
+            w.style.top = savedPos.top;
+            w.style.left = savedPos.left;
+            w.classList.remove('opacity-0'); // Pokazujemy widget po ustaleniu pozycji
+        }
     },
 
     // ==================================================================
@@ -346,6 +380,7 @@ const podpowiadaczApp = {
                             <label class="block text-[10px] font-bold g-text-muted mb-1">Dostawca Głosu</label>
                             <select id="tts-provider" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeTTSProvider()">
                                 <option value="native" ${podpowiadaczApp.settings.ttsProvider==='native'?'selected':''}>Wbudowany (Darmowy)</option>
+                                <option value="gemini" ${podpowiadaczApp.settings.ttsProvider==='gemini'?'selected':''}>Google Gemini (Emocjonalny)</option>
                                 <option value="openai" ${podpowiadaczApp.settings.ttsProvider==='openai'?'selected':''}>OpenAI (TTS-1)</option>
                                 <option value="elevenlabs" ${podpowiadaczApp.settings.ttsProvider==='elevenlabs'?'selected':''}>ElevenLabs (Naturalny)</option>
                                 <option value="cartesia" ${podpowiadaczApp.settings.ttsProvider==='cartesia'?'selected':''}>Cartesia (Szybki)</option>
@@ -421,7 +456,6 @@ const podpowiadaczApp = {
             return;
         }
         
-        // Dopasowujemy jeśli wpisany tekst zawiera się gdzieś w sugestii (ignorując wielkość liter)
         const matches = podpowiadaczApp.suggestionsDB.filter(s => s.toLowerCase().startsWith(query) && s.toLowerCase() !== query);
         
         if (matches.length > 0) {
@@ -441,7 +475,6 @@ const podpowiadaczApp = {
             input.value = val + ' ';
             input.focus();
             podpowiadaczApp.showSuggestions(input.value);
-            // Auto expand textarea height
             input.style.height = '46px';
             input.style.height = (input.scrollHeight) + 'px';
         }
@@ -781,8 +814,39 @@ const podpowiadaczApp = {
     },
 
     // ==================================================================
-    // MOWA: TEXT-TO-SPEECH (Czytanie odpowiedzi i Ręczne Zatrzymanie)
+    // MOWA: TEXT-TO-SPEECH (Czytanie z Callbackiem akcji)
     // ==================================================================
+    
+    pcmToWav: (base64Data, sampleRate) => {
+        const binaryString = atob(base64Data);
+        const len = binaryString.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+
+        const wav = new ArrayBuffer(44 + bytes.length);
+        const view = new DataView(wav);
+
+        const writeString = (v, o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + bytes.length, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true); 
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true); 
+        writeString(view, 36, 'data');
+        view.setUint32(40, bytes.length, true);
+
+        new Uint8Array(wav, 44).set(bytes);
+        const blob = new Blob([wav], { type: 'audio/wav' });
+        return URL.createObjectURL(blob);
+    },
+
     stopTTS: () => {
         if (podpowiadaczApp.activeAudio) { 
             podpowiadaczApp.activeAudio.pause(); 
@@ -796,19 +860,32 @@ const podpowiadaczApp = {
             podpowiadaczApp.currentTTSButton.dataset.playing = 'false';
             podpowiadaczApp.currentTTSButton = null;
         }
+
+        // KRYTYCZNE OPÓŹNIENIE AKCJI: Zawsze wywołuj zapamiętaną akcję po zakończeniu (nawet przy anulowaniu)
+        if (podpowiadaczApp.pendingActionCallback) {
+            const cb = podpowiadaczApp.pendingActionCallback;
+            podpowiadaczApp.pendingActionCallback = null;
+            cb();
+        }
     },
 
-    readText: async (buttonEl, text) => {
-        // Jeśli kliknięto w ten sam przycisk, który właśnie odtwarza - wyłączamy mowę
+    readText: async (buttonEl, text, onEndCallback = null) => {
         if (buttonEl && buttonEl.dataset.playing === 'true') {
             podpowiadaczApp.stopTTS();
             return;
         }
 
         podpowiadaczApp.stopTTS();
+        
+        // Zapisujemy kod do odpalenia po skończonej mowie
+        podpowiadaczApp.pendingActionCallback = onEndCallback;
 
         const cleanText = text.replace(/\[BIGOS:.*?\]/g, '').replace(/[\*\_`#]/g, '').trim();
-        if(!cleanText) return;
+        if(!cleanText) {
+            // Jeśli nie ma tekstu do przeczytania, po prostu przerwij by callback się wykonał
+            podpowiadaczApp.stopTTS(); 
+            return;
+        }
 
         if (buttonEl) {
             buttonEl.innerHTML = '🛑 Zatrzymaj';
@@ -822,7 +899,7 @@ const podpowiadaczApp = {
         const voice = podpowiadaczApp.settings.ttsVoice;
 
         const finalizeBtn = () => { 
-            podpowiadaczApp.stopTTS(); // Funkcja sama resetuje UI przycisku
+            podpowiadaczApp.stopTTS(); 
         };
 
         if (prov === 'native') {
@@ -832,10 +909,48 @@ const podpowiadaczApp = {
             utterance.onerror = finalizeBtn;
             window.speechSynthesis.speak(utterance);
             
-            // Bezpiecznik: jeśli po upływie czasu native API zablokuje zdarzenie (zdarza się to w Chrome)
-            const estimatedTime = (cleanText.length / 10) * 1000; // Ok. 10 znaków na sek.
+            const estimatedTime = (cleanText.length / 10) * 1000; 
             setTimeout(finalizeBtn, estimatedTime + 2000); 
         } 
+        else if (prov === 'gemini') {
+            if(!key) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Brak klucza API dla Gemini TTS!', 'error'); finalizeBtn(); return; }
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`;
+                const payload = {
+                    contents: [{ parts: [{ text: cleanText }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice || 'Kore' } } }
+                    }
+                };
+                
+                const response = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if(!response.ok) throw new Error();
+                const data = await response.json();
+                const part = data.candidates?.[0]?.content?.parts?.[0];
+                
+                if (part && part.inlineData) {
+                    const base64Audio = part.inlineData.data;
+                    const mime = part.inlineData.mimeType || "audio/L16; rate=24000";
+                    let sampleRate = 24000;
+                    const rateMatch = mime.match(/rate=(\d+)/);
+                    if(rateMatch) sampleRate = parseInt(rateMatch[1], 10);
+                    
+                    const audioUrl = podpowiadaczApp.pcmToWav(base64Audio, sampleRate);
+                    const audio = new Audio(audioUrl);
+                    audio.onended = finalizeBtn;
+                    audio.onerror = finalizeBtn;
+                    audio.play();
+                    podpowiadaczApp.activeAudio = audio;
+                } else {
+                    throw new Error("Brak danych audio");
+                }
+            } catch(e) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie udało się pobrać głosu z Google Gemini', 'error'); finalizeBtn(); }
+        }
         else if (prov === 'openai') {
             if(!key) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Brak klucza API dla OpenAI TTS!', 'error'); finalizeBtn(); return; }
             try {
@@ -847,6 +962,7 @@ const podpowiadaczApp = {
                 const blob = await response.blob();
                 const audio = new Audio(URL.createObjectURL(blob));
                 audio.onended = finalizeBtn;
+                audio.onerror = finalizeBtn;
                 audio.play();
                 podpowiadaczApp.activeAudio = audio;
             } catch(e) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie udało się pobrać głosu OpenAI', 'error'); finalizeBtn(); }
@@ -863,6 +979,7 @@ const podpowiadaczApp = {
                 const blob = await response.blob();
                 const audio = new Audio(URL.createObjectURL(blob));
                 audio.onended = finalizeBtn;
+                audio.onerror = finalizeBtn;
                 audio.play();
                 podpowiadaczApp.activeAudio = audio;
             } catch(e) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie udało się pobrać głosu ElevenLabs', 'error'); finalizeBtn(); }
@@ -878,6 +995,7 @@ const podpowiadaczApp = {
                 const blob = await response.blob();
                 const audio = new Audio(URL.createObjectURL(blob));
                 audio.onended = finalizeBtn;
+                audio.onerror = finalizeBtn;
                 audio.play();
                 podpowiadaczApp.activeAudio = audio;
             } catch(e) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie udało się pobrać głosu Cartesia', 'error'); finalizeBtn(); }
@@ -1047,12 +1165,21 @@ const podpowiadaczApp = {
         document.body.appendChild(modal);
 
         document.getElementById('ai-clear-cancel').onclick = () => modal.remove();
+        
         document.getElementById('ai-clear-ok').onclick = () => {
-            podpowiadaczApp.stopTTS(); // Bezpieczne wyciszenie podczas resetu
+            podpowiadaczApp.stopTTS(); 
+            
             podpowiadaczApp.messages = [];
-            podpowiadaczApp.init(); 
+            podpowiadaczApp.saveData(); 
+
+            podpowiadaczApp.messages.push({
+                role: 'assistant',
+                text: 'Cześć! Jestem Twoim osobistym asystentem wbudowanym w **BigOS**. \n\nSpróbuj napisać lub powiedzieć:\n* *"Otwórz Kombinator i włącz ciemny motyw"* \n* *"Zmień tapetę na kosmos"*\n* *"Otwórz plik o nazwie BigOS"*\n\nW czym mogę pomóc?'
+            });
+            
             podpowiadaczApp.saveData();
             podpowiadaczApp.renderChat();
+            
             if(typeof apps !== 'undefined') apps.showToast('Czat', 'Historia wyczyszczona!', 'success');
             modal.remove();
         };
@@ -1066,20 +1193,35 @@ const podpowiadaczApp = {
     },
 
     // ==================================================================
-    // INTEGRACJA Z SYSTEMEM (Interpreter Poleceń)
+    // INTEGRACJA Z SYSTEMEM (Oddzielony parser komend od wykonywania)
     // ==================================================================
-    executeSystemCommands: (aiText) => {
+    extractCommands: (aiText) => {
         let cleanText = aiText;
-        let commandFound = false;
+        let commands = [];
         let mapQuery = null;
 
         const regex = /\[BIGOS:([^:\]]+):([^\]]+)\]/g;
         let match;
 
         while ((match = regex.exec(aiText)) !== null) {
-            commandFound = true;
-            const action = match[1].toLowerCase().trim();
-            const param = match[2].trim();
+            commands.push({
+                action: match[1].toLowerCase().trim(),
+                param: match[2].trim()
+            });
+            if (match[1].toLowerCase().trim() === 'map') {
+                mapQuery = match[2].trim();
+            }
+        }
+
+        cleanText = cleanText.replace(/\[BIGOS:(.*?):(.*?)\]/g, '').trim();
+        
+        return { cleanText, commands, mapQuery };
+    },
+
+    runCommands: (commands) => {
+        commands.forEach(cmd => {
+            const action = cmd.action;
+            const param = cmd.param;
 
             console.log("BigAI Command Executed:", action, param);
 
@@ -1116,14 +1258,11 @@ const podpowiadaczApp = {
                     if(param === 'abstrakcja') url = 'tapety/abstrakcja.webp';
                     
                     if (bg) { bg.style.backgroundImage = `url('${url}')`; bg.classList.add('custom-wp'); }
-                    localStorage.setItem('bigos_bg', url); 
+                    bigosDB.set('bigos_bg', url); 
                 }
                 else if (action === 'search_browser') {
                     if(typeof winManager !== 'undefined') winManager.open('siecioslaw');
                     if(typeof siecioslawApp !== 'undefined') siecioslawApp.navigateURL('https://www.bing.com/search?q=' + encodeURIComponent(param));
-                }
-                else if (action === 'map') {
-                    mapQuery = param;
                 }
                 else if (action === 'notify') {
                     if(typeof apps !== 'undefined') apps.showToast('BigAI', param, 'success');
@@ -1187,11 +1326,7 @@ const podpowiadaczApp = {
             } catch(e) {
                 console.error("Failed to execute BigOS command:", e);
             }
-        }
-
-        cleanText = cleanText.replace(/\[BIGOS:(.*?):(.*?)\]/g, '').trim();
-        
-        return { cleanText, commandFound, mapQuery };
+        });
     },
 
     // ==================================================================
@@ -1248,11 +1383,22 @@ Dostępne akcje systemowe:
 13. Formatowanie systemu: [BIGOS:format_system:none] - wywołuje okno formatowania systemu do ustawień fabrycznych.
 14. Wyłączanie systemu: [BIGOS:shutdown_system:none] - natychmiastowo wyłącza system BigOS.
 
+UWAGA: ZAWSZE odpowiadaj bezpośrednio. NIE GENERUJ żadnego kodu w Pythonie (jak \`tools.search\`) do szukania w internecie. Masz wiedzę wbudowaną. Odpowiadaj jako inteligentny asystent systemowy.
+
 PRZYKŁADY:
 User: "Uruchom mi kalkulator i włącz ciemny tryb."
 AI: "Jasne, odpalam Rachmistrza w ciemnym motywie! [BIGOS:open_app:kalkulator] [BIGOS:set_theme:theme-dark]"
 
-User: "Otwórz ustawienia systemu (Kombinator)."
+User: "Włącz grajka i puść muzykę"
+AI: "Odpalam odtwarzacz muzyki! [BIGOS:open_app:grajek] [BIGOS:music_ctrl:playpause]"
+
+User: "Zmień piosenkę na następną"
+AI: "Przełączam utwór! [BIGOS:music_ctrl:next]"
+
+User: "Zatrzymaj muzykę"
+AI: "Zatrzymuję! [BIGOS:music_ctrl:playpause]"
+
+User: "Uruchom kombinator."
 AI: "Otwieram panel ustawień! [BIGOS:open_app:tapeciak]"
 
 User: "Wyłącz system BigOS."
@@ -1313,7 +1459,8 @@ Zawsze upewnij się, że używasz dokładnych tagów podanych w instrukcji.`;
                         const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         const data = await response.json();
                         if (response.ok) {
-                            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Brak odpowiedzi od Gemini.";
+                            let textParts = data.candidates?.[0]?.content?.parts?.filter(p => p.text)?.map(p => p.text) || [];
+                            responseText = textParts.join('\n') || "Brak odpowiedzi od Gemini.";
                             break;
                         } else {
                             if(i === 2) throw new Error(data.error?.message || response.statusText);
@@ -1392,20 +1539,34 @@ Zawsze upewnij się, że używasz dokładnych tagów podanych w instrukcji.`;
             responseText = `⚠️ **Błąd API (${prov}):** ${error.message}\n\nUpewnij się, że wpisany klucz jest prawidłowy. Jeśli używasz OpenRouter z kontem 0$, upewnij się, że wybierasz darmowe modele (z dopiskiem :free) i Twoje konto jest zweryfikowane.`;
         }
 
-        const execResult = podpowiadaczApp.executeSystemCommands(responseText);
+        // ==================================================================
+        // OCZYSZCZANIE Z HALUCYNACJI (Filtr blokujący pisanie kodu Python)
+        // ==================================================================
+        responseText = responseText.replace(/```python\n[\s\S]*?\n```/gi, '').trim();
+        if(responseText === "") responseText = "Wybacz, wystąpił problem techniczny podczas przetwarzania Twojego zapytania. Spróbuj zadać je inaczej.";
 
+        // NOWY MECHANIZM: Opóźnione wykonywanie komend systemowych po przeczytaniu wiadomości głosowo!
+        const extracted = podpowiadaczApp.extractCommands(responseText);
         podpowiadaczApp.isThinking = false;
         
-        const newMsg = { role: 'assistant', text: execResult.cleanText, rawText: responseText };
-        if (execResult.mapQuery) newMsg.mapQuery = execResult.mapQuery; 
+        const newMsg = { role: 'assistant', text: extracted.cleanText, rawText: responseText };
+        if (extracted.mapQuery) newMsg.mapQuery = extracted.mapQuery; 
         
         podpowiadaczApp.messages.push(newMsg);
-        
         podpowiadaczApp.saveData();
         podpowiadaczApp.renderChat();
         
+        // Zapakowanie akcji do funkcji, która wykona się za chwilę
+        const executeAllActions = () => {
+            podpowiadaczApp.runCommands(extracted.commands);
+        };
+
         if (podpowiadaczApp.settings.autoTTS) {
-            podpowiadaczApp.readText(null, execResult.cleanText);
+            // Przekazanie akcji jako Callback po skończeniu mowy
+            podpowiadaczApp.readText(null, extracted.cleanText, executeAllActions);
+        } else {
+            // Natychmiastowe wykonanie jeśli funkcja TTS jest wyłączona
+            executeAllActions();
         }
     }
 };

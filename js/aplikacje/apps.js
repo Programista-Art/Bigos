@@ -33,6 +33,24 @@ const apps = {
         const calWidget = document.getElementById('calendar-widget');
         if(calWidget) calWidget.classList.add('hidden-cal'); 
 
+        // ==================================================
+        // ZAMROŻENIE WYSOKOŚCI SZUFLADY
+        // Zamienia pływającą wysokość na stałą, aby menu nie skakało podczas szukania
+        // ==================================================
+        const listContainer = document.getElementById('start-menu-list');
+        if (listContainer) {
+            listContainer.style.height = '55vh';
+            listContainer.style.minHeight = '300px';
+        }
+
+        // Auto-focus na pole wyszukiwarki (jeśli menu zostało otwarte)
+        const searchInput = document.getElementById('start-menu-search');
+        if (!sm.classList.contains('hidden') && searchInput) {
+            searchInput.value = '';
+            if (apps.searchMenu) apps.searchMenu('');
+            setTimeout(() => searchInput.focus(), 50);
+        }
+
         if (!document.getElementById('start-btn-format')) {
             const formatBtn = document.createElement('div');
             formatBtn.id = 'start-btn-format';
@@ -124,6 +142,42 @@ const apps = {
         document.body.innerHTML = `<div class="w-full h-full bg-black flex flex-col items-center justify-center text-white"><button onclick="location.reload()" class="w-24 h-24 rounded-full border-4 border-gray-600 text-gray-600 hover:text-white hover:border-white transition flex items-center justify-center text-4xl mb-4" title="Włącz BigOS">⏻</button><p class="text-gray-500 font-mono">System BigOS wyłączony.</p></div>`; 
     },
 
+    // Nowa, w 100% odporna funkcja filtrowania aplikacji
+    searchMenu: (query) => {
+        const term = query.toLowerCase().trim();
+        
+        const menu = document.getElementById('start-menu');
+        if (!menu) return;
+
+        // Szuka kontenera ze scrollem niezależnie od tego, czy ma ID czy nie
+        const listContainer = document.getElementById('start-menu-list') || menu.querySelector('.overflow-y-auto');
+        if (!listContainer) return;
+
+        // Pobieramy absolutnie wszystkie przyciski w liście
+        const items = listContainer.querySelectorAll('button');
+        const headers = listContainer.querySelectorAll('div, .start-header');
+        
+        if (term === '') {
+            // Czyszczenie wyszukiwarki - przywracamy wszystko
+            items.forEach(el => el.style.display = ''); 
+            headers.forEach(el => el.style.display = '');
+        } else {
+            items.forEach(el => {
+                // Pobieramy cały widoczny tekst przycisku i sprawdzamy dopasowanie
+                const name = el.innerText.toLowerCase();
+                if (name.includes(term)) {
+                    el.style.display = ''; // Pokazuje przycisk
+                } else {
+                    el.style.display = 'none'; // Ukrywa przycisk
+                }
+            });
+            // Ukrywa nagłówki ("Gry", "Narzędzia"), żeby nie śmieciły w wynikach
+            headers.forEach(el => el.style.display = 'none'); 
+        }
+    },
+
+    // ==================================================================
+    // 3. KOMPATYBILNOŚĆ WSTECZNA (Wrappery dla starszych linków w HTML)
     // ==================================================================
     // 3. KOMPATYBILNOŚĆ WSTECZNA DLA HTML (Tylko przekierowania do modułów!)
     // ==================================================================

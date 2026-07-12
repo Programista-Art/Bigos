@@ -14,6 +14,12 @@ const wladcaApp = {
         if (out) {
             out.style.userSelect = 'text';
             out.style.webkitUserSelect = 'text';
+            out.style.fontFamily = 'monospace, monospace'; // Wymuszamy monospace, ignorując motywy
+        }
+        
+        const termIn = document.getElementById('term-in');
+        if (termIn) {
+            termIn.style.fontFamily = 'monospace, monospace';
         }
         
         // Podpięcie dedykowanego menu kontekstowego pod okno Władcy Poleceń
@@ -65,7 +71,6 @@ const wladcaApp = {
             const text = await navigator.clipboard.readText();
             const input = document.getElementById('term-in');
             if (input) {
-                // Wklej w miejscu kursora
                 const start = input.selectionStart;
                 const end = input.selectionEnd;
                 input.value = input.value.substring(0, start) + text + input.value.substring(end);
@@ -73,7 +78,6 @@ const wladcaApp = {
                 input.focus();
             }
         } catch (err) {
-            // Niektóre przeglądarki ze względów bezpieczeństwa blokują czytanie schowka z kodu JS
             if(typeof apps !== 'undefined') apps.showToast('Terminal', 'Brak dostępu. Użyj skrótu CTRL+V.', 'error');
         }
         document.getElementById('context-menu').classList.remove('active');
@@ -85,6 +89,12 @@ const wladcaApp = {
     handle: (e) => {
         const input = document.getElementById('term-in');
         const out = document.getElementById('terminal-out');
+        let popup = document.getElementById('term-autocomplete-popup');
+
+        // Ukrywamy okienko podpowiedzi jeśli naciśnięto inny klawisz niż Tab
+        if (e.key !== 'Tab' && popup) {
+            popup.remove();
+        }
         
         // 1. HISTORIA KOMEND (Strzałki Góra/Dół)
         if (e.key === 'ArrowUp') {
@@ -122,9 +132,9 @@ const wladcaApp = {
             if (isCommandMode) {
                 prefix = cmdLine.toLowerCase();
                 const baseCommands = [
-                    'help', 'date', 'cls', 'clear', 'ver', 'dir', 'ls', 'cd', 'echo', 'whoami', 
-                    'mkdir', 'touch', 'rm', 'theme', 'reboot', 'restart', 'format', 'sysinfo', 'lock', 'calc', 'matrix', 'pogoda',
-                    'history', 'pwd', 'tree', 'ping', 'open', 'base64', 'timer', 'roll', 'color', 'cytat'
+                    'help', 'history', 'date', 'sysinfo', 'cls', 'clear', 'ver', 'dir', 'ls', 'tree', 'pwd', 'cd', 'echo', 'whoami', 
+                    'mkdir', 'touch', 'rm', 'theme', 'color', 'reboot', 'restart', 'format', 'lock', 'calc', 'base64', 'timer', 'roll', 'cytat', 'matrix', 'pogoda',
+                    'ping', 'open', 'kod', 'upychacz', 'zip', 'kasiarz', 'przelicznik'
                 ];
                 let appCommands = [];
                 if (typeof fileSystem !== 'undefined') {
@@ -141,21 +151,28 @@ const wladcaApp = {
             const matches = possibilities.filter(p => p.toLowerCase().startsWith(prefix));
 
             if (matches.length === 1) {
+                // Jeśli jest jeden wynik - autouzupełnia od razu
                 if (isCommandMode) {
                     input.value = matches[0] + ' ';
                 } else {
                     const cmd = cmdLine.substring(0, firstSpaceIndex);
                     input.value = cmd + ' ' + matches[0];
                 }
+                if (popup) popup.remove();
             } else if (matches.length > 1) {
-                let pathDisplay = '~';
-                if (wladcaApp.currentPath !== 'root' && typeof fileSystem !== 'undefined') {
-                    const f = fileSystem.find(i => i.id === wladcaApp.currentPath);
-                    if (f) pathDisplay = `~/${f.name}`;
+                // Wiele wyników - pokazuje pływające okienko nad inputem
+                if (!popup) {
+                    popup = document.createElement('div');
+                    popup.id = 'term-autocomplete-popup';
+                    popup.className = 'absolute bottom-full left-2 mb-2 bg-black/90 border g-border rounded-lg shadow-2xl p-2 flex flex-wrap gap-1.5 z-50 max-w-[95%] max-h-[120px] overflow-y-auto custom-scrollbar backdrop-blur-md';
+                    input.parentElement.style.position = 'relative';
+                    input.parentElement.appendChild(popup);
                 }
-                out.innerHTML += `\n<span class="text-blue-400">root@bigos:${pathDisplay}#</span> ${desktop.escapeHTML(cmdLine)}\n`;
-                out.innerHTML += matches.join('   ');
-                out.scrollTop = out.scrollHeight;
+                
+                popup.innerHTML = matches.map(m => {
+                    const insertVal = isCommandMode ? m + ' ' : cmdLine.substring(0, firstSpaceIndex) + ' ' + m;
+                    return `<span class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-[10px] font-bold border border-blue-500/30 cursor-pointer hover:bg-blue-500 hover:text-white transition" onclick="document.getElementById('term-in').value = '${insertVal}'; document.getElementById('term-in').focus(); document.getElementById('term-autocomplete-popup').remove();">${m}</span>`;
+                }).join('');
             }
             return;
         }
@@ -176,7 +193,7 @@ const wladcaApp = {
                 if (f) pathDisplay = `~/${f.name}`;
             }
 
-            out.innerHTML += `\n<span class="text-blue-400">root@bigos:${pathDisplay}#</span> ${desktop.escapeHTML(cmdLine)}`;
+            out.innerHTML += `\n<span class="g-accent font-bold">root@bigos:${pathDisplay}#</span> ${desktop.escapeHTML(cmdLine)}`;
             
             const args = cmdLine.split(' ').filter(arg => arg !== '');
             const cmd = args[0].toLowerCase();
@@ -192,40 +209,58 @@ const wladcaApp = {
     execute: (cmd, args, out) => {
         switch(cmd) {
             case 'help':
-                out.innerHTML += `
-Dostępne komendy:
-  <span class="text-yellow-400">help</span>            - Wyświetla tę listę
-  <span class="text-yellow-400">history</span>         - Wyświetla historię poleceń
-  <span class="text-yellow-400">date</span>            - Wyświetla aktualną datę i czas
-  <span class="text-yellow-400">sysinfo</span>         - Wyświetla informacje o sprzęcie
-  <span class="text-yellow-400">cls / clear</span>     - Czyści ekran terminala
-  <span class="text-yellow-400">ver</span>             - Wersja systemu BigOS
-  <span class="text-yellow-400">dir / ls</span>        - Wyświetla pliki i foldery
-  <span class="text-yellow-400">tree</span>            - Wyświetla drzewo obecnego katalogu
-  <span class="text-yellow-400">pwd</span>             - Zwraca obecną ścieżkę
-  <span class="text-yellow-400">cd [nazwa]</span>      - Zmiana katalogu (np. cd hasiok)
-  <span class="text-yellow-400">echo</span>            - Wypisuje tekst na ekranie
-  <span class="text-yellow-400">whoami</span>          - Wyświetla obecnego użytkownika
-  <span class="text-yellow-400">mkdir [n]</span>       - Tworzy nowy folder
-  <span class="text-yellow-400">touch [n]</span>       - Tworzy nowy, pusty plik
-  <span class="text-yellow-400">rm [n]</span>          - Usuwa plik lub folder
-  <span class="text-yellow-400">theme [motyw]</span>   - Zmienia motyw ('dark' lub 'light')
-  <span class="text-yellow-400">color [kolor]</span>   - Zmienia kolor tekstu (np. color red)
-  <span class="text-yellow-400">reboot/restart</span>  - Uruchamia ponownie system
-  <span class="text-yellow-400">format</span>          - Przywraca ustawienia fabryczne
-  <span class="text-yellow-400">lock</span>            - Blokuje ekran
-  <span class="text-yellow-400">calc [wzór]</span>     - Kalkulator (np. calc 5*5)
-  <span class="text-yellow-400">base64 [tryb]</span>   - base64 enc/dec [tekst]
-  <span class="text-yellow-400">timer [sek]</span>     - Uruchamia odliczanie
-  <span class="text-yellow-400">roll [n]</span>        - Rzuca wirtualną kością (1-n)
-  <span class="text-yellow-400">cytat</span>           - Losuje motywujący cytat
-  <span class="text-yellow-400">matrix</span>          - Efekt The Matrix
-  <span class="text-yellow-400">pogoda [miasto]</span> - Pogoda dla zadanego miasta
-  <span class="text-yellow-400">ping [adres]</span>    - Symuluje wysyłanie pakietów PING
-  <span class="text-yellow-400">open [url]</span>      - Otwiera adres w Sieciosławiu
-  <span class="text-yellow-400">upload</span>          - Wgrywa plik z komputera do BigOS
-  <span class="text-yellow-400">wasm_demo</span>       - Generuje testowy moduł WebAssembly
-  <span class="text-yellow-400">[nazwa]</span>         - Otwiera plik lub aplikację`;
+                // Kulooodporne renderowanie poleceń gwarantujące równiutką kolumnę "schodów"
+                const commandsList = [
+                    { c: 'help', d: 'Wyświetla tę listę' },
+                    { c: 'history', d: 'Wyświetla historię poleceń' },
+                    { c: 'date', d: 'Wyświetla aktualną datę i czas' },
+                    { c: 'sysinfo', d: 'Wyświetla informacje o sprzęcie' },
+                    { c: 'cls / clear', d: 'Czyści ekran terminala' },
+                    { c: 'ver', d: 'Wersja systemu BigOS' },
+                    { c: 'dir / ls', d: 'Wyświetla pliki i foldery' },
+                    { c: 'tree', d: 'Wyświetla drzewo obecnego katalogu' },
+                    { c: 'pwd', d: 'Zwraca obecną ścieżkę' },
+                    { c: 'cd [nazwa]', d: 'Zmiana katalogu (np. cd hasiok)' },
+                    { c: 'echo', d: 'Wypisuje tekst na ekranie' },
+                    { c: 'whoami', d: 'Wyświetla obecnego użytkownika' },
+                    { c: 'mkdir [n]', d: 'Tworzy nowy folder' },
+                    { c: 'touch [n]', d: 'Tworzy nowy, pusty plik' },
+                    { c: 'rm [n]', d: 'Usuwa plik lub folder' },
+                    { c: 'theme [motyw]', d: 'Zmienia motyw (\'dark\' lub \'light\')' },
+                    { c: 'color [kolor]', d: 'Zmienia kolor tekstu (np. color red)' },
+                    { c: 'reboot/restart', d: 'Uruchamia ponownie system' },
+                    { c: 'format', d: 'Przywraca ustawienia fabryczne' },
+                    { c: 'lock', d: 'Blokuje ekran' },
+                    { c: 'calc [wzór]', d: 'Kalkulator (np. calc 5*5)' },
+                    { c: 'base64 [tryb]', d: 'base64 enc/dec [tekst]' },
+                    { c: 'timer [sek]', d: 'Uruchamia odliczanie' },
+                    { c: 'roll [n]', d: 'Rzuca wirtualną kością (1-n)' },
+                    { c: 'cytat', d: 'Losuje motywujący cytat' },
+                    { c: 'matrix', d: 'Efekt The Matrix' },
+                    { c: 'pogoda [miasto]', d: 'Pogoda dla zadanego miasta' },
+                    { c: 'ping [adres]', d: 'Symuluje wysyłanie pakietów PING' },
+                    { c: 'open [url]', d: 'Otwiera adres w Sieciosławiu' }
+                ];
+
+                const aliasesList = [
+                    { c: 'kod', d: 'Otwiera Rachmistrz Kodu' },
+                    { c: 'upychacz / zip', d: 'Otwiera Kompresor ZIP' },
+                    { c: 'kasiarz', d: 'Kalkulator Finansowy' },
+                    { c: 'przelicznik', d: 'Przelicznik jednostek' },
+                    { c: '[nazwa]', d: 'Otwiera plik lub aplikację' }
+                ];
+
+                let hHTML = '\nDostępne komendy:\n';
+                commandsList.forEach(cmd => { 
+                    hHTML += `  <span class="g-accent opacity-80" style="display:inline-block; width:150px;">${cmd.c}</span> - ${cmd.d}\n`; 
+                });
+                
+                hHTML += '\nAplikacje (Szybkie aliasy):\n';
+                aliasesList.forEach(cmd => { 
+                    hHTML += `  <span class="g-accent opacity-80" style="display:inline-block; width:150px;">${cmd.c}</span> - ${cmd.d}\n`; 
+                });
+
+                out.innerHTML += hHTML;
                 break;
                 
             case 'date':
@@ -262,13 +297,14 @@ Dostępne komendy:
                 let browserInfo = "Nieznana";
                 if(navigator.userAgent.includes("Chrome")) browserInfo = "Google Chrome / Edge";
                 if(navigator.userAgent.includes("Firefox")) browserInfo = "Mozilla Firefox";
+                if(navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome")) browserInfo = "Apple Safari";
                 
                 out.innerHTML += `\n--- INFORMACJE O SYSTEMIE ---`;
                 out.innerHTML += `\nSystem: BigOS Wersja 1.5`;
                 out.innerHTML += `\nUżytkownik: root`;
                 out.innerHTML += `\nRozdzielczość ekranu: ${window.innerWidth}x${window.innerHeight} px`;
                 out.innerHTML += `\nSilnik przeglądarki: ${browserInfo}`;
-                out.innerHTML += `\nZajęte miejsce na wirtualnym dysku: ${kbMemory} KB`;
+                out.innerHTML += `\nZajęte miejsce na dysku wirtualnym: ${kbMemory} KB`;
                 break;
                 
             case 'echo':
@@ -295,8 +331,8 @@ Dostępne komendy:
                         out.innerHTML += `\n(katalog jest pusty)`;
                     } else {
                         let list = items.map(i => {
-                            if(i.type === 'folder') return `<span class="text-blue-400 font-bold">${i.name}/</span>`;
-                            if(i.type === 'app') return `<span class="text-green-400 font-bold">${i.name}.exe</span>`;
+                            if(i.type === 'folder') return `<span class="g-accent font-bold">${i.name}/</span>`;
+                            if(i.type === 'app') return `<span class="text-emerald-400 font-bold">${i.name}.exe</span>`;
                             return i.name;
                         }).join('  ');
                         out.innerHTML += `\n${list}`;
@@ -316,9 +352,9 @@ Dostępne komendy:
                         treeItems.forEach((item, index) => {
                             const isLast = index === treeItems.length - 1;
                             const prefix = isLast ? '└── ' : '├── ';
-                            let colorClass = 'text-gray-300';
-                            if(item.type === 'folder') colorClass = 'text-blue-400 font-bold';
-                            else if(item.type === 'app') colorClass = 'text-green-400 font-bold';
+                            let colorClass = 'g-text';
+                            if(item.type === 'folder') colorClass = 'g-accent font-bold';
+                            else if(item.type === 'app') colorClass = 'text-emerald-400 font-bold';
                             
                             out.innerHTML += `\n${prefix}<span class="${colorClass}">${desktop.escapeHTML(item.name)}</span>`;
                         });
@@ -533,7 +569,54 @@ Dostępne komendy:
                     "Istnieje 10 rodzajów ludzi: ci, którzy rozumieją system binarny, i ci, którzy go nie rozumieją.",
                     "To nie jest błąd, to nieudokumentowana funkcja.",
                     "W teorii teoria i praktyka są tym samym. W praktyce nie są.",
-                    "Zanim zaczniesz naprawiać kod, upewnij się, że komputer jest podłączony do prądu."
+                    "Jeśli coś działa, nie dotykaj.",
+                    "Programista – organizm, który zamienia kofeinę w kod.",
+                    "Błędy to po prostu nieoczekiwane cechy programu.",
+                    "Kompiluje się? Wrzucamy na produkcję!",
+                    "Na moim komputerze działało.",
+                    "Dobry kod sam się dokumentuje.",
+                    "Nie martw się, jeśli coś nie działa. Gdyby wszystko działało, nie miałbyś pracy.",
+                    "Każdy kod, którego nie pisałeś przez ostatnie 6 miesięcy, mógłby równie dobrze być napisany przez kogoś innego.",
+                    "Mierzenie postępu programowania w liniach kodu to jak mierzenie postępu budowy samolotu w kilogramach.",
+                    "Sprzęt to część komputera, którą można kopnąć. Oprogramowanie to część, którą można tylko przekląć.",
+                    "Prawdziwi programiści nie komentują kodu. Jeśli trudno było to napisać, powinno być trudno to przeczytać.",
+                    "Zrób to dobrze za pierwszym razem.",
+                    "Dwa najważniejsze narzędzia programisty to gumka do ścierania i kosz na śmieci.",
+                    "Przedwczesna optymalizacja to korzeń wszelkiego zła.",
+                    "Koduj tak, jakby osoba utrzymująca twój kod była brutalnym psychopatą, który wie, gdzie mieszkasz.",
+                    "Gdy uderzasz głową w klawiaturę, tracisz 150 kalorii na godzinę.",
+                    "Najlepszym sposobem przewidzenia przyszłości jest jej zaimplementowanie.",
+                    "W C++ trudniej strzelić sobie w stopę, ale jeśli to zrobisz, odstrzelisz sobie całą nogę.",
+                    "Jedyne zabezpieczenie to brak prądu.",
+                    "Internet Explorer to narzędzie do pobierania innych przeglądarek.",
+                    "Najgorszą rzeczą w programowaniu jest to, że musisz myśleć, zanim coś napiszesz.",
+                    "Upewnij się, że komputer jest podłączony do gniazdka.",
+                    "Języki programowania dzielą się na te, na które wszyscy narzekają, i te, których nikt nie używa.",
+                    "Czasem najlepszym kodem jest ten, którego w ogóle nie napisano.",
+                    "Ctrl+C, Ctrl+V - klawisze, które zbudowały nowoczesny internet.",
+                    "Kto rano wstaje, ten ma więcej czasu na debugowanie.",
+                    "Złota zasada IT: Uruchom ponownie i sprawdź czy działa.",
+                    "Chmura to po prostu komputer kogoś innego.",
+                    "Zrób kopię zapasową, zanim będzie za późno.",
+                    "Działające oprogramowanie to podstawowa miara postępu.",
+                    "Im więcej wiesz, tym bardziej zdajesz sobie sprawę, że nic nie wiesz.",
+                    "AI nie zastąpi programistów, ale programiści używający AI zastąpią tych, którzy jej nie używają.",
+                    "Pamiętaj o zamknięciu tagu </div>",
+                    "Nie ma głupich pytań, są tylko głupie błędy w kodzie.",
+                    "Pętla nieskończona - wejście jest, wyjścia brak.",
+                    "Rekurencja: patrz -> Rekurencja.",
+                    "Gdzie dwóch programistów, tam trzy frameworki JS.",
+                    "Wydawało mi się to proste, dopóki nie zacząłem tego kodować.",
+                    "Zawsze zostawiaj kod czystszym, niż go zastałeś.",
+                    "Życie to nie program, nie ma przycisku Cofnij.",
+                    "Najtrudniejsze w IT jest nazwanie zmiennej i unieważnienie pamięci podręcznej.",
+                    "Gdy brakuje argumentów, zacznij rzucać wyjątki.",
+                    "JavaScript to asynchroniczny chaos trzymany w ryzach taśmą klejącą.",
+                    "Zanim użyjesz AI, sprawdź w dokumentacji.",
+                    "Lepiej mieć jeden duży błąd niż tysiąc małych.",
+                    "Przerwa na kawę rozwiązuje 50% błędów w kodzie.",
+                    "Każdy problem w informatyce można rozwiązać przez dodanie kolejnego poziomu abstrakcji.",
+                    "System BigOS nie potrzebuje aktualizacji, BigOS JEST aktualizacją!"
                 ];
                 const randQuote = quotes[Math.floor(Math.random() * quotes.length)];
                 out.innerHTML += `\n💡 Cytat dla Ciebie:\n"${randQuote}"`;
@@ -552,7 +635,7 @@ Dostępne komendy:
                         for(let i = 0; i < 50; i++) {
                             line += chars.charAt(Math.floor(Math.random() * chars.length)) + ' ';
                         }
-                        out.innerHTML += `<div class="text-green-500 opacity-80" style="font-size: 0.75rem;">${line}</div>`;
+                        out.innerHTML += `<div class="text-emerald-500 opacity-80 font-bold" style="font-size: 0.75rem;">${line}</div>`;
                         out.scrollTop = out.scrollHeight;
                     }, 80);
                 }
@@ -588,78 +671,14 @@ Dostępne komendy:
                     out.innerHTML += `\nOtwieranie ${desktop.escapeHTML(url)} w przeglądarce Sieciosław...`;
                     
                     if (typeof winManager !== 'undefined') {
-                        const urlInput = document.getElementById('url-input');
+                        const urlInput = document.getElementById('s-url-input');
                         if(urlInput) {
                             urlInput.value = url;
-                            if(typeof apps !== 'undefined') apps.navigate();
+                            if(typeof siecioslawApp !== 'undefined') siecioslawApp.navigateFromBar();
                         }
                         winManager.open('siecioslaw');
                     }
                 }
-                break;
-
-            case 'upload':
-                const fileInput = document.createElement('input');
-                fileInput.type = 'file';
-                fileInput.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    out.innerHTML += `\nŁadowanie i kodowanie pliku ${desktop.escapeHTML(file.name)}... (to może chwilę potrwać)`;
-                    out.scrollTop = out.scrollHeight;
-                    
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                        try {
-                            let base64 = ev.target.result;
-                            if (base64.includes(',')) {
-                                base64 = base64.split(',')[1];
-                            }
-                            
-                            let iconType = '📄';
-                            if (file.name.endsWith('.wasm')) iconType = '⚙️';
-                            else if (file.name.endsWith('.csv')) iconType = '📊';
-                            else if (file.name.endsWith('.txt')) iconType = '📝';
-
-                            fileSystem.push({
-                                id: 'file_' + Date.now(),
-                                type: 'file',
-                                name: file.name,
-                                icon: iconType,
-                                content: base64,
-                                parentId: wladcaApp.currentPath,
-                                x: Math.floor(Math.random() * 200) + 20,
-                                y: Math.floor(Math.random() * 200) + 20
-                            });
-
-                            if (typeof fsManager !== 'undefined') fsManager.save();
-                            if (typeof desktop !== 'undefined') desktop.render();
-                            if (typeof fsManager !== 'undefined' && fsManager.currentFolder === wladcaApp.currentPath) fsManager.renderExplorerContent(wladcaApp.currentPath);
-                            
-                            out.innerHTML += `\n[Sukces] Plik ${desktop.escapeHTML(file.name)} został zapisany w obecnym katalogu!`;
-                            out.scrollTop = out.scrollHeight;
-                        } catch (err) {
-                            out.innerHTML += `\n[Błąd] Nie udało się wgrać pliku. Prawdopodobnie brak miejsca w pamięci przeglądarki.`;
-                            out.scrollTop = out.scrollHeight;
-                        }
-                    };
-                    reader.readAsDataURL(file);
-                };
-                fileInput.click();
-                out.innerHTML += `\nWybierz plik z dysku...`;
-                break;
-
-            case 'wasm_demo':
-                // Prosty, prekompilowany moduł WASM dodający 2 liczby
-                // Oparty na kodzie WAT: (module (func $add (param $a i32) (param $b i32) (result i32) local.get $a local.get $b i32.add) (export "add" (func $add)))
-                const wasmBase64 = "AGFzbQEAAAABBwFgAn9/AX8DAgEABwcBA2FkZAAACgkBBwAgACABags=";
-                fileSystem.push({ id: 'file_'+Date.now(), type: 'file', name: 'test_dodawania.wasm', icon: '⚙️', content: wasmBase64, parentId: wladcaApp.currentPath, x: 20, y: 20 });
-                
-                if(typeof fsManager !== 'undefined') fsManager.save();
-                if(typeof desktop !== 'undefined') desktop.render();
-                if(typeof fsManager !== 'undefined' && fsManager.currentFolder === wladcaApp.currentPath) fsManager.renderExplorerContent(wladcaApp.currentPath);
-                
-                out.innerHTML += `\n[WASM] Wygenerowano plik 'test_dodawania.wasm'.\nZnajdź go i kliknij dwukrotnie, aby uruchomić w wbudowanym silniku BigOS WebAssembly Engine!`;
                 break;
 
             case 'pogoda':
@@ -701,11 +720,42 @@ Dostępne komendy:
                     out.innerHTML += `\nOtwieranie pliku: ${desktop.escapeHTML(fileToOpen.name)}...`;
                     if (fileToOpen.name.endsWith('.csv') && typeof tabelarzApp !== 'undefined') {
                         tabelarzApp.openFromFS(fileToOpen);
+                    } else if (fileToOpen.name.endsWith('.zip') && typeof kompresorApp !== 'undefined') {
+                        kompresorApp.openWithItem(fileToOpen.id);
+                    } else if (fileToOpen.name.endsWith('.wasm') && typeof wasmEngineApp !== 'undefined') {
+                        wasmEngineApp.open(fileToOpen);
                     } else if (typeof skrybaApp !== 'undefined') {
                         skrybaApp.open(fileToOpen);
                     } else {
                         out.innerHTML += `\nBłąd: Brak przypisanego programu do otwarcia tego pliku.`;
                     }
+                    break;
+                }
+
+                // INTELIGENTNE ALIASY DLA APLIKACJI
+                let appIdTarget = null;
+                let appNameDisplay = fullItemName;
+
+                if (fullItemName === 'rachmistrz kodu' || fullItemName === 'kod' || fullItemName === 'rachmistrz-kodu') {
+                    appIdTarget = 'rachmistrz-kodu';
+                    appNameDisplay = 'Rachmistrz Kodu';
+                } else if (fullItemName === 'upychacz' || fullItemName === 'upychacz zip' || fullItemName === 'zip' || fullItemName === 'kompresor') {
+                    appIdTarget = 'kompresor';
+                    appNameDisplay = 'Upychacz ZIP';
+                } else if (fullItemName === 'kasiarz') {
+                    appIdTarget = 'kasiarz';
+                    appNameDisplay = 'Kasiarz';
+                } else if (fullItemName === 'przelicznik') {
+                    appIdTarget = 'przelicznik';
+                    appNameDisplay = 'Przelicznik';
+                } else if (fullItemName === 'tablica' || fullItemName === 'tabelarz') {
+                    appIdTarget = 'tabelarz';
+                    appNameDisplay = 'Tabelarz';
+                }
+
+                if (appIdTarget) {
+                    out.innerHTML += `\nUruchamianie: ${desktop.escapeHTML(appNameDisplay)}...`;
+                    if (typeof winManager !== 'undefined') winManager.open(appIdTarget);
                     break;
                 }
 
@@ -724,5 +774,4 @@ Dostępne komendy:
     }
 };
 
-// Automatyczne załadowanie konfiguracji po wczytaniu pliku
 setTimeout(wladcaApp.init, 500);

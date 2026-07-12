@@ -13,6 +13,10 @@ const siecioslawApp = {
     isVerticalTabs: false,
     isAIPanelOpen: false,
     
+    // Nowa niezależna pamięć podręczna dla asystenta wewnątrz przeglądarki
+    aiMessages: [],
+    isAIThinking: false,
+
     _initialized: false,
 
     init: () => {
@@ -95,7 +99,7 @@ const siecioslawApp = {
                 <!-- Pasek Adresu -->
                 <div class="flex-grow flex items-center g-bg border g-border rounded-full px-3 py-1 shadow-inner relative group focus-within:ring-2 focus-within:ring-blue-500">
                     <span id="s-sec-icon" class="text-xs mr-2 opacity-50">🔒</span>
-                    <input type="text" id="s-url-input" class="flex-grow bg-transparent border-none outline-none text-sm font-mono g-text placeholder-gray-500" placeholder="Szukaj w Google lub wpisz adres URL..." onkeydown="if(event.key==='Enter') siecioslawApp.navigateFromBar()">
+                    <input type="text" id="s-url-input" class="flex-grow bg-transparent border-none outline-none text-sm font-mono g-text placeholder-gray-500" placeholder="Szukaj w internecie lub wpisz adres URL..." onkeydown="if(event.key==='Enter') siecioslawApp.navigateFromBar()">
                     <button onclick="siecioslawApp.toggleBookmark()" id="s-bookmark-btn" class="ml-2 text-gray-500 hover:text-yellow-400 transition text-lg" title="Dodaj do zakładek">☆</button>
                 </div>
                 
@@ -103,7 +107,7 @@ const siecioslawApp = {
                     <button onclick="siecioslawApp.toggleVerticalTabs()" class="g-btn w-8 h-8 rounded shadow-sm flex items-center justify-center bg-white/5 hover:bg-blue-500 hover:text-white transition" title="Karty Pionowe">🗂️</button>
                     <button onclick="siecioslawApp.toggleSplitView()" id="s-split-btn" class="g-btn w-8 h-8 rounded shadow-sm flex items-center justify-center bg-white/5 hover:bg-emerald-500 hover:text-white transition" title="Podział Ekranu (Split View)">◫</button>
                     <button onclick="siecioslawApp.saveToBigOS()" class="g-btn w-8 h-8 rounded shadow-sm flex items-center justify-center bg-white/5 hover:bg-purple-500 hover:text-white transition text-purple-400" title="Zapisz do BigOS">📥</button>
-                    <button onclick="siecioslawApp.toggleAIPanel()" id="s-ai-btn" class="g-btn px-3 h-8 rounded shadow-sm flex items-center justify-center bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold border-none transition hover:opacity-80" title="Podpowiadacz AI">✨ AI</button>
+                    <button onclick="siecioslawApp.toggleAIPanel()" id="s-ai-btn" class="g-btn px-3 h-8 rounded shadow-sm flex items-center justify-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold border-none transition" title="Podpowiadacz AI">✨ BigAI</button>
                     
                     <!-- Menu Rozwijane -->
                     <div class="relative group ml-1 h-full flex items-center">
@@ -152,23 +156,21 @@ const siecioslawApp = {
                     </div>
                 </div>
 
-                <!-- PRAWY PANEL AI (Podpowiadacz w pełni automatyczny!) -->
+                <!-- PRAWY PANEL AI (Połączony z Globalnym BigAI) -->
                 <div id="s-ai-panel" class="w-[280px] sm:w-[320px] border-l g-border bg-black/20 flex-col shrink-0 transition-all duration-300 hidden z-40">
-                    <div class="p-3 border-b g-border flex justify-between items-center bg-gradient-to-r from-purple-600/20 to-blue-600/20">
-                        <span class="font-bold text-sm text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-blue-400">✨ Podpowiadacz AI</span>
-                        <button onclick="siecioslawApp.toggleAIPanel()" class="g-icon-btn hover:text-red-400 text-lg leading-none">✖</button>
+                    <div class="p-3 border-b g-border flex justify-between items-center bg-gradient-to-r from-blue-600/20 to-purple-600/20">
+                        <span class="font-bold text-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-md">🤖 BigAI w Przeglądarce</span>
+                        <div class="flex gap-2">
+                            <button onclick="if(typeof podpowiadaczApp !== 'undefined') podpowiadaczApp.stopTTS();" class="g-icon-btn hover:text-red-400 text-lg leading-none" title="Zatrzymaj Mowę">🛑</button>
+                            <button onclick="siecioslawApp.aiMessages=[]; siecioslawApp.renderAIChat();" class="g-icon-btn hover:text-red-400 text-lg leading-none" title="Wyczyść Czat">🗑️</button>
+                            <button onclick="siecioslawApp.toggleAIPanel()" class="g-icon-btn hover:text-red-400 text-lg leading-none">✖</button>
+                        </div>
                     </div>
-                    <div class="flex-grow p-3 overflow-y-auto custom-scrollbar text-sm flex flex-col gap-3" id="s-ai-chat">
-                        <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-gray-800 dark:text-gray-200 shadow-sm">
-                            Cześć! Jestem Twoim inteligentnym asystentem internetowym. O co chciałbyś mnie zapytać?
-                        </div>
-                        <div class="flex flex-wrap gap-2 mt-2">
-                            <button onclick="siecioslawApp.sendAI('Podsumuj stronę i powiedz mi o czym ona jest')" class="g-btn text-[10px] px-2 py-1 rounded-full border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20">📄 Streść</button>
-                            <button onclick="siecioslawApp.sendAI('Przetłumacz główne informacje na tej stronie na język polski')" class="g-btn text-[10px] px-2 py-1 rounded-full border-blue-500/50 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20">🌍 Przetłumacz</button>
-                        </div>
+                    <div class="flex-grow p-3 overflow-y-auto custom-scrollbar text-sm flex flex-col gap-3" id="s-ai-chat" style="user-select: text; -webkit-user-select: text;">
+                        <!-- Chat wstrzykiwany przez JS -->
                     </div>
                     <div class="p-2 border-t g-border bg-black/40">
-                        <input type="text" id="s-ai-input" placeholder="Zadaj pytanie..." class="w-full text-xs p-2 rounded-lg g-bg g-text border g-border outline-none focus:border-purple-500 transition shadow-inner" onkeydown="if(event.key==='Enter') { siecioslawApp.sendAI(this.value); this.value=''; }">
+                        <input type="text" id="s-ai-input" placeholder="Zadaj pytanie..." class="w-full text-xs p-2 rounded-lg g-bg g-text border g-border outline-none focus:border-blue-500 transition shadow-inner" onkeydown="if(event.key==='Enter') { siecioslawApp.sendAI(this.value); this.value=''; }">
                     </div>
                 </div>
             </div>
@@ -194,7 +196,6 @@ const siecioslawApp = {
             viewDiv.id = `view-${id}`;
             viewDiv.className = 's-tab-view absolute inset-0 hidden bg-white dark:bg-[#121212]';
             viewDiv.innerHTML = `
-                <!-- Sandbox nie pozwala na popupy top-level, dzięki czemu linki otwierają się poprawnie w ramce -->
                 <iframe id="frame-${id}" class="w-full h-full border-none bg-white absolute inset-0 hidden" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
                 <div id="start-${id}" class="w-full h-full bg-gray-50 dark:bg-[#1a1a1a] absolute inset-0 overflow-y-auto custom-scrollbar hidden"></div>
             `;
@@ -322,13 +323,12 @@ const siecioslawApp = {
     },
 
     // ==================================================================
-    // NAWIGACJA Z GOOGLE IGU=1 (Wymusza otwieranie linków w tej samej karcie)
+    // NAWIGACJA
     // ==================================================================
     interceptUrl: (url) => {
         let finalUrl = url;
         const lowerUrl = finalUrl.toLowerCase();
         
-        // Zabezpieczenia przeciw blokadom ramek X-Frame-Options
         if (lowerUrl.includes('google.') && !lowerUrl.includes('igu=1')) {
             finalUrl += (finalUrl.includes('?') ? '&' : '?') + 'igu=1';
         } else {
@@ -352,8 +352,7 @@ const siecioslawApp = {
         const isUrl = /^((https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}(:\d+)?(\/.*)?|localhost(:\d+)?(\/.*)?|bigos:\/\/.*)$/i.test(query);
 
         if (!isUrl) {
-            // Używamy z powrotem Google z parametrem igu=1, rozwiązuje to problem "otwierania w nowych kartach" hosta!
-            finalUrl = 'https://www.google.com/search?igu=1&q=' + encodeURIComponent(query);
+            finalUrl = 'https://www.bing.com/search?q=' + encodeURIComponent(query);
             siecioslawApp.updateTabState(finalUrl, query + ' - Wyszukiwanie');
         } else {
             if (!query.startsWith('http') && !query.startsWith('bigos://')) {
@@ -417,9 +416,6 @@ const siecioslawApp = {
         siecioslawApp.updateView(true);
     },
 
-    // ==================================================================
-    // AKTUALIZACJA GŁÓWNEGO WIDOKU
-    // ==================================================================
     updateView: (forceReload = false) => {
         const tab = siecioslawApp.tabs.find(t => t.id === siecioslawApp.activeTabId);
         if (!tab) return;
@@ -495,9 +491,6 @@ const siecioslawApp = {
         `;
     },
 
-    // ==================================================================
-    // STRONA STARTOWA BIGOS
-    // ==================================================================
     renderStartPage: (container) => {
         let recentsHtml = '';
         const recentHistory = [...siecioslawApp.history].slice(0, 5);
@@ -506,7 +499,7 @@ const siecioslawApp = {
         } else {
             recentHistory.forEach(h => {
                 recentsHtml += `<div class="flex items-center justify-between p-2 hover:bg-gray-200 dark:hover:bg-[#333] rounded cursor-pointer transition border border-transparent dark:border-[#444]" onclick="siecioslawApp.navigateURL('${siecioslawApp.escUrl(h.url)}')">
-                    <div class="truncate text-sm font-medium text-gray-900 dark:text-gray-100"><span class="mr-2">📄</span>${typeof desktop !== 'undefined' ? desktop.escapeHTML(h.title || h.url) : (h.title || h.url)}</div>
+                    <div class="truncate text-sm font-medium text-gray-900 dark:text-white"><span class="mr-2">📄</span>${typeof desktop !== 'undefined' ? desktop.escapeHTML(h.title || h.url) : (h.title || h.url)}</div>
                 </div>`;
             });
         }
@@ -532,8 +525,8 @@ const siecioslawApp = {
                     
                     <div class="w-full max-w-xl flex bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] rounded-full p-2 shadow-lg focus-within:ring-2 focus-within:ring-blue-500 transition-all">
                         <span class="text-xl px-3 text-gray-400 self-center">🔍</span>
-                        <input type="text" id="s-start-search" class="flex-grow bg-transparent border-none outline-none text-base text-gray-900 dark:text-white placeholder-gray-500 font-medium" placeholder="Wpisz zapytanie do Google..." onkeydown="if(event.key==='Enter') siecioslawApp.navigateURL('https://www.google.com/search?igu=1&q='+encodeURIComponent(this.value))">
-                        <button class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-bold transition shadow" onclick="siecioslawApp.navigateURL('https://www.google.com/search?igu=1&q='+encodeURIComponent(document.getElementById('s-start-search').value))">Szukaj</button>
+                        <input type="text" id="s-start-search" class="flex-grow bg-transparent border-none outline-none text-base text-gray-900 dark:text-white placeholder-gray-500 font-medium" placeholder="Wpisz zapytanie do Bing..." onkeydown="if(event.key==='Enter') siecioslawApp.navigateURL('https://www.bing.com/search?q='+encodeURIComponent(this.value))">
+                        <button class="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-bold transition shadow" onclick="siecioslawApp.navigateURL('https://www.bing.com/search?q='+encodeURIComponent(document.getElementById('s-start-search').value))">Szukaj</button>
                     </div>
                 </div>
 
@@ -585,7 +578,7 @@ const siecioslawApp = {
             view2.classList.remove('hidden');
             btn.classList.add('bg-emerald-500', 'text-white');
             btn.classList.remove('bg-white/5');
-            document.getElementById('s-frame-split').src = 'https://www.google.com/search?igu=1&q=BigOS';
+            document.getElementById('s-frame-split').src = 'https://www.bing.com/search?q=BigOS';
         } else {
             view2.classList.add('hidden');
             btn.classList.remove('bg-emerald-500', 'text-white');
@@ -594,7 +587,7 @@ const siecioslawApp = {
     },
 
     // ==================================================================
-    // ASYSTENT AI BROWSER (Prawdziwy, z bezpiecznym filtrowaniem kluczy)
+    // ZINTEGROWANY ASYSTENT BigAI W PRZEGLĄDARCE (Dedykowany Kontekst)
     // ==================================================================
     toggleAIPanel: () => {
         siecioslawApp.isAIPanelOpen = !siecioslawApp.isAIPanelOpen;
@@ -605,6 +598,7 @@ const siecioslawApp = {
             panel.classList.remove('hidden');
             panel.classList.add('flex');
             btn.classList.add('ring-2', 'ring-purple-400');
+            siecioslawApp.renderAIChat();
         } else {
             panel.classList.add('hidden');
             panel.classList.remove('flex');
@@ -612,79 +606,230 @@ const siecioslawApp = {
         }
     },
 
+    renderAIChat: () => {
+        const chatBox = document.getElementById('s-ai-chat');
+        if (!chatBox) return;
+
+        chatBox.innerHTML = '';
+
+        if (siecioslawApp.aiMessages.length === 0) {
+            chatBox.innerHTML = `
+                <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-gray-800 dark:text-gray-200 shadow-sm mb-2 text-xs">
+                    Cześć! Jestem Twoim inteligentnym asystentem internetowym (BigAI). O co chciałbyś zapytać w związku z przeglądaną stroną?<br><br>
+                    <i class="text-[9px] opacity-70">Jeśli uruchamiasz system lokalnie, upewnij się, że podałeś własny klucz API w ustawieniach głównych (Moduł Podpowiadacz).</i>
+                </div>
+                <div class="flex flex-wrap gap-2 mt-2 mb-4">
+                    <button onclick="siecioslawApp.sendAI('Podsumuj stronę i powiedz mi o czym ona jest')" class="g-btn text-[10px] px-3 py-1.5 rounded-full border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 shadow-sm font-bold">📄 Streść</button>
+                    <button onclick="siecioslawApp.sendAI('Przetłumacz główne informacje na tej stronie na język polski')" class="g-btn text-[10px] px-3 py-1.5 rounded-full border-blue-500/50 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20 shadow-sm font-bold">🌍 Przetłumacz</button>
+                </div>
+            `;
+        }
+
+        siecioslawApp.aiMessages.forEach((msg, idx) => {
+            const isUser = msg.role === 'user';
+            const alignClass = isUser ? 'self-end' : 'self-start';
+            const bgClass = isUser ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white border-blue-500/30' : 'g-panel bg-black/20 border g-border g-text';
+            const radiusClass = isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm';
+            
+            let htmlText = typeof desktop !== 'undefined' ? desktop.escapeHTML(msg.text) : msg.text;
+            
+            // Formatowanie i wymuszanie przechwytu linków wewnątrz okna Sieciosława
+            htmlText = htmlText.replace(/\[(.*?)\]\((.*?)\)/g, (m, txt, url) => {
+                let cleanUrl = url.replace(/&amp;/g, '&').replace(/'/g, "\\'");
+                return `<a href="#" onclick="siecioslawApp.addTab('${cleanUrl}'); return false;" class="text-blue-400 hover:text-blue-300 hover:underline font-bold cursor-pointer">🔗 ${txt}</a>`;
+            });
+            htmlText = htmlText.replace(/(^|\s|&gt;)(https?:\/\/[^\s<]+)/g, (m, prefix, url) => {
+                let cleanUrl = url.replace(/&amp;/g, '&').replace(/'/g, "\\'");
+                return `${prefix}<a href="#" onclick="siecioslawApp.addTab('${cleanUrl}'); return false;" class="text-blue-400 hover:text-blue-300 hover:underline font-bold cursor-pointer">🔗 ${url}</a>`;
+            });
+
+            htmlText = htmlText.replace(/\*\*(.*?)\*\*/g, '<b class="text-blue-400">$1</b>').replace(/\n/g, '<br>');
+            htmlText = htmlText.replace(/`(.*?)`/g, '<code class="bg-black/30 text-blue-300 px-1 py-0.5 rounded font-mono text-xs border g-border">$1</code>');
+
+            let ttsButton = (!isUser && typeof podpowiadaczApp !== 'undefined') ? `<button data-playing="false" class="text-[9px] text-gray-400 hover:text-emerald-400 font-bold ml-2 uppercase tracking-wider" onclick="podpowiadaczApp.readText(this, \`${htmlText.replace(/`/g, "'").replace(/<[^>]*>?/gm, '')}\`)">🔊 Czytaj</button>` : '';
+
+            const el = document.createElement('div');
+            el.className = `flex flex-col max-w-[90%] sm:max-w-[85%] ${alignClass} mb-3 shadow-md ${bgClass} ${radiusClass} p-3 text-xs leading-relaxed relative select-text cursor-auto`;
+            el.style.userSelect = "text";
+            el.style.webkitUserSelect = "text";
+
+            el.innerHTML = `
+                <div class="flex items-center justify-between mb-2 border-b border-white/10 pb-1 w-full opacity-70">
+                    <span class="text-[9px] font-bold uppercase tracking-wider">${isUser ? '👤 Ty' : '🤖 BigAI'}</span>
+                    ${ttsButton}
+                </div>
+                <div class="w-full break-words space-y-1 font-sans">
+                    ${htmlText}
+                </div>
+            `;
+            chatBox.appendChild(el);
+        });
+
+        if (siecioslawApp.isAIThinking) {
+            chatBox.innerHTML += `<div class="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-2 animate-pulse">Łączenie z chmurą BigAI...</div>`;
+        }
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    },
+
     sendAI: async (msgText) => {
-        const chat = document.getElementById('s-ai-chat');
-        if(!chat || !msgText.trim()) return;
+        if(!msgText.trim()) return;
 
-        chat.innerHTML += `
-            <div class="self-end bg-purple-600 text-white rounded-lg rounded-tr-none p-2 max-w-[85%] text-xs shadow">
-                ${typeof desktop !== 'undefined' ? desktop.escapeHTML(msgText) : msgText}
-            </div>
-        `;
-        chat.scrollTop = chat.scrollHeight;
-
-        const thinkingId = 'think_' + Date.now();
-        chat.innerHTML += `
-            <div id="${thinkingId}" class="self-start text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1 mb-2 animate-pulse">Łączenie z chmurą AI...</div>
-        `;
-        chat.scrollTop = chat.scrollHeight;
+        siecioslawApp.aiMessages.push({ role: 'user', text: msgText, rawText: msgText });
+        siecioslawApp.isAIThinking = true;
+        siecioslawApp.renderAIChat();
 
         const tab = siecioslawApp.tabs.find(t => t.id === siecioslawApp.activeTabId);
         const currentUrl = tab ? tab.url : 'Brak URL';
-        const promptText = `Pytanie użytkownika: ${msgText}\n\nAktualnie przeglądany przez niego adres URL w przeglądarce to: ${currentUrl}. Jeśli pyta o tę stronę lub prosi o streszczenie, użyj narzędzia wyszukiwarki internetowej aby zdobyć o niej informacje i streścić zawartość.`;
+        const promptText = `Pytanie użytkownika: ${msgText}\n\nAktualnie przeglądany adres URL w przeglądarce to: ${currentUrl}. Jeśli pyta o tę stronę lub prosi o streszczenie, użyj narzędzia wyszukiwarki internetowej aby zdobyć o niej informacje i streścić zawartość.`;
 
-        // INTELIGENTNE WYKRYWANIE KLUCZA
-        // Użyj klucza z Kombinatora, a jeśli jest puste, użyj środowiskowego (wbudowanego w Canvas Proxy)
-        let apiKey = localStorage.getItem('bigos_gemini_api_key') || ""; 
-        let modelName = apiKey ? "gemini-1.5-flash" : "gemini-2.5-flash-preview-09-2025";
+        // POBIERANIE USTAWIEŃ Z GŁÓWNEGO PODPOWIADACZA
+        const prov = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.provider : 'gemini_free';
+        const key = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.apiKey : '';
+        const mod = typeof podpowiadaczApp !== 'undefined' ? (podpowiadaczApp.settings.isCustomModel ? podpowiadaczApp.settings.customModel : podpowiadaczApp.settings.model) : 'gemini-3.1-flash-lite';
+
+        const systemPrompt = "Jesteś asystentem wbudowanym w przeglądarkę Sieciosław w systemie BigOS. Twoim zadaniem jest pomaganie w analizie, tłumaczeniu i streszczaniu stron internetowych. ZAWSZE odpowiadaj bezpośrednio tekstem. NIE GENERUJ ŻADNEGO KODU w Pythonie (jak np. tools.search) do wyszukiwania informacji. Jeśli nie masz danych, po prostu odpowiedz, co wiesz.";
+
+        let responseText = "Błąd API.";
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: promptText }] }],
-                systemInstruction: { parts: [{ text: "Jesteś inteligentnym asystentem wbudowanym w przeglądarkę Sieciosław systemu BigOS. Odpowiadaj krótko, zwięźle i po polsku. Masz dostęp do wbudowanej w Ciebie wyszukiwarki Google Search. Bądź pomocny." }] }
-            };
-
-            // Kluczowa poprawka: Grounding (Narzędzie Google Search) jest zablokowane dla darmowych kluczy użytkowników!
-            // Wywołuje błąd "400 Bad Request". Dodajemy je TYLKO gdy używamy klucza ze środowiska Canvas (!apiKey).
-            if (!apiKey) {
-                payload.tools = [{ google_search: {} }];
-            }
-
-            let aiResponse = "Przepraszam, wystąpił błąd serwera AI.";
-            
-            for (let i = 0; i < 3; i++) {
-                try {
-                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                    if (response.ok) {
-                        const data = await response.json();
-                        aiResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "Brak odpowiedzi ze strony sztucznej inteligencji.";
-                        aiResponse = aiResponse.replace(/\*\*(.*?)\*\*/g, '<b class="text-blue-500 dark:text-blue-400">$1</b>').replace(/\n/g, '<br>');
-                        break;
+            if (prov === 'gemini_free' || prov === 'gemini_api') {
+                const actualKey = prov === 'gemini_free' ? '' : key;
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${actualKey}`;
+                
+                let geminiContents = [];
+                let slice = siecioslawApp.aiMessages.slice(-8); 
+                
+                for (let m of slice) {
+                    let role = m.role === 'assistant' ? 'model' : 'user';
+                    let text = m.rawText || m.text;
+                    
+                    if (geminiContents.length === 0) {
+                        if (role === 'model') continue; 
+                        geminiContents.push({ role: role, parts: [{ text: text }] });
+                    } else {
+                        let lastMsg = geminiContents[geminiContents.length - 1];
+                        if (lastMsg.role === role) {
+                            lastMsg.parts[0].text += "\n\n" + text;
+                        } else {
+                            geminiContents.push({ role: role, parts: [{ text: text }] });
+                        }
                     }
-                } catch (e) {
-                    await new Promise(r => setTimeout(r, 1000 * (i+1))); 
                 }
+                
+                if (geminiContents.length > 0 && geminiContents[geminiContents.length - 1].role === 'user') {
+                    geminiContents[geminiContents.length - 1].parts[0].text = promptText;
+                } else {
+                    geminiContents.push({ role: 'user', parts: [{ text: promptText }]});
+                }
+
+                const payload = {
+                    contents: geminiContents,
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                if (prov === 'gemini_free') payload.tools = [{ google_search: {} }];
+
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        const data = await response.json();
+                        if (response.ok) {
+                            let textParts = data.candidates?.[0]?.content?.parts?.filter(p => p.text)?.map(p => p.text) || [];
+                            responseText = textParts.join('\n') || "Brak odpowiedzi od Gemini.";
+                            break;
+                        } else {
+                            if(i === 2) throw new Error(data.error?.message || response.statusText);
+                        }
+                    } catch (e) {
+                        if(i === 2) throw e;
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+                }
+            } 
+            else if (prov === 'openrouter') {
+                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${key}`,
+                        "HTTP-Referer": window.location.href, 
+                        "X-OpenRouter-Title": "BigOS Browser", 
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: mod,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...siecioslawApp.aiMessages.slice(0, -1).slice(-7).map(m => ({ role: m.role, content: m.rawText || m.text })),
+                            { role: "user", content: promptText }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                if(!response.ok) throw new Error(`OpenRouter: ${data.error?.message || response.statusText}`);
+                responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
+            }
+            else if (prov === 'openai') {
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: mod,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...siecioslawApp.aiMessages.slice(0, -1).slice(-7).map(m => ({ role: m.role, content: m.rawText || m.text })),
+                            { role: "user", content: promptText }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                if(!response.ok) throw new Error(`OpenAI: ${data.error?.message || response.statusText}`);
+                responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
+            }
+            else if (prov === 'groq') {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        model: mod,
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            ...siecioslawApp.aiMessages.slice(0, -1).slice(-7).map(m => ({ role: m.role, content: m.rawText || m.text })),
+                            { role: "user", content: promptText }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                if(!response.ok) throw new Error(`Groq: ${data.error?.message || response.statusText}`);
+                responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
             }
 
-            document.getElementById(thinkingId)?.remove();
-            
-            chat.innerHTML += `
-                <div class="self-start bg-gray-100 dark:bg-[#222] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-gray-200 rounded-lg rounded-tl-none p-3 max-w-[95%] text-xs shadow-md flex flex-col gap-2">
-                    <span class="font-bold text-[10px] text-purple-600 dark:text-purple-400 uppercase tracking-widest border-b border-gray-300 dark:border-[#444] pb-1">Podpowiadacz AI</span>
-                    <div>${aiResponse}</div>
-                </div>
-            `;
-            chat.scrollTop = chat.scrollHeight;
+        } catch (error) {
+            console.error(error);
+            if (prov === 'gemini_free' && (error.message.includes("unregistered callers") || error.message.includes("API Key"))) {
+                responseText = `⚠️ **Zabezpieczenie Google API:** \nUruchamiasz system BigOS lokalnie na własnym komputerze. Opcja "Darmowe wbudowane" działa tylko wewnątrz mojego symulatora (Canvas).\n\n👉 Wybierz w ustawieniach **"Własny Klucz Gemini"** i wklej tam swój darmowy klucz ze strony Google AI Studio.`;
+            } else {
+                responseText = `⚠️ **Błąd API (${prov}):** ${error.message}\nSprawdź poprawność klucza API w systemowym "Podpowiadaczu AI".`;
+            }
+        }
 
-        } catch (err) {
-            document.getElementById(thinkingId)?.remove();
-            chat.innerHTML += `<div class="self-start bg-red-500/20 text-red-500 rounded p-2 text-xs">Błąd połączenia z serwerem lub nieprawidłowy klucz z Kombinatora.</div>`;
+        // ==================================================================
+        // OCZYSZCZANIE Z HALUCYNACJI (Filtr blokujący pisanie kodu Python)
+        // ==================================================================
+        responseText = responseText.replace(/```python\n[\s\S]*?\n```/gi, '').trim();
+        if(responseText === "") responseText = "Przepraszam, wystąpił problem z przetworzeniem danych. Spróbuj zadać pytanie inaczej.";
+
+        siecioslawApp.isAIThinking = false;
+        siecioslawApp.aiMessages.push({ role: 'assistant', text: responseText, rawText: responseText });
+        siecioslawApp.renderAIChat();
+        
+        if (typeof podpowiadaczApp !== 'undefined' && podpowiadaczApp.settings.autoTTS) {
+            podpowiadaczApp.readText(null, responseText);
         }
     },
 
     // ==================================================================
-    // ZAPIS NA PULPIT I DRUKOWANIE
+    // INTEGRACJA Z BIGOS (Zapis na pulpit, Drukuj)
     // ==================================================================
     saveToBigOS: () => {
         const tab = siecioslawApp.tabs.find(t => t.id === siecioslawApp.activeTabId);
@@ -703,9 +848,10 @@ const siecioslawApp = {
             const content = `
                 <html>
                 <head><title>Skrót do ${title}</title></head>
-                <body style="font-family: sans-serif; text-align: center; margin-top: 20vh;">
-                    <h2>Skrót z Sieciosława</h2>
-                    <p>Oryginalny adres: <a href="${url}" target="_blank">${url}</a></p>
+                <body style="font-family: sans-serif; text-align: center; margin-top: 20vh; background: #222; color: #fff;">
+                    <h2 style="color: #60a5fa;">Skrót z Sieciosława</h2>
+                    <p style="margin-bottom: 30px;">Oryginalny adres:<br> <span style="color: #9ca3af;">${url}</span></p>
+                    <button onclick="parent.winManager.open('siecioslaw'); parent.siecioslawApp.addTab('${url}');" style="padding: 10px 20px; background: #2563eb; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.5);">🌐 Otwórz w Sieciosławie</button>
                 </body>
                 </html>
             `;

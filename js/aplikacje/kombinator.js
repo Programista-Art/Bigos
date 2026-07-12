@@ -1,5 +1,5 @@
 // ======================================================================
-// PLIK: js/aplikacje/kombinator.js (Kombinator - Tapety, Motywy, AI)
+// PLIK: js/aplikacje/kombinator.js (Kombinator - Tapety, Motywy)
 // ======================================================================
 
 const kombinatorApp = {
@@ -40,9 +40,6 @@ const kombinatorApp = {
         const proUI = document.createElement('div');
         proUI.className = 'flex flex-col overflow-hidden relative themed-app g-panel rounded-lg shadow-2xl h-full w-full';
 
-        // Pobranie zapisanego klucza AI
-        const savedApiKey = localStorage.getItem('bigos_gemini_api_key') || '';
-
         proUI.innerHTML = `
             <div class="px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-tapeciak')" ontouchstart="winManager.startDrag(event, 'app-tapeciak')">
                 <span class="text-sm font-bold g-accent drop-shadow-md">⚙️ Kombinator (Ustawienia Systemu)</span>
@@ -58,8 +55,6 @@ const kombinatorApp = {
                 <div class="w-1/4 sm:w-[180px] border-r g-border bg-black/10 flex flex-col p-2 gap-1 shrink-0 overflow-y-auto custom-scrollbar">
                     <button onclick="kombinatorApp.switchTab('wallpapers')" id="komb-tab-wallpapers" class="komb-tab g-item text-left px-3 py-2 rounded-lg font-bold text-xs sm:text-sm transition flex items-center gap-2"><span>🖼️</span> <span class="hidden sm:inline">Tapety</span></button>
                     <button onclick="kombinatorApp.switchTab('themes')" id="komb-tab-themes" class="komb-tab g-item text-left px-3 py-2 rounded-lg font-bold text-xs sm:text-sm transition flex items-center gap-2"><span>🎨</span> <span class="hidden sm:inline">Motywy</span></button>
-                    <div class="border-t g-border my-2 mx-2"></div>
-                    <button onclick="kombinatorApp.switchTab('ai')" id="komb-tab-ai" class="komb-tab g-item text-left px-3 py-2 rounded-lg font-bold text-xs sm:text-sm transition flex items-center gap-2"><span>🤖</span> <span class="hidden sm:inline">Podpowiadacz AI</span></button>
                 </div>
 
                 <!-- Prawy Panel Treści -->
@@ -70,7 +65,7 @@ const kombinatorApp = {
                         <div class="flex flex-col gap-3 shrink-0 mb-4 pb-4 border-b g-border">
                             <div class="flex items-center gap-3">
                                 <label class="text-[10px] uppercase font-bold g-text-muted tracking-wider shrink-0">Zmień tło dla:</label>
-                                <select id="wallpaper-target" class="p-1.5 text-xs font-bold g-bg g-text border g-border rounded outline-none flex-grow shadow-inner cursor-pointer">
+                                <select id="wallpaper-target" class="p.1.5 text-xs font-bold g-bg g-text border g-border rounded outline-none flex-grow shadow-inner cursor-pointer">
                                     <option value="desktop">Pulpitu (Główny ekran)</option>
                                     <option value="login">Ekranu Logowania</option>
                                 </select>
@@ -107,31 +102,6 @@ const kombinatorApp = {
                         </div>
                     </div>
 
-                    <!-- ZAKŁADKA 3: PODPOWIADACZ AI (Z kluczem API dla całego systemu) -->
-                    <div id="komb-content-ai" class="flex flex-col h-full absolute inset-0 hidden p-6 overflow-y-auto custom-scrollbar items-center">
-                        <h3 class="font-bold text-lg g-accent mb-6 border-b g-border pb-2 w-full max-w-lg text-center flex items-center justify-center gap-2"><span>🤖</span> Systemowy Asystent AI</h3>
-                        
-                        <div class="g-panel border g-border rounded-xl p-6 shadow-inner w-full max-w-lg flex flex-col gap-4 text-sm g-text">
-                            <p>System BigOS używa potężnego silnika <b class="g-accent">Google Gemini 2.5 Flash</b>. Aby sztuczna inteligencja mogła pomagać Ci w całym systemie (np. współpracować z przeglądarką i tworzyć pliki), musisz podać swój własny, darmowy klucz API.</p>
-                            
-                            <div class="bg-blue-500/10 border border-blue-500/30 p-3 rounded-lg text-xs leading-relaxed g-text">
-                                <b class="text-blue-500 dark:text-blue-400">Jak zdobyć klucz za darmo?</b><br>
-                                1. Wejdź na <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-blue-500 font-bold hover:underline">Google AI Studio</a> i zaloguj się swoim kontem.<br>
-                                2. Kliknij "Create API key" w nowym lub istniejącym projekcie.<br>
-                                3. Skopiuj wygenerowany ciąg znaków i wklej go poniżej.
-                            </div>
-
-                            <div class="mt-2 flex flex-col gap-1">
-                                <label class="text-[10px] font-bold g-text-muted uppercase tracking-widest">Twój systemowy klucz API Google Gemini:</label>
-                                <input type="password" id="komb-ai-key-input" placeholder="Wklej klucz (np. AIzaSy...)" value="${savedApiKey}" class="w-full p-3 rounded-lg g-bg g-text border g-border outline-none focus:border-blue-500 transition shadow-inner font-mono tracking-widest">
-                            </div>
-
-                            <button onclick="kombinatorApp.saveAIKey()" class="mt-4 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition duration-200 border border-blue-700 w-full">
-                                💾 Zapisz Klucz Systemowy
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         `;
@@ -140,26 +110,19 @@ const kombinatorApp = {
         kombinatorApp.switchTab('wallpapers');
     },
 
-    saveAIKey: () => {
-        const keyInput = document.getElementById('komb-ai-key-input').value.trim();
-        localStorage.setItem('bigos_gemini_api_key', keyInput);
-        if (typeof apps !== 'undefined') apps.showToast('Zapisano', 'Klucz Asystenta AI został zapisany w systemie.', 'success');
-    },
-
     switchTab: (tabId) => {
         document.querySelectorAll('.komb-tab').forEach(btn => {
-            btn.classList.remove('bg-blue-500', 'text-white', 'dark:bg-blue-600', 'bg-purple-600', 'dark:bg-purple-600');
+            btn.classList.remove('bg-blue-500', 'text-white', 'dark:bg-blue-600');
             btn.classList.add('g-text-muted');
         });
         
         const activeBtn = document.getElementById('komb-tab-' + tabId);
         if (activeBtn) {
             activeBtn.classList.remove('g-text-muted');
-            if(tabId === 'ai') activeBtn.classList.add('bg-purple-600', 'text-white', 'dark:bg-purple-600');
-            else activeBtn.classList.add('bg-blue-500', 'text-white', 'dark:bg-blue-600');
+            activeBtn.classList.add('bg-blue-500', 'text-white', 'dark:bg-blue-600');
         }
 
-        ['wallpapers', 'themes', 'ai'].forEach(id => {
+        ['wallpapers', 'themes'].forEach(id => {
             document.getElementById('komb-content-' + id).classList.add('hidden');
         });
         document.getElementById('komb-content-' + tabId).classList.remove('hidden');

@@ -412,30 +412,7 @@
         </div>
     </div>
 
-    <!-- <div id="app-pogodynka" class="window w-[350px] h-[450px] bg-gradient-to-b from-sky-400 to-blue-600 dark:from-gray-800 dark:to-gray-900 border border-blue-500 dark:border-gray-700 text-white">
-        <div class="title-bar bg-black/20 text-white p-2 flex justify-between items-center border-b border-white/10" onmousedown="winManager.startDrag(event, 'app-pogodynka')" ontouchstart="winManager.startDrag(event, 'app-pogodynka')">
-            <span class="text-sm font-bold">🌤️ Pogodynka</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('pogodynka')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.close('pogodynka')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
-            </div>
-        </div>
-        <div class="p-4 flex flex-col items-center h-full">
-            <div class="w-full flex gap-2 mb-6">
-                <input type="text" id="pogodynka-city" placeholder="Wpisz miasto..." class="flex-grow px-3 py-2 rounded-full bg-white/20 border border-white/30 text-white placeholder-white/70 outline-none focus:bg-white/30 text-sm" onkeydown="if(event.key==='Enter') pogodynkaApp.search()">
-                <button onclick="pogodynkaApp.search()" class="px-4 bg-white/30 hover:bg-white/40 rounded-full font-bold transition text-sm">Szukaj</button>
-            </div>
-            <div id="pogodynka-content" class="flex-grow flex flex-col items-center justify-center w-full text-center">
-                <div class="text-6xl mb-2" id="pog-icon">🌍</div>
-                <h2 class="text-2xl font-bold mb-1" id="pog-city">Wybierz Miasto</h2>
-                <div class="text-6xl font-light mb-4" id="pog-temp">--°C</div>
-                <div class="grid grid-cols-2 gap-4 w-full mt-auto bg-black/20 p-4 rounded-xl">
-                    <div><div class="text-xs text-white/70 uppercase">Wiatr</div><div class="font-bold text-lg" id="pog-wind">-- km/h</div></div>
-                    <div><div class="text-xs text-white/70 uppercase">Kod</div><div class="font-bold text-lg" id="pog-desc">--</div></div>
-                </div>
-            </div>
-        </div>
-    </div> -->
+
 <div id="app-pogodynka" class="window hidden"></div>
     <!-- 7. Sieciosław (Przeglądarka) -->
 <div id="app-siecioslaw" class="window hidden"></div>
@@ -479,7 +456,7 @@
         </div>
     </div>
 
-    <!-- 1. Skryba (Notatnik) -->
+    <!-- 1. Skryba (Notatnik)
     <div id="app-skryba" class="window w-[650px] h-[450px] bg-white dark:bg-gray-800 border dark:border-gray-700">
         <div class="title-bar bg-blue-700 dark:bg-gray-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-skryba')" ontouchstart="winManager.startDrag(event, 'app-skryba')">
             <span class="text-sm font-bold">📝 Skryba</span>
@@ -510,6 +487,38 @@
             <button onclick="document.execCommand('underline',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 underline rounded">U</button>
         </div>
         <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 bg-white dark:bg-[#1a1a1a] dark:text-gray-100 outline-none overflow-y-auto" placeholder="Zacznij pisać..."></div>
+    </div> -->
+
+    <div id="app-skryba" class="window w-[650px] h-[450px] themed-app g-panel border g-border shadow-2xl flex flex-col hidden">
+        <div class="title-bar bg-black/20 p-2 flex justify-between items-center border-b g-border cursor-move" onmousedown="winManager.startDrag(event, 'app-skryba')" ontouchstart="winManager.startDrag(event, 'app-skryba')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">📝 Skryba</span>
+            <div class="flex gap-2">
+                <button onclick="winManager.minimize('skryba')" class="g-icon-btn px-2 rounded hover:text-white transition">_</button>
+                <button onclick="winManager.maximize('app-skryba')" class="g-icon-btn px-2 rounded hover:text-white transition">□</button>
+                <button onclick="winManager.close('skryba')" class="text-red-500 hover:text-red-400 px-2 font-bold transition">✖</button>
+            </div>
+        </div>
+        <div class="flex gap-2 px-2 py-1 bg-black/10 text-xs border-b g-border z-50 shrink-0">
+            <div class="relative group cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition g-text font-bold">Plik
+                <div class="dropdown-menu absolute left-0 top-full g-panel border g-border shadow-xl rounded-b min-w-[200px] py-1 z-50 flex flex-col hidden group-hover:flex">
+                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="skrybaApp.newFile()">Nowy</button>
+                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="document.getElementById('skryba-open-pc').click()">Otwórz z komputera (.txt)</button>
+                    <input type="file" id="skryba-open-pc" class="hidden" accept=".txt" onchange="skrybaApp.openLocalFile(event)">
+                    <div class="border-t g-border my-1"></div>
+                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="skrybaApp.promptSaveToSystem()">Zapisz w BigOS</button>
+                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="skrybaApp.saveToPC()">Pobierz na PC (.txt)</button>
+                    <div class="border-t g-border my-1"></div>
+                    <button class="text-left px-4 py-1.5 hover:bg-red-500 hover:text-white transition text-red-400" onclick="winManager.close('skryba')">Zamknij program</button>
+                </div>
+            </div>
+            <div class="px-2 py-1 g-text-muted font-mono truncate max-w-[200px] border-l g-border ml-1 pl-2" id="skryba-filename-display">Nowy Plik.txt</div>
+        </div>
+        <div class="bg-black/20 p-2 flex gap-1 border-b g-border text-xs flex-wrap shadow-sm shrink-0">
+            <button onclick="document.execCommand('bold',false,null)" class="g-btn px-3 py-1 font-bold rounded shadow-sm hover:bg-white/10">B</button>
+            <button onclick="document.execCommand('italic',false,null)" class="g-btn px-3 py-1 italic rounded shadow-sm hover:bg-white/10">I</button>
+            <button onclick="document.execCommand('underline',false,null)" class="g-btn px-3 py-1 underline rounded shadow-sm hover:bg-white/10">U</button>
+        </div>
+        <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 g-bg g-text outline-none overflow-y-auto custom-scrollbar shadow-inner" placeholder="Zacznij pisać..."></div>
     </div>
 
    <!-- 2. Szkicownik-->
@@ -702,47 +711,47 @@
     </div>
 
     
-    <!-- 5. Grajek PRO -->
-    <div id="app-grajek" class="window w-[420px] h-[580px] bg-gray-50 dark:bg-[#111] text-gray-800 dark:text-green-400 font-mono border border-gray-300 dark:border-[#333]">
-        <div class="title-bar bg-green-700 dark:bg-[#222] text-white dark:text-gray-300 p-2 flex justify-between items-center border-b border-green-800 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-grajek')" ontouchstart="winManager.startDrag(event, 'app-grajek')">
-            <span class="text-sm font-bold">🎵 Grajek</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('grajek')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.close('grajek')" class="hover:bg-red-500 px-2">✖</button>
-            </div>
+    <!-- 5. Grajek (Skorupa z obsługą dynamicznych motywów) -->
+<div id="app-grajek" class="window w-[420px] h-[580px] themed-app g-panel font-mono border g-border">
+    <div class="title-bar bg-black/20 p-2 flex justify-between items-center border-b g-border" onmousedown="winManager.startDrag(event, 'app-grajek')" ontouchstart="winManager.startDrag(event, 'app-grajek')">
+        <span class="text-sm font-bold g-accent drop-shadow-md">🎵 Grajek</span>
+        <div class="flex gap-2">
+            <button onclick="winManager.minimize('grajek')" class="g-icon-btn px-2 rounded hover:text-white transition">_</button>
+            <button onclick="winManager.close('grajek')" class="text-red-500 hover:text-red-400 px-2 font-bold transition">✖</button>
+        </div>
+    </div>
+    
+    <div id="grajek-yt-container" class="w-full bg-black hidden border-b g-border"></div>
+    
+    <div class="p-4 flex flex-col h-full bg-black/5">
+        <div class="g-bg border g-border p-2 text-center text-xl rounded shadow-inner tracking-widest g-text relative mb-2">
+            <span id="grajek-time">00:00</span>
+        </div>
+        <input type="range" id="grajek-progress" value="0" class="w-full g-range cursor-pointer" oninput="apps.grajekSeek(this.value)">
+        <div class="flex justify-center gap-4 mt-3">
+            <button onclick="apps.grajekPrev()" class="g-btn rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏮</button>
+            <button onclick="apps.grajekPlay()" class="g-btn rounded-full w-12 h-12 flex items-center justify-center text-xl transition shadow">▶</button>
+            <button onclick="apps.grajekPause()" class="g-btn rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏸</button>
+            <button onclick="apps.grajekNext()" class="g-btn rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏭</button>
         </div>
         
-        <div id="grajek-yt-container" class="w-full bg-black hidden border-b border-[#333]"></div>
+        <div class="flex gap-2 mt-4 items-center flex-wrap">
+            <input type="text" id="grajek-url" placeholder="URL MP3 / YouTube..." class="flex-grow g-bg text-xs p-2 g-text border g-border outline-none focus:border-blue-500 rounded min-w-[150px] shadow-inner">
+            <button onclick="apps.grajkotekaAdd()" class="text-xs g-btn px-3 py-2 rounded shadow font-bold whitespace-nowrap">Dodaj Link</button>
+        </div>
         
-        <div class="p-4 flex flex-col h-full">
-            <div class="bg-white dark:bg-black border border-gray-300 dark:border-green-900/50 p-2 text-center text-xl rounded shadow-inner tracking-widest text-gray-800 dark:text-green-500 relative mb-2">
-                <span id="grajek-time">00:00</span>
+        <div class="mt-4 flex-grow border g-border g-bg rounded flex flex-col overflow-hidden shadow-inner">
+            <div class="bg-black/10 p-2 text-xs g-text-muted font-bold border-b g-border flex justify-between items-center flex-wrap gap-2">
+                <span class="uppercase tracking-wider">Grajkoteka</span>
+                <button onclick="document.getElementById('grajek-pc').click()" class="g-btn px-2 py-1 rounded transition whitespace-nowrap text-[10px]">Z Komputera</button>
+                <input type="file" id="grajek-pc" class="hidden" accept="audio/*" multiple onchange="apps.grajekLoadPC(event)">
             </div>
-            <input type="range" id="grajek-progress" value="0" class="w-full accent-green-500 cursor-pointer" oninput="apps.grajekSeek(this.value)">
-            <div class="flex justify-center gap-4 mt-2">
-                <button onclick="apps.grajekPrev()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏮</button>
-                <button onclick="apps.grajekPlay()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-12 h-12 flex items-center justify-center text-xl transition shadow">▶</button>
-                <button onclick="apps.grajekPause()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏸</button>
-                <button onclick="apps.grajekNext()" class="bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] border border-gray-300 dark:border-[#444] text-gray-800 dark:text-white rounded-full w-10 h-10 flex items-center justify-center text-lg transition shadow">⏭</button>
-            </div>
-            
-            <div class="flex gap-2 mt-4 items-center flex-wrap">
-                <input type="text" id="grajek-url" placeholder="URL MP3 / YouTube..." class="flex-grow bg-white dark:bg-black text-xs p-2 text-gray-800 dark:text-green-400 border border-gray-300 dark:border-[#333] outline-none focus:border-green-500 rounded min-w-[150px]">
-                <button onclick="apps.grajkotekaAdd()" class="text-xs bg-gray-200 dark:bg-[#222] hover:bg-gray-300 dark:hover:bg-[#333] text-gray-800 dark:text-gray-200 px-3 py-2 rounded border border-gray-300 dark:border-[#444] shadow font-bold whitespace-nowrap">Dodaj Link</button>
-            </div>
-            
-            <div class="mt-4 flex-grow border border-gray-300 dark:border-[#333] bg-white dark:bg-black rounded flex flex-col overflow-hidden">
-                <div class="bg-gray-100 dark:bg-[#222] p-1 px-2 text-xs text-gray-600 dark:text-gray-400 font-bold border-b border-gray-300 dark:border-[#333] flex justify-between items-center flex-wrap gap-2">
-                    <span>Grajkoteka (Playlista)</span>
-                    <button onclick="document.getElementById('grajek-pc').click()" class="bg-green-600 hover:bg-green-500 text-white px-2 py-1 rounded transition whitespace-nowrap">Z Komputera</button>
-                    <input type="file" id="grajek-pc" class="hidden" accept="audio/*" multiple onchange="apps.grajekLoadPC(event)">
-                </div>
-                <div id="grajkoteka-list" class="overflow-y-auto flex-grow text-xs text-gray-800 dark:text-green-300">
-                    <!-- Elementy listy ładuje JS -->
-                </div>
+            <div id="grajkoteka-list" class="overflow-y-auto custom-scrollbar flex-grow text-xs g-text p-2">
+                <!-- Elementy listy ładuje JS -->
             </div>
         </div>
     </div>
+</div>
 
     <!-- 6. Rachmistrz (Kalkulator) -->
     <div id="app-kalkulator" class="window w-[300px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
@@ -802,24 +811,23 @@
     <div id="browser-content" class="flex-grow relative bg-white dark:bg-[#1e1e1e]"></div>
 </div> 
 
-    <!-- 8. Władca Poleceń (Terminal) -->
-    <div id="app-wladca" class="window w-[500px] h-[350px] bg-black text-green-500 font-mono border border-gray-700">
-        <div class="title-bar bg-[#222] text-gray-300 p-2 flex justify-between items-center border-b border-[#444]" onmousedown="winManager.startDrag(event, 'app-wladca')" ontouchstart="winManager.startDrag(event, 'app-wladca')">
-            <span class="text-sm font-bold">💻 Władca Poleceń</span>
+<!-- 8. Władca Poleceń (Terminal) -->
+    <div id="app-wladca" class="window w-[500px] h-[350px] themed-app g-panel font-mono border g-border shadow-2xl">
+        <div class="title-bar bg-black/30 p-2 flex justify-between items-center border-b g-border cursor-move" onmousedown="winManager.startDrag(event, 'app-wladca')" ontouchstart="winManager.startDrag(event, 'app-wladca')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">💻 Władca Poleceń</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('wladca')" class="hover:text-white px-2">_</button>
-                <button onclick="winManager.maximize('app-wladca')" class="hover:text-white px-2">□</button>
-                <button onclick="winManager.close('wladca')" class="hover:text-red-500 px-2">✖</button>
+                <button onclick="winManager.minimize('wladca')" class="g-icon-btn px-2 rounded hover:text-white transition">_</button>
+                <button onclick="winManager.maximize('app-wladca')" class="g-icon-btn px-2 rounded hover:text-white transition">□</button>
+                <button onclick="winManager.close('wladca')" class="text-red-500 hover:text-red-400 px-2 font-bold transition">✖</button>
             </div>
         </div>
-        <div id="terminal-out" class="flex-grow p-3 overflow-y-auto whitespace-pre-wrap text-sm">Witaj we Władcy Poleceń!\nWpisz 'help' aby uzyskać listę komend.</div>
-        <div class="p-2 flex border-t border-[#333] text-sm items-center">
-            <span class="mr-2 text-blue-400">root@bigos:~#</span>
-            <!-- <input type="text" id="term-in" class="flex-grow bg-transparent outline-none text-green-400" autocomplete="off" onkeydown="apps.terminalHandle(event)"> -->
-            <input type="text" id="term-in" class="flex-grow bg-transparent outline-none text-green-400" autocomplete="off" onkeydown="wladcaApp.handle(event)">
+        <div id="terminal-out" class="flex-grow p-3 overflow-y-auto whitespace-pre-wrap text-sm g-text bg-black/20 custom-scrollbar">Witaj we Władcy Poleceń!
+Wpisz 'help' aby uzyskać listę komend.</div>
+        <div class="p-2 flex border-t g-border text-sm items-center bg-black/40">
+            <span class="mr-2 g-accent font-bold">root@bigos:~#</span>
+            <input type="text" id="term-in" class="flex-grow bg-transparent outline-none g-text font-bold" autocomplete="off" onkeydown="wladcaApp.handle(event)">
         </div>
     </div>
-
 
 <!-- 8. Patrzałka (Przeglądarka Zdjęć i Edytor) -->
     <!-- 8. Patrzałka (Przeglądarka Zdjęć i Edytor) -->
@@ -1008,61 +1016,76 @@
         </div>
     </div>
 
+
     <!-- PASEK ZADAŃ -->
-    <div class="absolute bottom-0 w-full h-12 bg-gray-900/95 backdrop-blur-lg border-t border-gray-700 flex items-center px-2 justify-between z-[200] shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+    <div class="absolute bottom-0 w-full h-12 themed-app g-panel !rounded-none !border-x-0 !border-b-0 flex items-center px-2 justify-between z-[200]">
         <div class="flex items-center gap-1 sm:gap-2 h-full">
-            <button onclick="apps.toggleStartMenu()" class="h-9 px-3 sm:px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 rounded text-white font-bold shadow-lg transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base">
+            <button onclick="apps.toggleStartMenu()" class="h-9 px-3 sm:px-5 g-btn font-bold shadow-sm transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base" style="background: var(--primary); color: #000; border-color: var(--primary);">
                 🗃️ <span class="hidden sm:inline">Szuflada</span>
             </button>
-            <div id="taskbar-apps" class="flex gap-1 h-full items-center ml-1 sm:ml-2 border-l border-gray-700 pl-1 sm:pl-2 overflow-x-auto no-scrollbar"></div>
+            <div id="taskbar-apps" class="flex gap-1 h-full items-center ml-1 sm:ml-2 border-l g-border pl-1 sm:pl-2 overflow-x-auto no-scrollbar"></div>
         </div>
         <div class="flex items-center gap-1 sm:gap-2 h-full shrink-0">
-            <button onclick="apps.toggleCalendar(event)" class="text-xl cursor-pointer hover:bg-white/10 px-2 h-9 rounded transition text-white" title="Kalendarz">📅</button>
-            <div class="text-xs sm:text-sm font-semibold text-white px-2 h-9 flex items-center border-l border-gray-700">
+            <button onclick="apps.toggleCalendar(event)" class="text-xl cursor-pointer g-icon-btn px-2 h-9 rounded transition flex items-center justify-center" title="Kalendarz">📅</button>
+            <div class="text-xs sm:text-sm font-bold g-text px-2 h-9 flex items-center border-l g-border">
                 <span id="taskbar-clock">00:00</span>
             </div>
         </div>
     </div>
 
-    <!-- Szuflada (Menu Start) -->
-    <div id="start-menu" class="absolute bottom-14 left-2 w-64 bg-gray-800/95 backdrop-blur-xl border border-gray-600 rounded-lg shadow-2xl p-2 hidden flex-col z-[200] text-white">
-        <div class="text-xs text-gray-400 mb-2 px-2 pb-2 border-b border-gray-600 font-bold uppercase tracking-wider">Aplikacje i Narzędzia</div>
-        <div class="flex-grow overflow-y-auto max-h-[60vh] space-y-1 pr-1">
-            <button onclick="winManager.open('skryba'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">📝</span> Skryba</button>
-            <button onclick="winManager.open('szkicownik'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎨</span> Szkicownik</button>
-            <button onclick="winManager.open('aktowka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">📁</span> Aktówka</button>
-            <button onclick="winManager.open('patrzalka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🖼️</span> Patrzałka</button>
-            <button onclick="winManager.open('grajacz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎬</span> Grajacz Filmów</button>
-            <button onclick="winManager.open('siecioslaw'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🌐</span> Sieciosław</button>
-            <button onclick="winManager.open('wladca'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">💻</span> Władca Poleceń</button>
-            <button onclick="winManager.open('kalkulator'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🧮</span> Rachmistrz</button>
-            <button onclick="winManager.open('grajek'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎵</span> Grajek</button>
-            
-            <div class="text-xs text-gray-400 mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t border-gray-700 pt-2">Narzędzia</div>
-            <button onclick="winManager.open('nadzorca'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">📊</span> Nadzorca</button>
-            <button onclick="winManager.open('pogodynka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🌤️</span> Pogodynka</button>
-            <button onclick="winManager.open('czasomierz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">⏱️</span> Czasomierz</button>
-            <button onclick="winManager.open('tapeciak'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">⚙️</span> Kombinator</button>
-            
-
-            <div class="text-xs text-gray-400 mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t border-gray-700 pt-2">Gry</div>
-            <button onclick="winManager.open('pelzacz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🐍</span> Pełzacz</button>
-            <button onclick="winManager.open('murarz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🧱</span> Murarz</button>
-            <button onclick="winManager.open('ufoludki'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">👾</span> Ufoludki</button>
-            <button onclick="winManager.open('odbijanka'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🏓</span> Odbijanka</button>
-            <button onclick="winManager.open('trzepotek'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🐦</span> Trzepotek</button>
-            <button onclick="winManager.open('scigacz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🏎️</span> Ścigacz</button>
-            <button onclick="winManager.open('bombiarz'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">💣</span> Bombiarz</button>
-            <button onclick="winManager.open('kolko'); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-blue-600 rounded w-full text-left transition"><span class="text-xl">🎮</span> Kółko i Krzyżyk</button>
-            
-            <button onclick="apps.createStickyNote(); apps.toggleStartMenu()" class="flex items-center gap-3 p-2 hover:bg-yellow-600 rounded w-full text-left transition mt-2"><span class="text-xl">📌</span> Nowa Karteczka</button>
+<!-- Szuflada MENU -->
+    <div id="start-menu" class="absolute bottom-14 left-2 w-64 themed-app g-panel border g-border rounded-lg shadow-2xl p-2 hidden flex-col z-[200]">
+        
+        <!-- Wyszukiwarka -->
+        <div class="mb-2 px-1">
+            <input type="text" id="start-menu-search" placeholder="Szukaj aplikacji..." class="w-full p-2 text-sm g-bg g-text border g-border rounded outline-none focus:border-blue-500 shadow-inner transition-colors" oninput="if(typeof apps !== 'undefined' && apps.searchMenu) apps.searchMenu(this.value)" onkeydown="if(event.key === 'Enter') { const firstVis = document.querySelector('.start-item[style*=\\'display: flex\\']'); if(firstVis) firstVis.click(); }">
         </div>
-        <div class="mt-2 pt-2 border-t border-gray-600">
-            <button onclick="apps.lockSystem()" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left text-sm text-gray-300 transition">🔒 Zablokuj</button>
-            <button onclick="apps.sleepSystem()" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left text-sm text-gray-300 transition">🌙 Uśpij</button>
-            <button onclick="apps.shutdownSystem()" class="flex items-center gap-3 p-2 hover:bg-red-500/30 rounded w-full text-left text-sm text-red-400 transition">🛑 Zamknij</button>
+
+        <div class="start-header text-[10px] g-text-muted mb-1 px-2 pb-1 border-b g-border font-bold uppercase tracking-wider">Aplikacje i Narzędzia</div>
+        
+        <div class="flex-grow overflow-y-auto max-h-[55vh] space-y-1 pr-1 custom-scrollbar" id="start-menu-list">
+            <button onclick="winManager.open('skryba'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">📝</span> <span class="app-name">Skryba</span></button>
+            <button onclick="winManager.open('szkicownik'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🎨</span> <span class="app-name">Szkicownik</span></button>
+            <button onclick="winManager.open('aktowka'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">📁</span> <span class="app-name">Aktówka</span></button>
+            <button onclick="winManager.open('patrzalka'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🖼️</span> <span class="app-name">Patrzałka</span></button>
+            <button onclick="winManager.open('grajacz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🎬</span> <span class="app-name">Grajacz Filmów</span></button>
+            <button onclick="winManager.open('siecioslaw'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🌐</span> <span class="app-name">Sieciosław</span></button>
+            <button onclick="winManager.open('wladca'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">💻</span> <span class="app-name">Władca Poleceń</span></button>
+            <button onclick="winManager.open('kalkulator'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🧮</span> <span class="app-name">Rachmistrz</span></button>
+            <button onclick="winManager.open('grajek'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🎵</span> <span class="app-name">Grajek</span></button>
+            <button onclick="winManager.open('podpowiadacz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🤖</span> <span class="app-name">Podpowiadacz AI</span></button>
+            
+            <div class="start-header text-[10px] g-text-muted mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t g-border pt-2">Narzędzia</div>
+            <button onclick="winManager.open('nadzorca'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">📊</span> <span class="app-name">Nadzorca</span></button>
+            <button onclick="winManager.open('pogodynka'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🌤️</span> <span class="app-name">Pogodynka</span></button>
+            <button onclick="winManager.open('czasomierz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">⏱️</span> <span class="app-name">Czasomierz</span></button>
+            <button onclick="winManager.open('tapeciak'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">⚙️</span> <span class="app-name">Kombinator</span></button>
+            <button onclick="winManager.open('rachmistrz-kodu'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">👨‍💻</span> <span class="app-name">Rachmistrz Kodu</span></button>
+            <button onclick="winManager.open('kasiarz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">💰</span> <span class="app-name">Kasiarz</span></button>
+            <button onclick="winManager.open('przelicznik'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🔄</span> <span class="app-name">Przelicznik</span></button>
+            <button onclick="winManager.open('kompresor'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🗜️</span> <span class="app-name">Upychacz ZIP</span></button>
+
+            <div class="start-header text-[10px] g-text-muted mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t g-border pt-2">Gry</div>
+            <button onclick="winManager.open('pelzacz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🐍</span> <span class="app-name">Pełzacz</span></button>
+            <button onclick="winManager.open('murarz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🧱</span> <span class="app-name">Murarz</span></button>
+            <button onclick="winManager.open('ufoludki'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">👾</span> <span class="app-name">Ufoludki</span></button>
+            <button onclick="winManager.open('odbijanka'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🏓</span> <span class="app-name">Odbijanka</span></button>
+            <button onclick="winManager.open('trzepotek'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🐦</span> <span class="app-name">Trzepotek</span></button>
+            <button onclick="winManager.open('scigacz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🏎️</span> <span class="app-name">Ścigacz</span></button>
+            <button onclick="winManager.open('bombiarz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">💣</span> <span class="app-name">Bombiarz</span></button>
+            <button onclick="winManager.open('kolko'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🎮</span> <span class="app-name">Kółko i Krzyżyk</span></button>
+            <button onclick="winManager.open('wasm'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">👾</span> <span class="app-name">WASM Engine</span></button>
+            
+            <button onclick="apps.createStickyNote(); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition mt-2 g-text font-medium text-yellow-500 hover:text-yellow-400"><span class="text-xl drop-shadow-sm">📌</span> <span class="app-name text-yellow-500 hover:text-yellow-400">Nowa Karteczka</span></button>
+        </div>
+        <div class="mt-2 pt-2 border-t g-border">
+            <button onclick="apps.lockSystem()" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left text-sm g-text transition font-medium">🔒 Zablokuj</button>
+            <button onclick="apps.sleepSystem()" class="flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left text-sm g-text transition font-medium">🌙 Uśpij</button>
+            <button onclick="apps.shutdownSystem()" class="flex items-center gap-3 p-2 hover:bg-red-500/20 rounded w-full text-left text-sm text-red-500 hover:text-red-400 transition font-bold">🛑 Zamknij</button>
         </div>
     </div>
+ 
+
    <!-- rachmistrz kodu  -->
    <div id="app-rachmistrz-kodu" class="window absolute"></div>
 
