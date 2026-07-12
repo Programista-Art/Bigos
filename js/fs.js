@@ -5,44 +5,70 @@
 const bigosDB = {
     dbName: 'BigOS_DB',
     storeName: 'fs_store',
-    _db: null, // NOWOŚĆ: Trzymamy jedno aktywne połączenie, by nie zapychać RAM-u
+    _db: null, 
+    
     open() {
         return new Promise((resolve, reject) => {
             if (this._db) { resolve(this._db); return; }
             const req = indexedDB.open(this.dbName, 1);
-            req.onupgradeneeded = e => { e.target.result.createObjectStore(this.storeName); };
+            req.onupgradeneeded = e => { 
+                if (!e.target.result.objectStoreNames.contains(this.storeName)) {
+                    e.target.result.createObjectStore(this.storeName); 
+                }
+            };
             req.onsuccess = e => { this._db = e.target.result; resolve(this._db); };
             req.onerror = e => reject(e.target.error);
         });
     },
+    
     async get(key) {
-        const db = await this.open();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, 'readonly');
-            const req = tx.objectStore(this.storeName).get(key);
-            req.onsuccess = () => resolve(req.result);
-            req.onerror = () => reject(req.error);
-        });
+        try {
+            const db = await this.open();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(this.storeName, 'readonly');
+                const req = tx.objectStore(this.storeName).get(key);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        } catch(e) {
+            console.warn("IndexedDB odrzuciło odczyt. Ładowanie z pamięci zapasowej...", e);
+            return JSON.parse(localStorage.getItem(key));
+        }
     },
+    
     async set(key, value) {
-        const db = await this.open();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, 'readwrite');
-            const req = tx.objectStore(this.storeName).put(value, key);
-            req.onsuccess = () => resolve();
-            req.onerror = () => reject(req.error);
-        });
+        try {
+            const db = await this.open();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(this.storeName, 'readwrite');
+                const req = tx.objectStore(this.storeName).put(value, key);
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        } catch(e) {
+            console.warn("IndexedDB zablokowane. Aktywacja systemu zapasowego (Fallback)...", e);
+            // Cichy i płynny zapis do starego systemu na wypadek zablokowania bazy
+            localStorage.setItem(key, JSON.stringify(value));
+        }
     },
+    
     async clear() {
-        const db = await this.open();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(this.storeName, 'readwrite');
-            const req = tx.objectStore(this.storeName).clear();
-            req.onsuccess = () => resolve();
-            req.onerror = () => reject(req.error);
-        });
+        try {
+            const db = await this.open();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(this.storeName, 'readwrite');
+                const req = tx.objectStore(this.storeName).clear();
+                req.onsuccess = () => resolve();
+                req.onerror = () => reject(req.error);
+            });
+        } catch(e) {
+            // Oczyszczanie zapasowe
+            localStorage.removeItem('bigos_fs');
+            localStorage.removeItem('bigos_fs_favs');
+            localStorage.removeItem('bigos_fs_history');
+        }
     },
-    // NOWOŚĆ: Funkcja zwalniająca plik bazy przed usunięciem
+    
     close() {
         if (this._db) { 
             this._db.close(); 
@@ -65,7 +91,6 @@ const fsManager = {
             let savedFavs = await bigosDB.get('bigos_fs_favs');
             let savedHist = await bigosDB.get('bigos_fs_history');
 
-            // MIGRACJA Z LOCALSTORAGE DO INDEXEDDB (Automatyczne przeniesienie starych plików)
             if (!saved && localStorage.getItem('bigos_fs')) {
                 console.log("Migracja systemu plików z LocalStorage do IndexedDB...");
                 saved = JSON.parse(localStorage.getItem('bigos_fs'));
@@ -128,10 +153,7 @@ const fsManager = {
             await bigosDB.set('bigos_fs_favs', fsManager.favorites);
             await bigosDB.set('bigos_fs_history', fsManager.opHistory);
         } catch (error) {
-            console.error("Błąd zapisu fsManager do IndexedDB:", error);
-            if (typeof apps !== 'undefined' && apps.showToast) {
-                apps.showToast('Błąd Pamięci', 'Nie udało się zapisać danych (błąd IndexedDB)!', 'error');
-            }
+            console.error("Błąd zapisu fsManager:", error);
         }
     },
 
@@ -241,7 +263,6 @@ const fsManager = {
         `;
         appWindow.appendChild(proUI);
 
-        // Zezwalamy na otwieranie domyślnego menu kontekstowego BigOS z tła
         const wrapper = document.getElementById('explorer-content-wrapper');
         if (wrapper) {
             wrapper.oncontextmenu = (e) => {
@@ -447,7 +468,6 @@ const fsManager = {
         
         if (item.type === 'file' && item.content) {
             contentBox.classList.remove('hidden');
-            // Zabezpieczenie przed pokazywaniem zawartości plików ZIP/Obrazów jako tekstu
             if(item.content.startsWith('data:')) {
                 contentVal.innerText = '[Plik binarny - Zoptymalizowany dla wydajności]';
             } else {

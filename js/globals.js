@@ -12,6 +12,7 @@ let currentTheme = 'dark';
 
 // --- 2. BAZA DOMYŚLNYCH APLIKACJI ---
 const defaultApps = [
+    { id: 'app_podpowiadacz', type: 'app', name: 'Podpowiadacz AI', icon: '🤖', appId: 'podpowiadacz' },
     { id: 'app_skryba', type: 'app', name: 'Skryba', icon: '📝', appId: 'skryba' },
     { id: 'app_szkicownik', type: 'app', name: 'Szkicownik', icon: '🎨', appId: 'szkicownik' },
     { id: 'app_aktowka', type: 'app', name: 'Aktówka', icon: '📁', appId: 'aktowka' },
@@ -26,7 +27,7 @@ const defaultApps = [
     { id: 'app_pogodynka', type: 'app', name: 'Pogodynka', icon: '🌤️', appId: 'pogodynka' },
     { id: 'app_czasomierz', type: 'app', name: 'Czasomierz', icon: '⏱️', appId: 'czasomierz' },
     { id: 'app_pelzacz', type: 'app', name: 'Pełzacz', icon: '🐍', appId: 'pelzacz' },
-    { id: 'app_tank', type: 'app', name: 'Czogi', icon: '🚜', appId: 'tank' },
+    { id: 'app_tank', type: 'app', name: 'Czołgi', icon: '🚜', appId: 'tank' },
     { id: 'app_murarz', type: 'app', name: 'Murarz', icon: '🧱', appId: 'murarz' },
     { id: 'app_ufoludki', type: 'app', name: 'Ufoludki', icon: '👾', appId: 'ufoludki' },
     { id: 'app_odbijanka', type: 'app', name: 'Odbijanka', icon: '🏓', appId: 'odbijanka' },
