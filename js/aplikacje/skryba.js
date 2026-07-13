@@ -1,5 +1,5 @@
 // ======================================================================
-// PLIK: js/aplikacje/skryba.js (Skryba 5.2 - Pamięć AI, Czysty UI, Zamykanie)
+// PLIK: js/aplikacje/skryba.js (Skryba 5.3 - Pamięć AI, Czysty UI, Tagi, Status Zapisu)
 // ======================================================================
 
 window.skrybaApp = {
@@ -312,7 +312,7 @@ window.skrybaApp = {
                     <!-- Stopka ze Statystykami -->
                     <div id="skryba-footer" class="p-1.5 px-4 border-t g-border bg-black/20 flex justify-between items-center text-[10px] g-text-muted shrink-0 z-10 font-bold uppercase tracking-wider transition-all duration-300">
                         <div class="flex items-center gap-4">
-                            <span id="skryba-status" class="flex items-center gap-1 text-green-500">🟢 Zapisano</span>
+                            <span id="skryba-status" class="flex items-center gap-1 cursor-default text-gray-400" title="Nowy plik">⚪ Brak</span>
                             <div class="w-px h-3 bg-gray-600"></div>
                             <span id="skryba-word-count">Słów: 0</span>
                             <span id="skryba-char-count" class="hidden sm:inline">Znaków: 0</span>
@@ -466,7 +466,7 @@ window.skrybaApp = {
         document.getElementById('skryba-raw-editor').value = '';
         document.getElementById('skryba-tags-input').value = '';
         window.skrybaApp.isDirty = false;
-        document.getElementById('skryba-status').innerHTML = '<span class="g-text-muted">⚪ Brak pliku</span>';
+        document.getElementById('skryba-status').innerHTML = '<span class="text-gray-400" title="Nowy plik">⚪ Brak</span>';
         document.getElementById('skryba-word-count').innerText = 'Słów: 0';
         document.getElementById('skryba-char-count').innerText = 'Znaków: 0';
         document.getElementById('skryba-read-time').innerText = 'Czas czytania: 0 min';
@@ -800,7 +800,7 @@ window.skrybaApp = {
     markDirty: () => {
         window.skrybaApp.isDirty = true;
         const status = document.getElementById('skryba-status');
-        if(status) status.innerHTML = '🟠 Zmieniono (Oczekuje na zapis)';
+        if(status) status.innerHTML = '<span class="text-yellow-400 drop-shadow-md" title="Niezapisane zmiany">🟡 Niezapisane</span>';
     },
     
     updateStats: () => {
@@ -1006,13 +1006,25 @@ window.skrybaApp = {
             let icon = meta.locked ? '🔒' : '📄';
 
             const btn = document.createElement('button');
-            btn.className = `w-full text-left p-2 rounded text-xs truncate transition flex items-center justify-between border ${isSel ? 'bg-blue-500/20 border-blue-500 g-text font-bold shadow-inner' : 'g-text hover:bg-white/10 border-transparent'}`;
+            btn.className = `w-full text-left p-2 rounded text-xs transition flex items-center justify-between border ${isSel ? 'bg-blue-500/20 border-blue-500 g-text font-bold shadow-inner' : 'g-text hover:bg-white/10 border-transparent'}`;
+            
+            let tagsHtml = '';
+            if (meta.tags) {
+                const tagList = meta.tags.split(',').map(t => t.trim()).filter(t => t);
+                if (tagList.length > 0) {
+                    tagsHtml = `<div class="text-[9px] text-blue-400 font-normal truncate mt-0.5">${tagList.map(t => t.startsWith('#') ? t : '#'+t).join(' ')}</div>`;
+                }
+            }
+
             btn.innerHTML = `
-                <div class="flex items-center gap-2 truncate">
-                    <span class="text-sm shrink-0 drop-shadow-sm">${icon}</span> 
-                    <span class="truncate">${typeof desktop !== 'undefined' ? desktop.escapeHTML(note.name) : note.name}</span>
+                <div class="flex items-start gap-2 truncate w-full">
+                    <span class="text-sm shrink-0 drop-shadow-sm mt-0.5">${icon}</span> 
+                    <div class="flex flex-col truncate w-full">
+                        <span class="truncate leading-tight">${typeof desktop !== 'undefined' ? desktop.escapeHTML(note.name) : note.name}</span>
+                        ${tagsHtml}
+                    </div>
                 </div>
-                ${meta.isFav ? '<span class="text-yellow-500 text-[10px] shrink-0 drop-shadow-md">⭐</span>' : ''}
+                ${meta.isFav ? '<span class="text-yellow-500 text-[10px] shrink-0 drop-shadow-md ml-1 self-start mt-0.5">⭐</span>' : ''}
             `;
             btn.onclick = () => window.skrybaApp.open(note);
             
@@ -1036,7 +1048,7 @@ window.skrybaApp = {
         document.getElementById('skryba-editor').contentEditable = "true";
         
         window.skrybaApp.isDirty = false;
-        document.getElementById('skryba-status').innerHTML = '⚪ Nowy Plik';
+        document.getElementById('skryba-status').innerHTML = '<span class="text-gray-400" title="Nowy plik">⚪ Brak</span>';
         document.getElementById('skryba-word-count').innerText = 'Słów: 0';
         document.getElementById('skryba-char-count').innerText = 'Znaków: 0';
         document.getElementById('skryba-read-time').innerText = 'Czas czytania: 0 min';
@@ -1081,7 +1093,7 @@ window.skrybaApp = {
         }
         
         window.skrybaApp.isDirty = false;
-        document.getElementById('skryba-status').innerHTML = '<span class="text-green-500">🟢 Zapisano</span>';
+        document.getElementById('skryba-status').innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
         window.skrybaApp.updateStats();
         window.skrybaApp.updateToolbarUI();
 
@@ -1243,7 +1255,6 @@ window.skrybaApp = {
 
         const f = fileSystem.find(i => i.id === window.skrybaApp.currentFileId);
         if(f) {
-            // Zawsze wewnętrznie trzymamy stan edytora WYSIWYG, BigOS wie jak go renderować
             let contentToSave = isRaw ? rawEditor.value : editor.innerHTML;
             
             f.content = contentToSave; 
@@ -1261,7 +1272,7 @@ window.skrybaApp = {
         } 
         
         window.skrybaApp.isDirty = false;
-        document.getElementById('skryba-status').innerHTML = '<span class="text-green-500">🟢 Zapisano Auto</span>';
+        document.getElementById('skryba-status').innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
         window.skrybaApp.renderSidebar();
         
         if (typeof desktop !== 'undefined') desktop.render(); 
@@ -1274,7 +1285,7 @@ window.skrybaApp = {
         } else {
             window.skrybaApp.saveNoteSilent();
             if(typeof apps !== 'undefined') apps.showToast('Skryba', 'Notatka zapisana na dysku BigOS.', 'success');
-            document.getElementById('skryba-status').innerHTML = '<span class="text-green-500">🟢 Zapisano</span>';
+            document.getElementById('skryba-status').innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
         }
     },
 
@@ -1365,7 +1376,7 @@ window.skrybaApp = {
                 window.skrybaApp.currentFileId = newId;
                 document.getElementById('skryba-note-title').value = finalName;
                 window.skrybaApp.isDirty = false;
-                document.getElementById('skryba-status').innerHTML = '<span class="text-green-500">🟢 Zapisano</span>';
+                document.getElementById('skryba-status').innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
             }
             
             window.skrybaApp.renderSidebar();
@@ -1437,7 +1448,6 @@ window.skrybaApp = {
             ext = ".html";
         } 
         else if (format === 'rtf') {
-            // ZAAWANSOWANY PARSER RTF Z KOLORAMI I NAGŁÓWKAMI
             const strToRTF = (str) => str.replace(/[\u0080-\uFFFF]/g, m => '\\uc1\\u' + m.charCodeAt(0) + '?');
             
             let colortbl = "{\\colortbl;\\red0\\green0\\blue0;"; 
@@ -1646,7 +1656,7 @@ window.skrybaApp = {
             
             window.skrybaApp.currentFileId = null; 
             window.skrybaApp.isDirty = true;
-            document.getElementById('skryba-status').innerHTML = '<span class="text-yellow-500">🟠 Wczytano (Niezapisane)</span>';
+            document.getElementById('skryba-status').innerHTML = '<span class="text-yellow-400 drop-shadow-md" title="Niezapisane zmiany">🟡 Niezapisane</span>';
             window.skrybaApp.updateStats();
             window.skrybaApp.renderSidebar();
             
