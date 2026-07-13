@@ -24,41 +24,52 @@ const bigosDB = {
     async get(key) {
         try {
             const db = await this.open();
-            return new Promise((resolve, reject) => {
+            // KRYTYCZNA POPRAWKA: Await wymusza zatrzymanie się i złapanie błędów transakcji
+            return await new Promise((resolve, reject) => {
                 const tx = db.transaction(this.storeName, 'readonly');
                 const req = tx.objectStore(this.storeName).get(key);
                 req.onsuccess = () => resolve(req.result);
                 req.onerror = () => reject(req.error);
+                tx.onerror = () => reject(tx.error);
             });
         } catch(e) {
             console.warn("IndexedDB odrzuciło odczyt. Ładowanie z pamięci zapasowej...", e);
-            return JSON.parse(localStorage.getItem(key));
+            const localData = localStorage.getItem(key);
+            return localData ? JSON.parse(localData) : undefined;
         }
     },
     
     async set(key, value) {
         try {
             const db = await this.open();
-            return new Promise((resolve, reject) => {
+            // KRYTYCZNA POPRAWKA: Await + tx.oncomplete gwarantuje zrzut na fizyczny dysk
+            return await new Promise((resolve, reject) => {
                 const tx = db.transaction(this.storeName, 'readwrite');
                 const req = tx.objectStore(this.storeName).put(value, key);
-                req.onsuccess = () => resolve();
+                tx.oncomplete = () => resolve(); // Czeka na definitywne potwierdzenie dysku
+                tx.onerror = () => reject(tx.error);
                 req.onerror = () => reject(req.error);
             });
         } catch(e) {
             console.warn("IndexedDB zablokowane. Aktywacja systemu zapasowego (Fallback)...", e);
-            // Cichy i płynny zapis do starego systemu na wypadek zablokowania bazy
-            localStorage.setItem(key, JSON.stringify(value));
+            try {
+                // Bezpieczny, płynny zapis do starego systemu na wypadek zablokowania bazy
+                localStorage.setItem(key, JSON.stringify(value));
+            } catch(lsError) {
+                console.error("Krytyczny błąd: Brak miejsca również w LocalStorage!", lsError);
+                if (typeof apps !== 'undefined') apps.showToast("Błąd Dysku", "Brak miejsca do zapisu pliku!", "error");
+            }
         }
     },
     
     async clear() {
         try {
             const db = await this.open();
-            return new Promise((resolve, reject) => {
+            return await new Promise((resolve, reject) => {
                 const tx = db.transaction(this.storeName, 'readwrite');
                 const req = tx.objectStore(this.storeName).clear();
-                req.onsuccess = () => resolve();
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
                 req.onerror = () => reject(req.error);
             });
         } catch(e) {
