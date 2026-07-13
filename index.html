@@ -455,40 +455,11 @@
             </div>
         </div>
     </div>
+    
+    <!-- SKRYBA - Notatnik -->
+ <div id="app-skryba" class="window hidden"></div>
 
-    <!-- 1. Skryba (Notatnik)
-    <div id="app-skryba" class="window w-[650px] h-[450px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-blue-700 dark:bg-gray-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-skryba')" ontouchstart="winManager.startDrag(event, 'app-skryba')">
-            <span class="text-sm font-bold">📝 Skryba</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('skryba')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.maximize('app-skryba')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('skryba')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
-            </div>
-        </div>
-        <div class="flex gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs border-b border-gray-300 dark:border-gray-600 z-50">
-            <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 px-2 py-1 rounded transition">Plik
-                <div class="dropdown-menu bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-gray-800 dark:text-gray-100 shadow-xl pb-1 pt-1">
-                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="skrybaApp.newFile()">Nowy</div>
-                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="document.getElementById('skryba-open-pc').click()">Otwórz z komputera (.txt)</div>
-                    <input type="file" id="skryba-open-pc" class="hidden" accept=".txt" onchange="skrybaApp.openLocalFile(event)">
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="skrybaApp.promptSaveToSystem()">Zapisz w BigOS</div>
-                    <div class="px-4 py-2 hover:bg-blue-500 hover:text-white cursor-pointer" onclick="skrybaApp.saveToPC()">Pobierz na PC (.txt)</div>
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-red-500 hover:text-white cursor-pointer" onclick="winManager.close('skryba')">Zamknij program</div>
-                </div>
-            </div>
-            <div class="px-2 py-1 text-gray-500 dark:text-gray-400 font-semibold truncate max-w-[200px]" id="skryba-filename-display">Nowy Plik.txt</div>
-        </div>
-        <div class="bg-gray-50 dark:bg-gray-800 p-2 flex gap-1 border-b border-gray-300 dark:border-gray-600 text-xs flex-wrap shadow-sm">
-            <button onclick="document.execCommand('bold',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 font-bold rounded">B</button>
-            <button onclick="document.execCommand('italic',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 italic rounded">I</button>
-            <button onclick="document.execCommand('underline',false,null)" class="px-2 py-1 bg-white dark:bg-gray-700 border dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 underline rounded">U</button>
-        </div>
-        <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 bg-white dark:bg-[#1a1a1a] dark:text-gray-100 outline-none overflow-y-auto" placeholder="Zacznij pisać..."></div>
-    </div> -->
-
+<!-- 
     <div id="app-skryba" class="window w-[650px] h-[450px] themed-app g-panel border g-border shadow-2xl flex flex-col hidden">
         <div class="title-bar bg-black/20 p-2 flex justify-between items-center border-b g-border cursor-move" onmousedown="winManager.startDrag(event, 'app-skryba')" ontouchstart="winManager.startDrag(event, 'app-skryba')">
             <span class="text-sm font-bold g-accent drop-shadow-md">📝 Skryba</span>
@@ -519,7 +490,7 @@
             <button onclick="document.execCommand('underline',false,null)" class="g-btn px-3 py-1 underline rounded shadow-sm hover:bg-white/10">U</button>
         </div>
         <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 g-bg g-text outline-none overflow-y-auto custom-scrollbar shadow-inner" placeholder="Zacznij pisać..."></div>
-    </div>
+    </div> -->
 
    <!-- 2. Szkicownik-->
     <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
