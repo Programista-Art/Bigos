@@ -12,9 +12,9 @@ let currentTheme = 'dark';
 
 // --- 2. BAZA DOMYŚLNYCH APLIKACJI ---
 const defaultApps = [
-    { id: 'app_podpowiadacz', type: 'app', name: 'Podpowiadacz AI', icon: '🤖', appId: 'podpowiadacz' },
+    { id: 'app_podpowiadacz', type: 'app', name: 'BIG AI', icon: '🤖', appId: 'biai' },
     { id: 'app_skryba', type: 'app', name: 'Skryba', icon: '📝', appId: 'skryba' },
-    { id: 'app_szkicownik', type: 'app', name: 'Szkicownik', icon: '🎨', appId: 'szkicownik' },
+    { id: 'app_szkicownik', type: 'app', name: 'Artysta', icon: '🎨', appId: 'artystaApp' },
     { id: 'app_aktowka', type: 'app', name: 'Aktówka', icon: '📁', appId: 'aktowka' },
     { id: 'app_patrzalka', type: 'app', name: 'Patrzałka', icon: '🖼️', appId: 'patrzalka' },
     { id: 'app_grajacz', type: 'app', name: 'Grajacz Filmów', icon: '🎬', appId: 'grajacz' },

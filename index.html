@@ -69,23 +69,7 @@
         </div>
     </div>
 
-        <!-- MIEJSCE NA BANER REKLAMOWY (AdSense) -->
-        <div class="bg-black/40 backdrop-blur-md border border-white/10 p-2 rounded-xl flex flex-col items-center justify-center shadow-2xl" style="min-width: 320px; min-height: 100px;">
-            <span class="text-[10px] text-gray-400 mb-1 tracking-widest uppercase font-bold">Reklama</span>
-            
-            <!-- Kod jednostki reklamowej AdSense -->
-            <ins class="adsbygoogle"
-                 style="display:inline-block;width:320px;height:100px"
-                 data-ad-client="ca-pub-TUTAJ_WPISZESZ_SWOJ_KOD_KLIENta"
-                 data-ad-slot="TUTAJ_KOD_SLOTU"></ins>
-            <script>
-                 (adsbygoogle = window.adsbygoogle || []).push({});
-            </script>
-            <!-- Koniec kodu AdSense -->
-            
-        </div>
 
-    </div>
 
     <!-- EKRAN UŚPIENIA -->
     <div id="sleep-screen" class="hidden absolute inset-0 bg-black z-[9950] transition-opacity duration-1000 opacity-0 flex-col items-center justify-center cursor-pointer">
@@ -93,7 +77,6 @@
         <div class="text-white/20 text-sm animate-pulse tracking-widest">Porusz myszką lub naciśnij klawisz, aby wybudzić</div>
     </div>
    
-    <!-- Koniec nowego kodu -->
 
     <!-- PULPIT -->
     <div id="desktop-bg" class="absolute inset-0 z-0 transition-all duration-500"></div>
@@ -459,38 +442,6 @@
     <!-- SKRYBA - Notatnik -->
  <div id="app-skryba" class="window hidden"></div>
 
-<!-- 
-    <div id="app-skryba" class="window w-[650px] h-[450px] themed-app g-panel border g-border shadow-2xl flex flex-col hidden">
-        <div class="title-bar bg-black/20 p-2 flex justify-between items-center border-b g-border cursor-move" onmousedown="winManager.startDrag(event, 'app-skryba')" ontouchstart="winManager.startDrag(event, 'app-skryba')">
-            <span class="text-sm font-bold g-accent drop-shadow-md">📝 Skryba</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('skryba')" class="g-icon-btn px-2 rounded hover:text-white transition">_</button>
-                <button onclick="winManager.maximize('app-skryba')" class="g-icon-btn px-2 rounded hover:text-white transition">□</button>
-                <button onclick="winManager.close('skryba')" class="text-red-500 hover:text-red-400 px-2 font-bold transition">✖</button>
-            </div>
-        </div>
-        <div class="flex gap-2 px-2 py-1 bg-black/10 text-xs border-b g-border z-50 shrink-0">
-            <div class="relative group cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition g-text font-bold">Plik
-                <div class="dropdown-menu absolute left-0 top-full g-panel border g-border shadow-xl rounded-b min-w-[200px] py-1 z-50 flex flex-col hidden group-hover:flex">
-                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="skrybaApp.newFile()">Nowy</button>
-                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="document.getElementById('skryba-open-pc').click()">Otwórz z komputera (.txt)</button>
-                    <input type="file" id="skryba-open-pc" class="hidden" accept=".txt" onchange="skrybaApp.openLocalFile(event)">
-                    <div class="border-t g-border my-1"></div>
-                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="skrybaApp.promptSaveToSystem()">Zapisz w BigOS</button>
-                    <button class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition" onclick="skrybaApp.saveToPC()">Pobierz na PC (.txt)</button>
-                    <div class="border-t g-border my-1"></div>
-                    <button class="text-left px-4 py-1.5 hover:bg-red-500 hover:text-white transition text-red-400" onclick="winManager.close('skryba')">Zamknij program</button>
-                </div>
-            </div>
-            <div class="px-2 py-1 g-text-muted font-mono truncate max-w-[200px] border-l g-border ml-1 pl-2" id="skryba-filename-display">Nowy Plik.txt</div>
-        </div>
-        <div class="bg-black/20 p-2 flex gap-1 border-b g-border text-xs flex-wrap shadow-sm shrink-0">
-            <button onclick="document.execCommand('bold',false,null)" class="g-btn px-3 py-1 font-bold rounded shadow-sm hover:bg-white/10">B</button>
-            <button onclick="document.execCommand('italic',false,null)" class="g-btn px-3 py-1 italic rounded shadow-sm hover:bg-white/10">I</button>
-            <button onclick="document.execCommand('underline',false,null)" class="g-btn px-3 py-1 underline rounded shadow-sm hover:bg-white/10">U</button>
-        </div>
-        <div id="skryba-editor" contenteditable="true" class="flex-grow p-4 g-bg g-text outline-none overflow-y-auto custom-scrollbar shadow-inner" placeholder="Zacznij pisać..."></div>
-    </div> -->
 
    <!-- 2. Szkicownik-->
     <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
