@@ -24,6 +24,11 @@ window.artystaApp = {
 
     // --- TEKST ---
     textActive: false, textElement: null,
+    shapeType: 'rect',
+    gradientType: 'linear',
+    gradientColor1: '#ff0000',
+    gradientColor2: '#0000ff',
+    dragLayerIndex: null,
 
     // --- AI ---
     aiMessages: [],
@@ -77,10 +82,12 @@ window.artystaApp = {
         window.addEventListener('keyup', (e) => {
             if(e.code === 'Space') { workspace.style.cursor = 'crosshair'; artystaApp.tempPanMode = false; }
         });
+
+        artystaApp.loadGoogleFonts();
     },
 
     // ==================================================================
-    // 1. INTERFEJS UŻYTKOWNIKA (UI) W THEME.JS
+    // 1. INTERFEJS UŻYTKOWNIKA (UI)
     // ==================================================================
     upgradeUI: () => {
         let appWindow = document.getElementById('app-szkicownik');
@@ -100,15 +107,12 @@ window.artystaApp = {
         proUI.className = 'flex flex-col overflow-hidden relative themed-app g-panel rounded-lg shadow-2xl h-full w-full select-none';
 
         proUI.innerHTML = `
-            <!-- KURSOR PĘDZLA -->
             <div id="art-cursor" class="pointer-events-none absolute z-[9999] border hidden mix-blend-difference" style="border-radius: 50%; transform: translate(-50%, -50%); border-color: rgba(255,255,255,0.9); box-shadow: 0 0 0 1px rgba(0,0,0,0.8), inset 0 0 0 1px rgba(0,0,0,0.8);"></div>
 
-            <!-- GŁÓWNY PASEK TYTUŁOWY Z MENU DROPDOWN -->
             <div class="px-2 py-1 border-b g-border flex justify-between items-center cursor-move bg-black/40 shrink-0 relative z-[100] shadow-md" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
                 <div class="flex items-center gap-2">
                     <span class="text-sm font-bold g-text drop-shadow-md flex items-center gap-1 mx-2">🎨 Artysta</span>
                     
-                    <!-- MENU PLIK -->
                     <div class="relative group h-full flex items-center">
                         <button class="px-3 py-1.5 hover:bg-white/10 transition cursor-pointer g-text font-bold text-xs rounded">Plik</button>
                         <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded min-w-[200px] z-[9999] py-1">
@@ -127,7 +131,6 @@ window.artystaApp = {
                         </div>
                     </div>
 
-                    <!-- MENU EDYCJA -->
                     <div class="relative group h-full flex items-center">
                         <button class="px-3 py-1.5 hover:bg-white/10 transition cursor-pointer g-text font-bold text-xs rounded">Edycja</button>
                         <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded min-w-[200px] z-[9999] py-1">
@@ -138,7 +141,6 @@ window.artystaApp = {
                         </div>
                     </div>
 
-                    <!-- MENU OBRAZ -->
                     <div class="relative group h-full flex items-center">
                         <button class="px-3 py-1.5 hover:bg-white/10 transition cursor-pointer g-text font-bold text-xs rounded">Obraz</button>
                         <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded min-w-[200px] z-[9999] py-1">
@@ -148,7 +150,6 @@ window.artystaApp = {
                         </div>
                     </div>
 
-                    <!-- MENU FILTRY -->
                     <div class="relative group h-full flex items-center">
                         <button class="px-3 py-1.5 hover:bg-white/10 transition cursor-pointer g-text font-bold text-xs rounded">Filtry</button>
                         <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded min-w-[200px] z-[9999] py-1">
@@ -172,32 +173,25 @@ window.artystaApp = {
                 </div>
             </div>
 
-            <!-- PASEK WŁAŚCIWOŚCI NARZĘDZIA -->
-            <div class="p-2 border-b g-border bg-black/20 flex gap-4 items-center shrink-0 h-10 overflow-x-auto custom-scrollbar" id="art-properties-bar">
-                <!-- Generowane dynamicznie na podstawie wybranego narzędzia -->
-            </div>
+            <div class="p-2 border-b g-border bg-black/20 flex gap-4 items-center shrink-0 h-10 overflow-x-auto custom-scrollbar" id="art-properties-bar"></div>
 
             <div class="flex flex-row flex-grow overflow-hidden relative">
-                
-                <!-- PASEK NARZĘDZI (Lewy - Powiększony do 2 kolumn) -->
                 <div class="w-[84px] border-r g-border bg-black/30 flex flex-col p-1 gap-1 shrink-0 overflow-y-auto custom-scrollbar z-20 items-center pt-2">
                     <div class="grid grid-cols-2 gap-1 w-full px-1">
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="move" onclick="artystaApp.setTool('move')" title="Przesuń Widok (Spacja)">🖐️</button>
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="picker" onclick="artystaApp.setTool('picker')" title="Pipeta (Wybierz Kolor)">💧</button>
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="move" onclick="artystaApp.setTool('move')" title="Przesuń / Przenieś warstwę">🖐️</button>
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="picker" onclick="artystaApp.setTool('picker')" title="Pipeta">💧</button>
 
                         <div class="col-span-2 w-full h-px bg-gray-600/50 my-1"></div>
                         
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="pencil" onclick="artystaApp.setTool('pencil')" title="Ołówek (Twardy)">✏️</button>
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="brush" onclick="artystaApp.setTool('brush')" title="Pędzel (Miękki)">🖌️</button>
-                        
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="pencil" onclick="artystaApp.setTool('pencil')" title="Ołówek">✏️</button>
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="brush" onclick="artystaApp.setTool('brush')" title="Pędzel">🖌️</button>
                         <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="airbrush" onclick="artystaApp.setTool('airbrush')" title="Aerograf">💨</button>
                         <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="marker" onclick="artystaApp.setTool('marker')" title="Marker">🖍️</button>
-                        
                         <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="pen" onclick="artystaApp.setTool('pen')" title="Długopis">🖊️</button>
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="calligraphy" onclick="artystaApp.setTool('calligraphy')" title="Pióro Kaligraficzne">✒️</button>
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="calligraphy" onclick="artystaApp.setTool('calligraphy')" title="Pióro">✒️</button>
 
                         <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="eraser" onclick="artystaApp.setTool('eraser')" title="Gumka">🧼</button>
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="fill" onclick="artystaApp.setTool('fill')" title="Wypełnienie (Wiadro)">🪣</button>
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="fill" onclick="artystaApp.setTool('fill')" title="Wypełnienie">🪣</button>
                         
                         <div class="col-span-2 w-full h-px bg-gray-600/50 my-1"></div>
 
@@ -207,20 +201,15 @@ window.artystaApp = {
                         <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="text" onclick="artystaApp.setTool('text')" title="Tekst">T</button>
 
                         <div class="col-span-2 w-full h-px bg-gray-600/50 my-1"></div>
-                        
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="line" onclick="artystaApp.setTool('line')" title="Linia Prosta">📏</button>
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="rect" onclick="artystaApp.setTool('rect')" title="Prostokąt">⬜</button>
-                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="circle" onclick="artystaApp.setTool('circle')" title="Koło">⭕</button>
+
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="shape" onclick="artystaApp.setTool('shape')" title="Kształty">⬜</button>
+                        <button class="art-tool-btn w-8 h-8 rounded-lg g-btn hover:bg-white/10 flex items-center justify-center text-lg transition-all shadow-sm" data-tool="gradient" onclick="artystaApp.setTool('gradient')" title="Gradient">🌈</button>
                     </div>
                 </div>
 
-                <!-- Obszar Roboczy (Nieskończone płótno) -->
                 <div id="art-workspace-area" oncontextmenu="return false;" class="flex-grow relative bg-[#1a1a1a] overflow-hidden cursor-crosshair" style="background-image: linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222), linear-gradient(45deg, #222 25%, transparent 25%, transparent 75%, #222 75%, #222); background-size: 20px 20px; background-position: 0 0, 10px 10px;">
-                    <div id="art-canvas-container" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-gray-600 bg-white" style="width: 800px; height: 600px; transform-origin: top left;">
-                        <!-- Kanwasy dodawane w JS -->
-                    </div>
+                    <div id="art-canvas-container" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_50px_rgba(0,0,0,0.8)] border border-gray-600 bg-white" style="width: 800px; height: 600px; transform-origin: top left;"></div>
                     
-                    <!-- Nawigacja Pływająca w Prawym Dolnym Rogu (Naprawione klikanie przez panel) -->
                     <div class="absolute bottom-4 right-4 g-panel border g-border rounded-lg shadow-xl flex items-center p-1 bg-black/60 backdrop-blur-md" onpointerdown="event.stopPropagation()" onmousedown="event.stopPropagation()">
                         <button class="g-btn text-xs px-2 py-1 rounded" onclick="artystaApp.setZoom(artystaApp.zoom - 0.2)">➖</button>
                         <span class="text-[10px] font-mono font-bold text-blue-400 w-12 text-center" id="art-zoom-val">100%</span>
@@ -231,10 +220,7 @@ window.artystaApp = {
                     </div>
                 </div>
 
-                <!-- PRAWY PANEL (Kolory, Historia, Warstwy) -->
                 <div class="w-[220px] sm:w-[260px] border-l g-border bg-black/30 flex flex-col shrink-0 overflow-hidden z-20 shadow-2xl relative">
-                    
-                    <!-- KOLORY (Przypięty Picker) -->
                     <div id="art-colors-container-wrap" class="flex flex-col border-b g-border shrink-0 transition-all duration-300">
                         <div class="p-2 bg-black/40 text-[10px] font-bold g-text-muted uppercase tracking-widest border-b g-border flex justify-between items-center shrink-0">
                             <div class="flex gap-2 items-center">
@@ -253,7 +239,6 @@ window.artystaApp = {
                         </div>
                     </div>
 
-                    <!-- HISTORIA -->
                     <div id="art-history-container-wrap" class="flex flex-col h-1/4 min-h-[100px] border-b g-border shrink-0 transition-all duration-300">
                         <div class="p-2 bg-black/30 text-[10px] font-bold g-text-muted uppercase tracking-widest border-b g-border flex justify-between items-center shrink-0">
                             <div class="flex gap-2 items-center">
@@ -268,7 +253,6 @@ window.artystaApp = {
                         <div id="art-history-list" class="flex-grow overflow-y-auto custom-scrollbar p-1 flex flex-col gap-0.5 bg-black/10 transition-all duration-300"></div>
                     </div>
 
-                    <!-- WARSTWY -->
                     <div id="art-layers-container-wrap" class="flex flex-col flex-grow overflow-hidden transition-all duration-300">
                         <div class="p-2 bg-black/30 text-[10px] font-bold g-text-muted uppercase tracking-widest border-b g-border flex justify-between items-center shrink-0">
                             <div class="flex gap-2 items-center">
@@ -282,7 +266,6 @@ window.artystaApp = {
                         </div>
                         
                         <div id="art-layers-list-container" class="flex flex-col flex-grow overflow-hidden transition-all duration-300">
-                            <!-- Opcje wybranej warstwy -->
                             <div class="p-2 border-b g-border bg-black/20 flex flex-col gap-2 shrink-0">
                                 <select id="art-layer-blend" class="w-full text-[10px] p-1 rounded g-bg g-text border g-border outline-none shadow-inner cursor-pointer" onchange="artystaApp.setLayerBlend(this.value)">
                                     <option value="source-over">Zwykłe (Normal)</option>
@@ -301,13 +284,11 @@ window.artystaApp = {
                                 </div>
                             </div>
 
-                            <!-- Lista Warstw -->
                             <div id="art-layers-list" class="flex-grow overflow-y-auto custom-scrollbar p-1 flex flex-col gap-1 bg-black/10"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- PRAWY PANEL AI (Wysuwany) -->
                 <div id="art-ai-sidebar" class="w-[280px] sm:w-[320px] border-l g-border bg-black/20 hidden flex-col shrink-0 transition-all duration-300 z-40 relative shadow-2xl">
                     <div class="p-3 border-b g-border flex justify-between items-center bg-gradient-to-r from-blue-600/20 to-purple-600/20 shrink-0">
                         <span class="font-bold text-sm text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-md">✨ BigAI Tools</span>
@@ -321,14 +302,11 @@ window.artystaApp = {
                         <button class="g-btn text-[10px] p-2 rounded shadow-sm border-yellow-500/50 hover:bg-yellow-600/20 flex flex-col items-center justify-center gap-1" onclick="artystaApp.askAI('Przekształć to w szkic', true)"><span class="text-xl">✏️</span> Szkic</button>
                     </div>
 
-                    <div class="flex-grow p-3 overflow-y-auto custom-scrollbar text-sm flex flex-col gap-3" id="art-ai-chat" style="user-select: text; -webkit-user-select: text;">
-                        <!-- Chat wstrzykiwany przez JS -->
-                    </div>
+                    <div class="flex-grow p-3 overflow-y-auto custom-scrollbar text-sm flex flex-col gap-3" id="art-ai-chat" style="user-select: text; -webkit-user-select: text;"></div>
                     <div class="p-2 border-t g-border bg-black/40 shrink-0">
                         <input type="text" id="art-ai-input" placeholder="Wpisz komendę dla AI..." class="w-full text-xs p-2 rounded-lg g-bg g-text border g-border outline-none focus:border-purple-500 transition shadow-inner" onkeydown="if(event.key==='Enter') { artystaApp.sendAI(this.value); this.value=''; }">
                     </div>
                 </div>
-
             </div>
         `;
         appWindow.appendChild(proUI);
@@ -337,40 +315,38 @@ window.artystaApp = {
         artystaApp.renderAIChat();
     },
 
-    // ==================================================================
-    // ZWIJANIE PANELI (COLLAPSE)
-    // ==================================================================
+    loadGoogleFonts: () => {
+        const fonts = [
+            'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Raleway', 'Poppins',
+            'Ubuntu', 'Playfair Display', 'Merriweather', 'Nunito', 'Pacifico', 'Dancing Script'
+        ];
+        const link = document.createElement('link');
+        link.href = 'https://fonts.googleapis.com/css2?family=' + fonts.map(f => f.replace(/ /g, '+')).join('&family=') + '&display=swap';
+        link.rel = 'stylesheet';
+        document.head.appendChild(link);
+    },
+
     togglePanel: (panelId) => {
         const list = document.getElementById(`art-${panelId}-list`);
         const btn = document.getElementById(`art-${panelId}-collapse-btn`);
         const contWrap = document.getElementById(`art-${panelId}-container-wrap`);
-        
-        // Zastępstwo dla layers, ponieważ mają wewn. selektor i input range
         const actualList = panelId === 'layers' ? document.getElementById('art-layers-list-container') : list;
 
         if(actualList.classList.contains('hidden')) {
             actualList.classList.remove('hidden');
             btn.innerText = '▼';
-            if (panelId === 'history' || panelId === 'layers') {
-                contWrap.classList.add(panelId === 'history' ? 'h-1/4' : 'flex-grow');
-            }
+            if (panelId === 'history' || panelId === 'layers') contWrap.classList.add(panelId === 'history' ? 'h-1/4' : 'flex-grow');
         } else {
             actualList.classList.add('hidden');
             btn.innerText = '▶';
-            if (panelId === 'history' || panelId === 'layers') {
-                contWrap.classList.remove('h-1/4', 'flex-grow');
-            }
+            if (panelId === 'history' || panelId === 'layers') contWrap.classList.remove('h-1/4', 'flex-grow');
         }
     },
 
-    // ==================================================================
-    // ZAMYKANIE PLIKU (Z NOWYM MODALEM)
-    // ==================================================================
     confirmCloseFile: () => {
         const modalId = 'art-close-modal';
         let modal = document.getElementById(modalId);
         if(modal) modal.remove();
-
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm';
@@ -402,43 +378,29 @@ window.artystaApp = {
         if(typeof apps !== 'undefined') apps.showToast('Zakończono', 'Zamknięto plik.', 'info');
     },
 
-    // ==================================================================
-    // AKTUALIZACJA KURSORA PĘDZLA (Custom Cursor - Naprawione Pozycjonowanie)
-    // ==================================================================
     updateCursor: (e) => {
         const cursor = document.getElementById('art-cursor');
         const ws = document.getElementById('art-workspace-area');
         const win = document.getElementById('app-szkicownik');
         if (!cursor || !ws || !win) return;
-        
         const rect = ws.getBoundingClientRect();
-        
-        // Ukrywamy kursor, jeśli wyszliśmy poza obszar roboczy płótna
         if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
             cursor.style.display = 'none';
             return;
         }
-
-        const toolsWithBrush = ['brush', 'pencil', 'eraser', 'airbrush', 'marker', 'pen', 'calligraphy', 'blur', 'dodge', 'burn', 'line', 'rect', 'circle'];
-        
+        const toolsWithBrush = ['brush', 'pencil', 'eraser', 'airbrush', 'marker', 'pen', 'calligraphy', 'blur', 'dodge', 'burn'];
         if (!toolsWithBrush.includes(artystaApp.activeTool) || artystaApp.isPanning || artystaApp.textActive) {
             cursor.style.display = 'none';
             return;
         }
-        
         cursor.style.display = 'block';
-        
         let pressure = (e.pointerType === 'pen' && e.pressure !== undefined) ? e.pressure : 1.0;
         let size = Math.max(1, artystaApp.brushSize * pressure) * artystaApp.zoom;
-        
-        // Używamy absolute position w oknie całego BigOSa
         cursor.style.width = `${size}px`;
         cursor.style.height = `${size}px`;
         cursor.style.left = `${e.clientX}px`;
         cursor.style.top = `${e.clientY}px`;
-        
-        // Zmiana kształtu kursora na podstawie narzędzia
-        if (['pencil', 'marker', 'rect'].includes(artystaApp.activeTool)) {
+        if (['pencil', 'marker'].includes(artystaApp.activeTool)) {
             cursor.style.borderRadius = '0';
             cursor.style.transform = `translate(-50%, -50%)`;
         } else if (artystaApp.activeTool === 'calligraphy') {
@@ -451,15 +413,12 @@ window.artystaApp = {
         }
     },
 
-    // ==================================================================
-    // 2. PASEK WŁAŚCIWOŚCI NARZĘDZIA (Dynamiczny)
-    // ==================================================================
     updatePropertiesBar: () => {
         const bar = document.getElementById('art-properties-bar');
         if(!bar) return;
         let html = '';
 
-        if (['brush', 'pencil', 'eraser', 'line', 'airbrush', 'marker', 'pen', 'calligraphy', 'blur', 'dodge', 'burn'].includes(artystaApp.activeTool)) {
+        if (['brush', 'pencil', 'eraser', 'airbrush', 'marker', 'pen', 'calligraphy', 'blur', 'dodge', 'burn'].includes(artystaApp.activeTool)) {
             html += `
                 <div class="flex items-center gap-2 shrink-0">
                     <span class="text-[10px] font-bold g-text-muted uppercase">Rozmiar</span>
@@ -467,7 +426,7 @@ window.artystaApp = {
                     <span id="art-prop-size" class="text-[10px] font-mono font-bold w-8">${artystaApp.brushSize}px</span>
                 </div>
             `;
-            if (!['pencil', 'pen', 'line'].includes(artystaApp.activeTool)) {
+            if (!['pencil', 'pen'].includes(artystaApp.activeTool)) {
                 html += `
                     <div class="w-px h-6 bg-gray-500/30 mx-2 shrink-0"></div>
                     <div class="flex items-center gap-2 shrink-0">
@@ -477,27 +436,70 @@ window.artystaApp = {
                 `;
             }
         }
-        else if (['rect', 'circle'].includes(artystaApp.activeTool)) {
+        else if (artystaApp.activeTool === 'shape') {
             html += `
-                <div class="flex items-center gap-2 shrink-0">
-                    <span class="text-[10px] font-bold g-text-muted uppercase">Grubość krawędzi</span>
-                    <input type="range" min="0" max="50" value="${artystaApp.brushSize}" class="w-24 h-1.5 g-range rounded appearance-none cursor-pointer" oninput="artystaApp.brushSize=parseInt(this.value); document.getElementById('art-prop-size').innerText=this.value+'px'">
-                    <span id="art-prop-size" class="text-[10px] font-mono font-bold w-8">${artystaApp.brushSize}px</span>
+                <select id="art-shape-type" class="p-1 rounded g-bg g-text border g-border text-xs outline-none shadow-inner" onchange="artystaApp.shapeType=this.value">
+                    <option value="line" ${artystaApp.shapeType==='line'?'selected':''}>Linia</option>
+                    <option value="arrow" ${artystaApp.shapeType==='arrow'?'selected':''}>Strzałka</option>
+                    <option value="rect" ${artystaApp.shapeType==='rect'?'selected':''}>Prostokąt</option>
+                    <option value="roundedRect" ${artystaApp.shapeType==='roundedRect'?'selected':''}>Zaokrąglony prostokąt</option>
+                    <option value="circle" ${artystaApp.shapeType==='circle'?'selected':''}>Okrąg</option>
+                    <option value="ellipse" ${artystaApp.shapeType==='ellipse'?'selected':''}>Elipsa</option>
+                    <option value="triangle" ${artystaApp.shapeType==='triangle'?'selected':''}>Trójkąt</option>
+                    <option value="polygon" ${artystaApp.shapeType==='polygon'?'selected':''}>Wielokąt</option>
+                    <option value="star" ${artystaApp.shapeType==='star'?'selected':''}>Gwiazda</option>
+                    <option value="heart" ${artystaApp.shapeType==='heart'?'selected':''}>Serce</option>
+                    <option value="speechBubble" ${artystaApp.shapeType==='speechBubble'?'selected':''}>Chmurka</option>
+                </select>
+                <div class="flex items-center gap-2 ml-2 shrink-0">
+                    <span class="text-[10px] font-bold g-text-muted uppercase">Grubość</span>
+                    <input type="range" min="1" max="50" value="${artystaApp.brushSize}" class="w-20 h-1.5 g-range rounded appearance-none cursor-pointer" oninput="artystaApp.brushSize=parseInt(this.value)">
+                    <span class="text-[10px] font-mono">${artystaApp.brushSize}px</span>
                 </div>
-                <div class="flex items-center gap-2 ml-4 shrink-0">
-                    <label class="text-[10px] font-bold g-text flex items-center gap-1 cursor-pointer"><input type="checkbox" id="art-prop-fill" class="accent-blue-500"> Wypełnij środek (Kolor Tła)</label>
+                <div class="flex items-center gap-2 ml-2 shrink-0">
+                    <label class="text-[10px] font-bold g-text flex items-center gap-1 cursor-pointer"><input type="checkbox" id="art-prop-fill" class="accent-blue-500"> Wypełnienie</label>
                 </div>
+            `;
+        }
+        else if (artystaApp.activeTool === 'gradient') {
+            html += `
+                <select id="art-grad-type" class="p-1 rounded g-bg g-text border g-border text-xs outline-none shadow-inner" onchange="artystaApp.gradientType=this.value">
+                    <option value="linear" ${artystaApp.gradientType==='linear'?'selected':''}>Liniowy</option>
+                    <option value="radial" ${artystaApp.gradientType==='radial'?'selected':''}>Promienisty</option>
+                    <option value="conic" ${artystaApp.gradientType==='conic'?'selected':''}>Stożkowy</option>
+                </select>
+                <span class="text-[10px] font-bold g-text-muted uppercase ml-2">Kolor 1</span>
+                <input type="color" id="art-grad-color1" value="${artystaApp.gradientColor1}" class="w-8 h-6 rounded cursor-pointer" onchange="artystaApp.gradientColor1=this.value">
+                <span class="text-[10px] font-bold g-text-muted uppercase ml-1">Kolor 2</span>
+                <input type="color" id="art-grad-color2" value="${artystaApp.gradientColor2}" class="w-8 h-6 rounded cursor-pointer" onchange="artystaApp.gradientColor2=this.value">
             `;
         }
         else if (artystaApp.activeTool === 'text') {
             html += `
-                <select id="art-txt-font" class="p-1 rounded g-bg g-text border g-border text-xs outline-none shadow-inner" onchange="if(artystaApp.textElement) artystaApp.updateTextPreview()">
-                    <option value="Arial">Arial</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Courier New">Courier New</option>
-                    <option value="Verdana">Verdana</option>
-                    <option value="Georgia">Georgia</option>
-                    <option value="Comic Sans MS">Comic Sans</option>
+                <select id="art-txt-font" class="p-1 rounded g-bg g-text border g-border text-xs outline-none shadow-inner" onchange="artystaApp.updateTextPreview()">
+                    <optgroup label="Systemowe">
+                        <option value="Arial">Arial</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Comic Sans MS">Comic Sans</option>
+                    </optgroup>
+                    <optgroup label="Google Fonts">
+                        <option value="Roboto">Roboto</option>
+                        <option value="Open Sans">Open Sans</option>
+                        <option value="Lato">Lato</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Oswald">Oswald</option>
+                        <option value="Raleway">Raleway</option>
+                        <option value="Poppins">Poppins</option>
+                        <option value="Ubuntu">Ubuntu</option>
+                        <option value="Playfair Display">Playfair Display</option>
+                        <option value="Merriweather">Merriweather</option>
+                        <option value="Nunito">Nunito</option>
+                        <option value="Pacifico">Pacifico</option>
+                        <option value="Dancing Script">Dancing Script</option>
+                    </optgroup>
                 </select>
                 <div class="flex items-center gap-1 shrink-0">
                     <span class="text-[10px] font-bold g-text-muted uppercase">Rozmiar</span>
@@ -507,43 +509,44 @@ window.artystaApp = {
                     <button id="art-txt-b" class="w-6 h-6 rounded g-btn font-bold text-xs" onclick="this.classList.toggle('border-blue-500'); this.classList.toggle('text-blue-500'); if(artystaApp.textElement) artystaApp.updateTextPreview()">B</button>
                     <button id="art-txt-i" class="w-6 h-6 rounded g-btn italic text-xs" onclick="this.classList.toggle('border-blue-500'); this.classList.toggle('text-blue-500'); if(artystaApp.textElement) artystaApp.updateTextPreview()">I</button>
                     <button id="art-txt-u" class="w-6 h-6 rounded g-btn underline text-xs" onclick="this.classList.toggle('border-blue-500'); this.classList.toggle('text-blue-500'); if(artystaApp.textElement) artystaApp.updateTextPreview()">U</button>
+                    <button id="art-txt-s" class="w-6 h-6 rounded g-btn line-through text-xs" onclick="this.classList.toggle('border-blue-500'); this.classList.toggle('text-blue-500'); if(artystaApp.textElement) artystaApp.updateTextPreview()">S</button>
+                </div>
+                <div class="flex gap-1 shrink-0 ml-2">
+                    <select id="art-txt-align" class="text-[10px] p-0.5 rounded g-bg g-text border g-border" onchange="if(artystaApp.textElement) artystaApp.updateTextPreview()">
+                        <option value="left">Lewo</option>
+                        <option value="center">Środek</option>
+                        <option value="right">Prawo</option>
+                    </select>
+                    <span class="text-[10px] font-bold g-text-muted uppercase">Obrót</span>
+                    <input type="range" id="art-txt-rotation" min="-180" max="180" value="0" class="w-14 h-1.5 g-range" oninput="if(artystaApp.textElement) artystaApp.updateTextPreview()">
                 </div>
             `;
         }
         else if (artystaApp.activeTool === 'move') {
-            html += `<span class="text-[10px] g-text-muted italic">Kliknij i przeciągnij na płótnie, aby przesunąć widok. Użyj Ctrl + Scroll do powiększania.</span>`;
+            html += `<span class="text-[10px] g-text-muted italic">Kliknij i przeciągnij, by przesunąć widok lub warstwę tekstową.</span>`;
         }
         else if (artystaApp.activeTool === 'picker') {
             html += `<span class="text-[10px] g-text-muted italic">Kliknij na obrazie, by pobrać kolor główny. Kliknij Prawym Przyciskiem by pobrać kolor tła.</span>`;
         }
-
         bar.innerHTML = html;
     },
 
     setTool: (tool) => {
         if (artystaApp.activeTool === 'text' && tool !== 'text') artystaApp.finishText();
         artystaApp.activeTool = tool;
-        
-        document.querySelectorAll('.art-tool-btn').forEach(b => {
-            b.classList.remove('bg-blue-500', 'text-white', 'shadow-inner');
-        });
+        document.querySelectorAll('.art-tool-btn').forEach(b => b.classList.remove('bg-blue-500', 'text-white', 'shadow-inner'));
         const btn = document.querySelector(`.art-tool-btn[data-tool="${tool}"]`);
         if (btn) btn.classList.add('bg-blue-500', 'text-white', 'shadow-inner');
-
         const ws = document.getElementById('art-workspace-area');
         if(ws) {
             if(tool === 'move') ws.style.cursor = 'grab';
             else if(tool === 'text') ws.style.cursor = 'text';
             else if(tool === 'picker') ws.style.cursor = 'crosshair';
-            else ws.style.cursor = 'crosshair'; 
+            else ws.style.cursor = 'crosshair';
         }
-
         artystaApp.updatePropertiesBar();
     },
 
-    // ==================================================================
-    // 3. SILNIK PAN & ZOOM I ZARZĄDZANIE PŁÓTNEM
-    // ==================================================================
     applyCanvasSize: (w, h) => {
         artystaApp.width = w; artystaApp.height = h;
         const cont = document.getElementById('art-canvas-container');
@@ -560,7 +563,7 @@ window.artystaApp = {
     },
 
     setZoom: (val) => {
-        artystaApp.zoom = Math.max(0.1, Math.min(val, 32)); // 10% do 3200%
+        artystaApp.zoom = Math.max(0.1, Math.min(val, 32));
         document.getElementById('art-zoom-val').innerText = Math.round(artystaApp.zoom * 100) + '%';
         artystaApp.updateView();
     },
@@ -571,12 +574,10 @@ window.artystaApp = {
         const padding = 40;
         const availableW = ws.clientWidth - padding;
         const availableH = ws.clientHeight - padding;
-        
         const scaleX = availableW / artystaApp.width;
         const scaleY = availableH / artystaApp.height;
-        let scale = Math.min(scaleX, scaleY, 1); // Nie powiększamy pikselozy powyżej 100% z automatu
+        let scale = Math.min(scaleX, scaleY, 1);
         if(scale <= 0) scale = 0.1;
-        
         artystaApp.setZoom(scale);
         artystaApp.panX = 0;
         artystaApp.panY = 0;
@@ -600,53 +601,39 @@ window.artystaApp = {
         };
     },
 
-    // ==================================================================
-    // 4. ZARZĄDZANIE WARSTWAMI (Obsługa Tekstu)
-    // ==================================================================
     addLayer: (name = "Nowa Warstwa", isBg = false, layerType = 'normal') => {
         artystaApp.finishText();
-        
         const canvas = document.createElement('canvas');
         canvas.width = artystaApp.width; canvas.height = artystaApp.height;
         canvas.className = 'absolute top-0 left-0 pointer-events-none';
-        
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (isBg) {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-
         document.getElementById('art-canvas-container').insertBefore(canvas, artystaApp.previewCanvas);
-
         const id = 'layer_' + Date.now() + Math.random();
         const layer = {
-            id: id, name: name, canvas: canvas, ctx: ctx,
+            id, name, canvas, ctx,
             visible: true, locked: false, opacity: 100, blendMode: 'source-over',
             type: layerType, textData: null
         };
-
-        artystaApp.layers.unshift(layer); 
+        artystaApp.layers.unshift(layer);
         artystaApp.currentLayerId = id;
-        
         artystaApp.updateLayersStyle();
         artystaApp.renderLayersList();
-        
         if(!isBg && layerType !== 'text') artystaApp.saveHistory(`Dodano warstwę: ${name}`);
     },
 
     deleteCurrentLayer: () => {
         artystaApp.finishText();
         if (artystaApp.layers.length <= 1) return typeof apps !== 'undefined' ? apps.showToast('Błąd', 'Musisz mieć chociaż jedną warstwę!', 'error') : null;
-        
         const idx = artystaApp.layers.findIndex(l => l.id === artystaApp.currentLayerId);
         if (idx === -1) return;
-
         artystaApp.layers[idx].canvas.remove();
         const name = artystaApp.layers[idx].name;
         artystaApp.layers.splice(idx, 1);
-        
         artystaApp.currentLayerId = artystaApp.layers[Math.max(0, idx - 1)].id;
-        
         artystaApp.updateLayersStyle();
         artystaApp.renderLayersList();
         artystaApp.saveHistory(`Usunięto warstwę: ${name}`);
@@ -659,9 +646,7 @@ window.artystaApp = {
         artystaApp.saveHistory(`Wyczyszczono: ${l.name}`);
     },
 
-    getCurrentLayer: () => {
-        return artystaApp.layers.find(l => l.id === artystaApp.currentLayerId);
-    },
+    getCurrentLayer: () => artystaApp.layers.find(l => l.id === artystaApp.currentLayerId),
 
     updateLayersStyle: () => {
         artystaApp.layers.forEach((l, i) => {
@@ -673,36 +658,99 @@ window.artystaApp = {
         if(artystaApp.previewCanvas) artystaApp.previewCanvas.style.zIndex = artystaApp.layers.length + 10;
     },
 
+    showRenameLayerModal: (idx) => {
+        const layer = artystaApp.layers[idx];
+        const modalId = 'art-rename-modal';
+        let modal = document.getElementById(modalId);
+        if(modal) modal.remove();
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm';
+        modal.innerHTML = `
+            <div class="g-panel p-5 rounded-xl shadow-2xl border g-border w-80">
+                <h3 class="text-sm font-bold g-text mb-3">Zmień nazwę warstwy</h3>
+                <input type="text" id="art-rename-input" value="${layer.name.replace(/"/g, '&quot;')}" class="w-full p-2 g-bg g-text border g-border rounded outline-none text-sm mb-4">
+                <div class="flex justify-end gap-2">
+                    <button onclick="document.getElementById('${modalId}').remove()" class="px-3 py-1.5 g-bg g-text rounded border g-border text-xs">Anuluj</button>
+                    <button onclick="let n=document.getElementById('art-rename-input').value.trim(); if(n){ artystaApp.layers[${idx}].name=n; artystaApp.renderLayersList(); } document.getElementById('${modalId}').remove();" class="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-bold">OK</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        document.getElementById('art-rename-input').focus();
+    },
+
     renderLayersList: () => {
         const list = document.getElementById('art-layers-list');
         if(!list) return;
         list.innerHTML = '';
-
         artystaApp.layers.forEach((l, i) => {
             const isSel = l.id === artystaApp.currentLayerId;
             const el = document.createElement('div');
             el.className = `flex flex-col p-2 border-b g-border cursor-pointer transition ${isSel ? 'bg-blue-600/30 border-l-4 border-blue-500' : 'hover:bg-white/5 border-transparent border-l-4'}`;
-            el.onclick = () => { artystaApp.currentLayerId = l.id; artystaApp.renderLayersList(); };
-            
+            el.draggable = true;
+            el.onclick = (e) => { if (e.target.tagName === 'BUTTON') return; artystaApp.currentLayerId = l.id; artystaApp.renderLayersList(); };
+            el.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); artystaApp.showLayerContextMenu(e, i); };
+            el.ondragstart = (e) => { artystaApp.dragLayerIndex = i; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', i); };
+            el.ondragover = (e) => e.preventDefault();
+            el.ondrop = (e) => {
+                e.preventDefault();
+                const from = artystaApp.dragLayerIndex;
+                const to = i;
+                if (from === to || from === undefined) return;
+                const movedLayer = artystaApp.layers.splice(from, 1)[0];
+                artystaApp.layers.splice(to, 0, movedLayer);
+                artystaApp.updateLayersStyle();
+                artystaApp.renderLayersList();
+                artystaApp.saveHistory('Zmiana kolejności warstw');
+                artystaApp.dragLayerIndex = null;
+            };
             const layerTypeIcon = l.type === 'text' ? '<span class="text-[10px] text-blue-400 font-bold mr-1 bg-blue-500/20 px-1 rounded">T</span>' : '';
-
             el.innerHTML = `
                 <div class="flex items-center gap-2">
                     <button class="hover:text-white text-lg leading-none" onclick="event.stopPropagation(); artystaApp.layers[${i}].visible = !artystaApp.layers[${i}].visible; artystaApp.updateLayersStyle(); artystaApp.renderLayersList();">${l.visible ? '👁️' : '🕶️'}</button>
-                    <div class="flex-grow text-xs font-bold g-text truncate" ondblclick="event.stopPropagation(); let n = prompt('Nazwa warstwy:', '${l.name}'); if(n){ artystaApp.layers[${i}].name = n; artystaApp.renderLayersList(); }">
-                        ${layerTypeIcon}${typeof desktop !== 'undefined' ? desktop.escapeHTML(l.name) : l.name}
-                    </div>
+                    <div class="flex-grow text-xs font-bold g-text truncate" ondblclick="event.stopPropagation(); artystaApp.showRenameLayerModal(${i})">${layerTypeIcon}${typeof desktop !== 'undefined' ? desktop.escapeHTML(l.name) : l.name}</div>
                     <button class="hover:text-red-400 text-lg leading-none ${l.locked ? 'text-red-500' : 'text-gray-500'}" onclick="event.stopPropagation(); artystaApp.layers[${i}].locked = !artystaApp.layers[${i}].locked; artystaApp.renderLayersList();" title="${l.locked ? 'Odblokuj rysowanie' : 'Zablokuj rysowanie'}">${l.locked ? '🔒' : '🔓'}</button>
                 </div>
             `;
             list.appendChild(el);
-            
             if(isSel) {
                 document.getElementById('art-layer-blend').value = l.blendMode;
                 document.getElementById('art-layer-opacity').value = l.opacity;
                 document.getElementById('art-layer-op-val').innerText = l.opacity;
             }
         });
+    },
+
+    showLayerContextMenu: (e, idx) => {
+        const layer = artystaApp.layers[idx];
+        const menuId = 'art-layer-context-menu';
+        let menu = document.getElementById(menuId);
+        if(menu) menu.remove();
+        menu = document.createElement('div');
+        menu.id = menuId;
+        menu.className = 'absolute z-[10001] g-panel border g-border rounded-lg shadow-2xl py-1 min-w-[180px] text-xs';
+        menu.style.left = e.clientX + 'px';
+        menu.style.top = e.clientY + 'px';
+
+        const items = [
+            { label: layer.visible ? 'Ukryj warstwę' : 'Pokaż warstwę', action: () => { layer.visible = !layer.visible; artystaApp.updateLayersStyle(); artystaApp.renderLayersList(); } },
+            { label: 'Zmień nazwę...', action: () => artystaApp.showRenameLayerModal(idx) },
+            { label: 'Usuń warstwę', action: () => { artystaApp.currentLayerId = layer.id; artystaApp.deleteCurrentLayer(); } },
+            { label: 'Duplikuj warstwę', action: () => { const dup = {...layer}; dup.id = 'layer_'+Date.now(); dup.canvas = document.createElement('canvas'); dup.canvas.width = layer.canvas.width; dup.canvas.height = layer.canvas.height; dup.ctx = dup.canvas.getContext('2d'); dup.ctx.drawImage(layer.canvas,0,0); document.getElementById('art-canvas-container').insertBefore(dup.canvas, artystaApp.previewCanvas); artystaApp.layers.splice(idx+1,0,dup); artystaApp.renderLayersList(); artystaApp.saveHistory('Duplikowano warstwę'); } },
+            { label: 'Scal z warstwą poniżej', action: () => { if(idx < artystaApp.layers.length-1){ const below = artystaApp.layers[idx+1]; below.ctx.drawImage(layer.canvas,0,0); artystaApp.layers.splice(idx,1); layer.canvas.remove(); artystaApp.renderLayersList(); artystaApp.saveHistory('Scalono warstwy'); } } },
+            { label: layer.locked ? 'Odblokuj' : 'Zablokuj', action: () => { layer.locked = !layer.locked; artystaApp.renderLayersList(); } },
+        ];
+        items.forEach(item => {
+            const el = document.createElement('button');
+            el.className = 'w-full text-left px-3 py-1.5 hover:bg-blue-500 hover:text-white transition g-text';
+            el.textContent = item.label;
+            el.onclick = (ev) => { ev.stopPropagation(); item.action(); menu.remove(); };
+            menu.appendChild(el);
+        });
+        document.body.appendChild(menu);
+        const closeMenu = (ev) => { if(!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', closeMenu); } };
+        setTimeout(() => document.addEventListener('click', closeMenu), 10);
     },
 
     setLayerOpacity: (val) => {
@@ -715,14 +763,8 @@ window.artystaApp = {
         if(l) { l.blendMode = val; artystaApp.updateLayersStyle(); artystaApp.saveHistory('Zmieniono tryb mieszania'); }
     },
 
-    // ==================================================================
-    // 5. SYSTEM HISTORII  (Zapisywanie Tekstu jako Base64)
-    // ==================================================================
     saveHistory: (actionName) => {
-        if (artystaApp.historyStep < artystaApp.history.length - 1) {
-            artystaApp.history = artystaApp.history.slice(0, artystaApp.historyStep + 1);
-        }
-
+        if (artystaApp.historyStep < artystaApp.history.length - 1) artystaApp.history = artystaApp.history.slice(0, artystaApp.historyStep + 1);
         const snapshot = {
             name: actionName,
             w: artystaApp.width, h: artystaApp.height,
@@ -733,11 +775,9 @@ window.artystaApp = {
                 data: l.canvas.toDataURL('image/png') 
             }))
         };
-
         artystaApp.history.push(snapshot);
         if (artystaApp.history.length > 50) artystaApp.history.shift(); 
         else artystaApp.historyStep++;
-
         artystaApp.renderHistoryList();
     },
 
@@ -778,23 +818,19 @@ window.artystaApp = {
         artystaApp.layers.forEach(l => l.canvas.remove());
         artystaApp.layers = [];
         artystaApp.applyCanvasSize(snap.w, snap.h);
-        
         const workspace = document.getElementById('art-canvas-container');
-        
         let loaded = 0;
         snap.layers.forEach((sl, i) => {
             const canvas = document.createElement('canvas');
             canvas.width = snap.w; canvas.height = snap.h;
             canvas.className = 'absolute top-0 left-0 pointer-events-none';
             workspace.insertBefore(canvas, artystaApp.previewCanvas);
-            
             const layer = { 
-                id: sl.id, name: sl.name, canvas: canvas, ctx: canvas.getContext('2d', { willReadFrequently: true }), 
+                id: sl.id, name: sl.name, canvas, ctx: canvas.getContext('2d', { willReadFrequently: true }), 
                 visible: sl.visible, locked: sl.locked, opacity: sl.opacity, blendMode: sl.blendMode,
                 type: sl.type || 'normal', textData: sl.textData || null 
             };
             artystaApp.layers.push(layer); 
-            
             const img = new Image();
             img.onload = () => {
                 layer.ctx.drawImage(img, 0, 0);
@@ -823,12 +859,21 @@ window.artystaApp = {
     },
 
     // ==================================================================
-    // 6. RYSOWANIE I NOWE NARZĘDZIA (BLOKADA DLA TEKSTU, NAPRAWIONY BURN)
+    // RYSOWANIE
     // ==================================================================
     pointerDown: (e) => {
         const coords = artystaApp.getCanvasCoords(e);
 
         if (artystaApp.activeTool === 'move' || artystaApp.tempPanMode) {
+            if (artystaApp.textActive && artystaApp.textElement && artystaApp.activeTool === 'move') {
+                const startLeft = parseFloat(artystaApp.textElement.style.left);
+                const startTop = parseFloat(artystaApp.textElement.style.top);
+                artystaApp.isPanning = true;
+                artystaApp.startMouseX = e.clientX; artystaApp.startMouseY = e.clientY;
+                artystaApp.startPanX = startLeft;
+                artystaApp.startPanY = startTop;
+                return;
+            }
             artystaApp.isPanning = true;
             artystaApp.startMouseX = e.clientX; artystaApp.startMouseY = e.clientY;
             artystaApp.startPanX = artystaApp.panX; artystaApp.startPanY = artystaApp.panY;
@@ -841,7 +886,6 @@ window.artystaApp = {
             return;
         }
 
-        // Warstwa tekstowa z pełną zgodnością Photoshop-like
         if (artystaApp.activeTool === 'text') {
             if (l.type === 'text') {
                 artystaApp.spawnTextNode(0, 0, l);
@@ -853,7 +897,7 @@ window.artystaApp = {
         }
 
         if (l.type === 'text' && !['move', 'picker'].includes(artystaApp.activeTool)) {
-            if(typeof apps !== 'undefined') apps.showToast('Warstwa Tekstowa', 'Zmień na zwykłą warstwę by rysować (warstwa tekstowa tylko do edycji)', 'warning');
+            if(typeof apps !== 'undefined') apps.showToast('Warstwa Tekstowa', 'Zmień na zwykłą warstwę by rysować', 'warning');
             return;
         }
 
@@ -864,6 +908,13 @@ window.artystaApp = {
 
         if (artystaApp.activeTool === 'fill') {
             artystaApp.floodFill(Math.floor(coords.x), Math.floor(coords.y), e.buttons === 2 ? artystaApp.secondaryColor : artystaApp.primaryColor);
+            return;
+        }
+
+        if (artystaApp.activeTool === 'gradient' || artystaApp.activeTool === 'shape') {
+            artystaApp.isDrawing = true;
+            artystaApp.startDrawX = coords.x; artystaApp.startDrawY = coords.y;
+            artystaApp.lastX = coords.x; artystaApp.lastY = coords.y;
             return;
         }
 
@@ -884,10 +935,10 @@ window.artystaApp = {
             l.ctx.fillStyle = '#000000';
         } else if (artystaApp.activeTool === 'dodge') {
             l.ctx.globalCompositeOperation = 'color-dodge';
-            l.ctx.fillStyle = `rgba(255, 255, 255, ${artystaApp.brushOpacity / 1000})`; // Bardziej naturalny buildup
+            l.ctx.fillStyle = `rgba(255, 255, 255, ${artystaApp.brushOpacity / 1000})`;
         } else if (artystaApp.activeTool === 'burn') {
             l.ctx.globalCompositeOperation = 'multiply';
-            l.ctx.fillStyle = `rgba(0, 0, 0, ${artystaApp.brushOpacity / 1000})`; // Naturalne przyciemnianie
+            l.ctx.fillStyle = `rgba(0, 0, 0, ${artystaApp.brushOpacity / 1000})`;
         } else if (artystaApp.activeTool === 'blur') {
             l.ctx.globalCompositeOperation = 'source-over';
         } else {
@@ -919,6 +970,15 @@ window.artystaApp = {
     },
 
     pointerMove: (e) => {
+        if (artystaApp.isPanning && artystaApp.textActive && artystaApp.textElement && artystaApp.activeTool === 'move') {
+            const dx = e.clientX - artystaApp.startMouseX;
+            const dy = e.clientY - artystaApp.startMouseY;
+            const newLeft = artystaApp.startPanX + dx / artystaApp.zoom;
+            const newTop = artystaApp.startPanY + dy / artystaApp.zoom;
+            artystaApp.textElement.style.left = newLeft + 'px';
+            artystaApp.textElement.style.top = newTop + 'px';
+            return;
+        }
         if (artystaApp.isPanning) {
             artystaApp.panX = artystaApp.startPanX + (e.clientX - artystaApp.startMouseX);
             artystaApp.panY = artystaApp.startPanY + (e.clientY - artystaApp.startMouseY);
@@ -934,11 +994,63 @@ window.artystaApp = {
         const size = Math.max(1, artystaApp.brushSize * pressure);
         const color = e.buttons === 2 ? artystaApp.secondaryColor : artystaApp.primaryColor;
 
+        if (artystaApp.activeTool === 'gradient') {
+            const pCtx = artystaApp.previewCtx;
+            pCtx.clearRect(0,0, artystaApp.width, artystaApp.height);
+            const x0 = artystaApp.startDrawX, y0 = artystaApp.startDrawY;
+            const x1 = coords.x, y1 = coords.y;
+            if (artystaApp.gradientType === 'linear') {
+                const grad = pCtx.createLinearGradient(x0, y0, x1, y1);
+                grad.addColorStop(0, artystaApp.gradientColor1);
+                grad.addColorStop(1, artystaApp.gradientColor2);
+                pCtx.fillStyle = grad;
+                pCtx.fillRect(0,0, artystaApp.width, artystaApp.height);
+            } else if (artystaApp.gradientType === 'radial') {
+                const r = Math.hypot(x1-x0, y1-y0);
+                const grad = pCtx.createRadialGradient(x0, y0, 0, x0, y0, r);
+                grad.addColorStop(0, artystaApp.gradientColor1);
+                grad.addColorStop(1, artystaApp.gradientColor2);
+                pCtx.fillStyle = grad;
+                pCtx.fillRect(0,0, artystaApp.width, artystaApp.height);
+            } else if (artystaApp.gradientType === 'conic') {
+                pCtx.save();
+                const cx = x0, cy = y0;
+                const radius = Math.hypot(x1-cx, y1-cy);
+                const steps = 36;
+                for(let i=0; i<steps; i++) {
+                    const startAngle = (i/steps)*Math.PI*2;
+                    const endAngle = ((i+1)/steps)*Math.PI*2;
+                    const t = i/(steps-1);
+                    const r = parseInt(artystaApp.gradientColor1.slice(1,3),16)*(1-t) + parseInt(artystaApp.gradientColor2.slice(1,3),16)*t;
+                    const g = parseInt(artystaApp.gradientColor1.slice(3,5),16)*(1-t) + parseInt(artystaApp.gradientColor2.slice(3,5),16)*t;
+                    const b = parseInt(artystaApp.gradientColor1.slice(5,7),16)*(1-t) + parseInt(artystaApp.gradientColor2.slice(5,7),16)*t;
+                    pCtx.fillStyle = `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+                    pCtx.beginPath();
+                    pCtx.moveTo(cx, cy);
+                    pCtx.arc(cx, cy, radius, startAngle, endAngle);
+                    pCtx.closePath();
+                    pCtx.fill();
+                }
+                pCtx.restore();
+            }
+            return;
+        }
+        else if (artystaApp.activeTool === 'shape') {
+            const pCtx = artystaApp.previewCtx;
+            pCtx.clearRect(0,0, artystaApp.width, artystaApp.height);
+            pCtx.strokeStyle = color;
+            pCtx.lineWidth = size;
+            pCtx.lineCap = 'round'; pCtx.lineJoin = 'round';
+            const doFill = document.getElementById('art-prop-fill')?.checked || false;
+            pCtx.fillStyle = e.buttons === 2 ? artystaApp.primaryColor : artystaApp.secondaryColor;
+            artystaApp.drawShape(pCtx, artystaApp.shapeType, artystaApp.startDrawX, artystaApp.startDrawY, coords.x, coords.y, doFill);
+            return;
+        }
+
         l.ctx.globalAlpha = 1.0;
         l.ctx.filter = 'none';
 
         if (['brush', 'pencil', 'eraser', 'marker', 'pen', 'calligraphy', 'dodge', 'burn', 'blur', 'airbrush'].includes(artystaApp.activeTool)) {
-            
             l.ctx.beginPath();
             
             if (artystaApp.activeTool === 'eraser') {
@@ -1028,40 +1140,6 @@ window.artystaApp = {
             
             artystaApp.lastX = coords.x; artystaApp.lastY = coords.y;
         }
-        else if (['line', 'rect', 'circle'].includes(artystaApp.activeTool)) {
-            const pCtx = artystaApp.previewCtx;
-            pCtx.clearRect(0,0, artystaApp.width, artystaApp.height);
-            pCtx.strokeStyle = color;
-            pCtx.lineWidth = size;
-            pCtx.lineCap = 'round'; pCtx.lineJoin = 'round';
-            
-            const doFillEl = document.getElementById('art-prop-fill');
-            const doFill = doFillEl ? doFillEl.checked : false;
-            pCtx.fillStyle = e.buttons === 2 ? artystaApp.primaryColor : artystaApp.secondaryColor;
-
-            if (artystaApp.activeTool === 'line') {
-                pCtx.beginPath();
-                pCtx.moveTo(artystaApp.startDrawX, artystaApp.startDrawY);
-                pCtx.lineTo(coords.x, coords.y);
-                pCtx.stroke();
-            } else if (artystaApp.activeTool === 'rect') {
-                let w = coords.x - artystaApp.startDrawX;
-                let h = coords.y - artystaApp.startDrawY;
-                if(e.shiftKey) { let min = Math.min(Math.abs(w), Math.abs(h)); w = Math.sign(w)*min; h = Math.sign(h)*min; }
-                pCtx.beginPath();
-                pCtx.rect(artystaApp.startDrawX, artystaApp.startDrawY, w, h);
-                if(doFill) pCtx.fill();
-                pCtx.stroke();
-            } else if (artystaApp.activeTool === 'circle') {
-                let rX = Math.abs(coords.x - artystaApp.startDrawX);
-                let rY = Math.abs(coords.y - artystaApp.startDrawY);
-                if(e.shiftKey) { let min = Math.min(rX, rY); rX = min; rY = min; }
-                pCtx.beginPath();
-                pCtx.ellipse(artystaApp.startDrawX, artystaApp.startDrawY, rX, rY, 0, 0, Math.PI*2);
-                if(doFill) pCtx.fill();
-                pCtx.stroke();
-            }
-        }
     },
 
     pointerUp: (e) => {
@@ -1072,103 +1150,186 @@ window.artystaApp = {
         const l = artystaApp.getCurrentLayer();
         if (l) l.ctx.globalCompositeOperation = 'source-over';
 
-        if (['line', 'rect', 'circle'].includes(artystaApp.activeTool)) {
+        if (artystaApp.activeTool === 'gradient') {
             l.ctx.drawImage(artystaApp.previewCanvas, 0, 0);
             artystaApp.previewCtx.clearRect(0,0, artystaApp.width, artystaApp.height);
+            artystaApp.saveHistory('Gradient');
         }
-        
-        const toolNames = { 'brush':'Pędzel', 'pencil':'Ołówek', 'eraser':'Gumka', 'line':'Linia', 'rect':'Prostokąt', 'circle':'Koło', 'airbrush': 'Aerograf', 'marker':'Marker', 'pen':'Długopis', 'calligraphy':'Pióro', 'blur':'Rozmycie', 'dodge':'Rozjaśnianie', 'burn':'Przyciemnianie' };
-        artystaApp.saveHistory(toolNames[artystaApp.activeTool] || 'Rysowanie');
+        else if (artystaApp.activeTool === 'shape') {
+            const coords = artystaApp.getCanvasCoords(e);
+            const color = e.buttons === 2 ? artystaApp.secondaryColor : artystaApp.primaryColor;
+            const size = Math.max(1, artystaApp.brushSize);
+            const doFill = document.getElementById('art-prop-fill')?.checked || false;
+            l.ctx.strokeStyle = color;
+            l.ctx.lineWidth = size;
+            l.ctx.fillStyle = e.buttons === 2 ? artystaApp.primaryColor : artystaApp.secondaryColor;
+            artystaApp.drawShape(l.ctx, artystaApp.shapeType, artystaApp.startDrawX, artystaApp.startDrawY, coords.x, coords.y, doFill);
+            artystaApp.previewCtx.clearRect(0,0, artystaApp.width, artystaApp.height);
+            artystaApp.saveHistory('Kształt: ' + artystaApp.shapeType);
+        }
+        else {
+            const toolNames = { 'brush':'Pędzel', 'pencil':'Ołówek', 'eraser':'Gumka', 'line':'Linia', 'rect':'Prostokąt', 'circle':'Koło', 'airbrush': 'Aerograf', 'marker':'Marker', 'pen':'Długopis', 'calligraphy':'Pióro', 'blur':'Rozmycie', 'dodge':'Rozjaśnianie', 'burn':'Przyciemnianie' };
+            artystaApp.saveHistory(toolNames[artystaApp.activeTool] || 'Rysowanie');
+        }
     },
 
-    // ==================================================================
-    // NARZĘDZIE TEKSTOWE (Pełnoprawne Warstwy)
-    // ==================================================================
+    drawShape: (ctx, type, x0, y0, x1, y1, doFill) => {
+        ctx.beginPath();
+        const w = x1 - x0, h = y1 - y0;
+        switch(type) {
+            case 'line':
+                ctx.moveTo(x0, y0);
+                ctx.lineTo(x1, y1);
+                break;
+            case 'arrow':
+                ctx.moveTo(x0, y0);
+                ctx.lineTo(x1, y1);
+                const angle = Math.atan2(y1-y0, x1-x0);
+                const headLen = 15;
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x1 - headLen * Math.cos(angle - Math.PI/6), y1 - headLen * Math.sin(angle - Math.PI/6));
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x1 - headLen * Math.cos(angle + Math.PI/6), y1 - headLen * Math.sin(angle + Math.PI/6));
+                break;
+            case 'rect':
+                ctx.rect(x0, y0, w, h);
+                break;
+            case 'roundedRect':
+                const r = 10;
+                ctx.moveTo(x0+r, y0);
+                ctx.lineTo(x1-r, y0);
+                ctx.arcTo(x1, y0, x1, y0+r, r);
+                ctx.lineTo(x1, y1-r);
+                ctx.arcTo(x1, y1, x1-r, y1, r);
+                ctx.lineTo(x0+r, y1);
+                ctx.arcTo(x0, y1, x0, y1-r, r);
+                ctx.lineTo(x0, y0+r);
+                ctx.arcTo(x0, y0, x0+r, y0, r);
+                break;
+            case 'circle':
+                const rx = Math.abs(w), ry = Math.abs(h);
+                const rCircle = Math.min(rx, ry);
+                ctx.ellipse(x0, y0, rCircle, rCircle, 0, 0, Math.PI*2);
+                break;
+            case 'ellipse':
+                ctx.ellipse(x0 + w/2, y0 + h/2, Math.abs(w)/2, Math.abs(h)/2, 0, 0, Math.PI*2);
+                break;
+            case 'triangle':
+                ctx.moveTo(x0 + w/2, y0);
+                ctx.lineTo(x1, y1);
+                ctx.lineTo(x0, y1);
+                ctx.closePath();
+                break;
+            case 'polygon':
+                const sides = 6;
+                const cx = x0, cy = y0, rad = Math.hypot(w, h);
+                for(let i=0; i<=sides; i++) {
+                    const a = (i/sides) * Math.PI*2 - Math.PI/2;
+                    const px = cx + Math.cos(a)*rad;
+                    const py = cy + Math.sin(a)*rad;
+                    if(i===0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                break;
+            case 'star':
+                const spikes = 5, outerRad = Math.hypot(w, h), innerRad = outerRad*0.5;
+                for(let i=0; i<=spikes*2; i++) {
+                    const a = (i/(spikes*2)) * Math.PI*2 - Math.PI/2;
+                    const rStar = i%2===0 ? outerRad : innerRad;
+                    const px = x0 + Math.cos(a)*rStar;
+                    const py = y0 + Math.sin(a)*rStar;
+                    if(i===0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                break;
+            case 'heart':
+                const topCurveHeight = h * 0.3;
+                ctx.moveTo(x0 + w/2, y1);
+                ctx.bezierCurveTo(x0, y1 - topCurveHeight, x0, y0 + topCurveHeight, x0 + w/2, y0);
+                ctx.bezierCurveTo(x1, y0 + topCurveHeight, x1, y1 - topCurveHeight, x0 + w/2, y1);
+                break;
+            case 'speechBubble':
+                const bubbleW = w, bubbleH = h, tailW = 20, tailH = 20;
+                ctx.moveTo(x0 + 10, y0);
+                ctx.lineTo(x1 - 10, y0);
+                ctx.quadraticCurveTo(x1, y0, x1, y0+10);
+                ctx.lineTo(x1, y1 - 10);
+                ctx.quadraticCurveTo(x1, y1, x1-10, y1);
+                ctx.lineTo(x0 + w*0.6 + tailW, y1);
+                ctx.lineTo(x0 + w*0.6, y1 + tailH);
+                ctx.lineTo(x0 + w*0.6 - tailW, y1);
+                ctx.lineTo(x0 + 10, y1);
+                ctx.quadraticCurveTo(x0, y1, x0, y1-10);
+                ctx.lineTo(x0, y0+10);
+                ctx.quadraticCurveTo(x0, y0, x0+10, y0);
+                break;
+        }
+        if(doFill) ctx.fill();
+        ctx.stroke();
+    },
+
     spawnTextNode: (x, y, existingLayer = null) => {
         if(artystaApp.textActive) artystaApp.finishText();
-        
         artystaApp.textActive = true;
-        
         const ws = document.getElementById('art-canvas-container');
         const input = document.createElement('div');
         input.id = 'art-text-input';
         input.contentEditable = "true";
         input.className = 'absolute min-w-[50px] outline-none border border-dashed border-gray-600 bg-transparent p-0 m-0 z-[1000] whitespace-pre-wrap';
-        
         if (existingLayer && existingLayer.textData) {
             const td = existingLayer.textData;
             input.style.left = `${td.x}px`;
             input.style.top = `${td.y}px`;
             input.innerText = td.text;
-            
-            const fSel = document.getElementById('art-txt-font');
-            if (fSel) fSel.value = td.font;
-            
-            const sSel = document.getElementById('art-txt-size');
-            if (sSel) sSel.value = td.size;
-            
+            document.getElementById('art-txt-font').value = td.font;
+            document.getElementById('art-txt-size').value = td.size;
             artystaApp.primaryColor = td.color;
-            const cPrim = document.getElementById('art-color-primary');
-            if (cPrim) cPrim.value = td.color;
-            
-            const bBtn = document.getElementById('art-txt-b');
-            if (bBtn) { if(td.isB) bBtn.classList.add('border-blue-500', 'text-blue-500'); else bBtn.classList.remove('border-blue-500', 'text-blue-500'); }
-            
-            const iBtn = document.getElementById('art-txt-i');
-            if (iBtn) { if(td.isI) iBtn.classList.add('border-blue-500', 'text-blue-500'); else iBtn.classList.remove('border-blue-500', 'text-blue-500'); }
-            
-            const uBtn = document.getElementById('art-txt-u');
-            if (uBtn) { if(td.isU) uBtn.classList.add('border-blue-500', 'text-blue-500'); else uBtn.classList.remove('border-blue-500', 'text-blue-500'); }
-            
+            document.getElementById('art-color-primary').value = td.color;
+            if(td.isB) document.getElementById('art-txt-b').classList.add('border-blue-500','text-blue-500');
+            if(td.isI) document.getElementById('art-txt-i').classList.add('border-blue-500','text-blue-500');
+            if(td.isU) document.getElementById('art-txt-u').classList.add('border-blue-500','text-blue-500');
+            if(td.isS) document.getElementById('art-txt-s')?.classList.add('border-blue-500','text-blue-500');
+            if(td.align) document.getElementById('art-txt-align').value = td.align;
+            if(td.rotation) document.getElementById('art-txt-rotation').value = td.rotation;
             existingLayer.ctx.clearRect(0,0, artystaApp.width, artystaApp.height);
         } else {
             input.style.left = `${x}px`;
             input.style.top = `${y}px`;
         }
-
-        input.style.transform = `scale(${1/artystaApp.zoom})`;
         input.style.transformOrigin = 'top left';
-
+        input.style.transform = `scale(${1/artystaApp.zoom})`;
         ws.appendChild(input);
         artystaApp.textElement = input;
-        
         artystaApp.updateTextPreview();
-        setTimeout(() => {
-            input.focus();
-            if (input.innerText.length > 0) {
-                const range = document.createRange();
-                const sel = window.getSelection();
-                range.selectNodeContents(input);
-                range.collapse(false);
-                sel.removeAllRanges();
-                sel.addRange(range);
-            }
-        }, 10);
+        setTimeout(() => input.focus(), 10);
     },
 
     updateTextPreview: () => {
         if (!artystaApp.textElement) return;
-        const font = document.getElementById('art-txt-font') ? document.getElementById('art-txt-font').value : 'Arial';
-        const size = document.getElementById('art-txt-size') ? parseInt(document.getElementById('art-txt-size').value) : 32;
-        const isB = document.getElementById('art-txt-b') && document.getElementById('art-txt-b').classList.contains('text-blue-500');
-        const isI = document.getElementById('art-txt-i') && document.getElementById('art-txt-i').classList.contains('text-blue-500');
-        const isU = document.getElementById('art-txt-u') && document.getElementById('art-txt-u').classList.contains('text-blue-500');
-        
+        const font = document.getElementById('art-txt-font')?.value || 'Arial';
+        const size = parseInt(document.getElementById('art-txt-size')?.value) || 32;
+        const isB = document.getElementById('art-txt-b')?.classList.contains('text-blue-500');
+        const isI = document.getElementById('art-txt-i')?.classList.contains('text-blue-500');
+        const isU = document.getElementById('art-txt-u')?.classList.contains('text-blue-500');
+        const isS = document.getElementById('art-txt-s')?.classList.contains('text-blue-500');
+        const align = document.getElementById('art-txt-align')?.value || 'left';
+        const rotation = parseInt(document.getElementById('art-txt-rotation')?.value) || 0;
         const el = artystaApp.textElement;
         el.style.fontFamily = `"${font}", sans-serif`;
         el.style.fontSize = `${size}px`;
         el.style.fontWeight = isB ? 'bold' : 'normal';
         el.style.fontStyle = isI ? 'italic' : 'normal';
-        el.style.textDecoration = isU ? 'underline' : 'none';
+        el.style.textDecoration = (isU ? 'underline ' : '') + (isS ? 'line-through' : '');
         el.style.color = artystaApp.primaryColor;
+        el.style.textAlign = align;
         el.style.lineHeight = '1.2';
+        el.style.transform = `scale(${1/artystaApp.zoom}) rotate(${rotation}deg)`;
     },
 
     finishText: () => {
         if (!artystaApp.textActive || !artystaApp.textElement) return;
         const text = artystaApp.textElement.innerText;
         const l = artystaApp.getCurrentLayer();
-        
         if (text.trim() === '') {
             if (l && l.type === 'text') {
                 artystaApp.textElement.remove();
@@ -1183,54 +1344,68 @@ window.artystaApp = {
             const isB = document.getElementById('art-txt-b').classList.contains('text-blue-500');
             const isI = document.getElementById('art-txt-i').classList.contains('text-blue-500');
             const isU = document.getElementById('art-txt-u').classList.contains('text-blue-500');
+            const isS = document.getElementById('art-txt-s').classList.contains('text-blue-500');
+            const align = document.getElementById('art-txt-align').value;
+            const rotation = parseInt(document.getElementById('art-txt-rotation').value) || 0;
             const color = artystaApp.primaryColor;
-            
             const startX = parseFloat(artystaApp.textElement.style.left);
             const startY = parseFloat(artystaApp.textElement.style.top);
-
-            l.textData = { text, x: startX, y: startY, font, size, isB, isI, isU, color };
-            
+            l.textData = { text, x: startX, y: startY, font, size, isB, isI, isU, isS, align, rotation, color };
             let shortText = text.replace(/\n/g, ' ').trim();
             l.name = shortText.substring(0, 15) + (shortText.length > 15 ? '...' : '');
-            
             l.ctx.clearRect(0,0, artystaApp.width, artystaApp.height);
+            l.ctx.save();
+            if (rotation !== 0) {
+                l.ctx.translate(startX, startY);
+                l.ctx.rotate(rotation * Math.PI / 180);
+                l.ctx.translate(-startX, -startY);
+            }
             l.ctx.font = `${isI ? 'italic ' : ''}${isB ? 'bold ' : ''}${size}px "${font}"`;
             l.ctx.fillStyle = color;
             l.ctx.textBaseline = 'top';
-            
             const lines = text.split('\n');
             let curY = startY;
-            
+            const lineHeight = size * 1.2;
+            let maxWidth = 0;
+            lines.forEach(line => { const m = l.ctx.measureText(line); maxWidth = Math.max(maxWidth, m.width); });
             lines.forEach(line => {
-                l.ctx.fillText(line, startX, curY);
+                let drawX = startX;
+                const m = l.ctx.measureText(line);
+                if (align === 'center') drawX = startX + (maxWidth - m.width)/2;
+                else if (align === 'right') drawX = startX + maxWidth - m.width;
+                l.ctx.fillText(line, drawX, curY);
                 if (isU) {
-                    const m = l.ctx.measureText(line);
                     l.ctx.beginPath();
-                    l.ctx.moveTo(startX, curY + size * 1.1);
-                    l.ctx.lineTo(startX + m.width, curY + size * 1.1);
+                    l.ctx.moveTo(drawX, curY + size * 1.1);
+                    l.ctx.lineTo(drawX + m.width, curY + size * 1.1);
                     l.ctx.strokeStyle = color;
                     l.ctx.lineWidth = Math.max(1, size / 15);
                     l.ctx.stroke();
                 }
-                curY += size * 1.2;
+                if (isS) {
+                    l.ctx.beginPath();
+                    const strikeY = curY + size * 0.5;
+                    l.ctx.moveTo(drawX, strikeY);
+                    l.ctx.lineTo(drawX + m.width, strikeY);
+                    l.ctx.strokeStyle = color;
+                    l.ctx.lineWidth = Math.max(1, size / 15);
+                    l.ctx.stroke();
+                }
+                curY += lineHeight;
             });
+            l.ctx.restore();
             artystaApp.renderLayersList();
             artystaApp.saveHistory('Wprowadzono Tekst');
         }
-        
         if(artystaApp.textElement) artystaApp.textElement.remove();
         artystaApp.textElement = null;
         artystaApp.textActive = false;
     },
 
-    // ==================================================================
-    // KROPLOMIERZ I WYPEŁNIENIE
-    // ==================================================================
     pickColor: (x, y, isSecondary) => {
         const temp = document.createElement('canvas');
         temp.width = artystaApp.width; temp.height = artystaApp.height;
         const ctx = temp.getContext('2d');
-        
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,temp.width,temp.height);
         for(let i = artystaApp.layers.length-1; i>=0; i--) {
             let l = artystaApp.layers[i];
@@ -1240,10 +1415,8 @@ window.artystaApp = {
                 ctx.drawImage(l.canvas, 0, 0);
             }
         }
-        
         const pixel = ctx.getImageData(x, y, 1, 1).data;
         const hex = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
-        
         if (isSecondary) {
             artystaApp.secondaryColor = hex;
             document.getElementById('art-color-secondary').value = hex;
@@ -1252,32 +1425,25 @@ window.artystaApp = {
             document.getElementById('art-color-primary').value = hex;
             if(artystaApp.textElement) artystaApp.updateTextPreview();
         }
-        
         if(typeof apps !== 'undefined') apps.showToast('Kroplomierz', `Pobrano kolor: ${hex}`, 'info');
     },
 
     floodFill: (startX, startY, hexColor) => {
         const l = artystaApp.getCurrentLayer();
         if(!l || l.locked || !l.visible) return;
-        
         const w = artystaApp.width; const h = artystaApp.height;
         if(startX < 0 || startX >= w || startY < 0 || startY >= h) return;
-        
         const imgData = l.ctx.getImageData(0,0,w,h);
         const data = imgData.data;
         const startIdx = (startY * w + startX) * 4;
         const tR = data[startIdx], tG = data[startIdx+1], tB = data[startIdx+2], tA = data[startIdx+3];
-        
         const fR = parseInt(hexColor.slice(1,3),16), fG = parseInt(hexColor.slice(3,5),16), fB = parseInt(hexColor.slice(5,7),16), fA = 255;
-        
         if (tR === fR && tG === fG && tB === fB && tA === fA) return;
-        
         const stack = [[startX, startY]];
         while(stack.length > 0) {
             let [x, y] = stack.pop(); let idx = (y * w + x) * 4;
             while(y >= 0 && data[idx]===tR && data[idx+1]===tG && data[idx+2]===tB && data[idx+3]===tA) { y--; idx -= w*4; }
             y++; idx += w*4; let reachL = false; let reachR = false;
-            
             while(y < h && data[idx]===tR && data[idx+1]===tG && data[idx+2]===tB && data[idx+3]===tA) {
                 data[idx] = fR; data[idx+1] = fG; data[idx+2] = fB; data[idx+3] = fA;
                 if(x > 0) { if(data[idx-4]===tR && data[idx-3]===tG && data[idx-2]===tB && data[idx-1]===tA) { if(!reachL) { stack.push([x-1,y]); reachL=true; } } else if(reachL) reachL=false; }
@@ -1289,9 +1455,7 @@ window.artystaApp = {
         artystaApp.saveHistory('Wypełnienie Kolorem');
     },
 
-    // ==================================================================
-    // AI PANEL
-    // ==================================================================
+    // AI
     toggleAIPanel: () => {
         const p = document.getElementById('art-ai-sidebar');
         if (p.classList.contains('hidden')) { p.classList.remove('hidden'); p.classList.add('flex'); }
@@ -1301,60 +1465,36 @@ window.artystaApp = {
     renderAIChat: () => {
         const chatBox = document.getElementById('art-ai-chat');
         if (!chatBox) return;
-
         chatBox.innerHTML = '';
-        
         if (artystaApp.aiMessages.length === 0) {
-            chatBox.innerHTML = `
-                <div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-gray-800 dark:text-gray-200 shadow-sm mb-2 text-xs">
-                    Witaj! Jestem BigAI w module graficznym. Opisz obrazek, który mam dla Ciebie wygenerować lub wpisz polecenie, np. "Usuń tło".
-                </div>
-            `;
+            chatBox.innerHTML = `<div class="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 text-gray-800 dark:text-gray-200 shadow-sm mb-2 text-xs">Witaj! Jestem BigAI w module graficznym. Opisz obrazek, który mam dla Ciebie wygenerować lub wpisz polecenie.</div>`;
         }
-
-        artystaApp.aiMessages.forEach((msg, idx) => {
+        artystaApp.aiMessages.forEach((msg) => {
             const isUser = msg.role === 'user';
             const alignClass = isUser ? 'self-end' : 'self-start';
             const bgClass = isUser ? 'bg-gradient-to-br from-blue-600 to-purple-600 text-white' : 'g-panel bg-black/20 border g-border g-text';
             const radiusClass = isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm';
-
             const el = document.createElement('div');
             el.className = `flex flex-col max-w-[90%] sm:max-w-[85%] ${alignClass} mb-3 shadow-md ${bgClass} ${radiusClass} p-3 text-xs leading-relaxed`;
-            el.innerHTML = `
-                <div class="flex items-center justify-between mb-2 border-b border-white/10 pb-1 w-full opacity-70">
-                    <span class="text-[9px] font-bold uppercase tracking-wider">${isUser ? '👤 Ty' : '✨ BigAI'}</span>
-                </div>
-                <div class="w-full break-words space-y-1 font-sans">
-                    ${typeof desktop !== 'undefined' ? desktop.escapeHTML(msg.text) : msg.text}
-                </div>
-            `;
+            el.innerHTML = `<div class="flex items-center justify-between mb-2 border-b border-white/10 pb-1 w-full opacity-70"><span class="text-[9px] font-bold uppercase tracking-wider">${isUser ? '👤 Ty' : '✨ BigAI'}</span></div><div class="w-full break-words space-y-1 font-sans">${typeof desktop !== 'undefined' ? desktop.escapeHTML(msg.text) : msg.text}</div>`;
             chatBox.appendChild(el);
         });
-
         if (artystaApp.isAIThinking) {
             chatBox.innerHTML += `<div class="self-start text-[10px] text-blue-400 font-bold uppercase tracking-widest mt-1 mb-2 animate-pulse">Generowanie / Łączenie z API...</div>`;
         }
-
         chatBox.scrollTop = chatBox.scrollHeight;
     },
 
     sendAI: async (msgText) => {
         if(!msgText.trim()) return;
-
         artystaApp.aiMessages.push({ role: 'user', text: msgText });
         artystaApp.isAIThinking = true;
         artystaApp.renderAIChat();
-
         setTimeout(() => {
             artystaApp.isAIThinking = false;
-            let response = "Przepraszam, ale funkcje generatywnej edycji obrazu wymagają podłączenia klucza API dla DALL-E lub Stable Diffusion w głównych ustawieniach systemu. Zostanie to dodane w przyszłych aktualizacjach BigOS!";
-            
-            if (msgText.toLowerCase().includes('usuń tło')) {
-                response = "Narzędzie Usuwania Tła (AI Masking) wymaga podłączenia wtyczki Remove.bg lub serwera lokalnego z odpowiednim modelem sieci neuronowej.";
-            } else if (msgText.toLowerCase().includes('upscale')) {
-                response = "Bezstratne powiększanie (Upscaling) pożera dużo pamięci. Zostanie udostępnione wkrótce z dedykowanym modelem ESRGAN.";
-            }
-
+            let response = "Przepraszam, ale funkcje generatywnej edycji obrazu wymagają podłączenia klucza API dla DALL-E lub Stable Diffusion w głównych ustawieniach systemu.";
+            if (msgText.toLowerCase().includes('usuń tło')) response = "Narzędzie Usuwania Tła (AI Masking) wymaga podłączenia wtyczki Remove.bg lub serwera lokalnego z odpowiednim modelem sieci neuronowej.";
+            else if (msgText.toLowerCase().includes('upscale')) response = "Bezstratne powiększanie (Upscaling) pożera dużo pamięci. Zostanie udostępnione wkrótce z dedykowanym modelem ESRGAN.";
             artystaApp.aiMessages.push({ role: 'assistant', text: response });
             artystaApp.renderAIChat();
             if(typeof apps !== 'undefined') apps.showToast('BigAI', 'Brak połączenia z silnikiem graficznym', 'error');
@@ -1370,44 +1510,30 @@ window.artystaApp = {
         }
     },
 
-    // ==================================================================
-    // FILTRY I TRANSFORMACJE (DZIAŁAJĄ NA AKTUALNEJ WARSTWIE)
-    // ==================================================================
+    // Filtry i transformacje
     transformImage: (type) => {
         const l = artystaApp.getCurrentLayer();
         if(!l || l.locked) return;
-        if(l.type === 'text') {
-            if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie można transformować warstw tekstowych.', 'warning');
-            return;
-        }
-        
+        if(l.type === 'text') { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie można transformować warstw tekstowych.', 'warning'); return; }
         const temp = document.createElement('canvas');
         temp.width = l.canvas.width; temp.height = l.canvas.height;
         const tCtx = temp.getContext('2d');
-        
         tCtx.translate(temp.width/2, temp.height/2);
         if(type === 'flipX') tCtx.scale(-1, 1);
         if(type === 'flipY') tCtx.scale(1, -1);
         tCtx.drawImage(l.canvas, -temp.width/2, -temp.height/2);
-        
         l.ctx.clearRect(0,0,l.canvas.width, l.canvas.height);
         l.ctx.drawImage(temp, 0, 0);
-        
         artystaApp.saveHistory(`Odbicie ${type}`);
     },
 
     applyFilter: (filterName, value = null) => {
         const l = artystaApp.getCurrentLayer();
         if(!l || l.locked || !l.visible) return typeof apps !== 'undefined' ? apps.showToast('Błąd', 'Warstwa zablokowana lub niewidoczna', 'error') : null;
-        if (l.type === 'text') {
-            if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie można filtrować warstw tekstowych. Utwórz nową warstwę.', 'warning');
-            return;
-        }
-        
+        if (l.type === 'text') { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie można filtrować warstw tekstowych.', 'warning'); return; }
         const temp = document.createElement('canvas');
         temp.width = l.canvas.width; temp.height = l.canvas.height;
         const tCtx = temp.getContext('2d');
-        
         if (filterName === 'grayscale') tCtx.filter = 'grayscale(100%)';
         else if (filterName === 'invert') tCtx.filter = 'invert(100%)';
         else if (filterName === 'sepia') tCtx.filter = 'sepia(100%) contrast(120%)';
@@ -1444,11 +1570,9 @@ window.artystaApp = {
             artystaApp.saveHistory(`Filtr: ${filterName}`);
             return;
         }
-
         tCtx.drawImage(l.canvas, 0, 0);
         l.ctx.clearRect(0,0,l.canvas.width, l.canvas.height);
         l.ctx.drawImage(temp, 0, 0);
-        
         artystaApp.saveHistory(`Filtr: ${filterName}`);
     },
 
@@ -1457,7 +1581,6 @@ window.artystaApp = {
         if (filterName === 'blur') { title = "Rozmycie Gaussa"; desc = "Promień rozmycia"; def = "5"; max = "50"; unit = "px"; }
         if (filterName === 'noise') { title = "Dodaj Szum"; desc = "Intensywność"; def = "40"; max = "255"; unit = ""; }
         if (filterName === 'pixelate') { title = "Mozaika (Pixel Art)"; desc = "Rozmiar piksela"; def = "10"; max = "50"; unit = "px"; }
-        
         if(typeof ui !== 'undefined') {
             ui.showPrompt(`${title} - ${desc} (max ${max}):`, def, "Zastosuj", (val) => {
                 let v = parseInt(val);
@@ -1466,14 +1589,10 @@ window.artystaApp = {
         }
     },
 
-    // ==================================================================
-    // MODALE PROJEKTÓW I ZAPISU
-    // ==================================================================
     showNewProjectModal: () => {
         const modalId = 'art-new-modal';
         let modal = document.getElementById(modalId);
         if(modal) modal.remove();
-
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm';
@@ -1481,24 +1600,8 @@ window.artystaApp = {
             <div class="g-panel p-6 rounded-2xl shadow-2xl max-w-sm w-full border g-border">
                 <h2 class="text-xl font-bold g-text mb-4 border-b g-border pb-2 flex items-center gap-2"><span>📄</span> Nowy Projekt</h2>
                 <div class="flex flex-col gap-3 mb-6">
-                    <div>
-                        <label class="block text-[10px] g-text-muted font-bold uppercase tracking-wider mb-1">Szerokość</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="art-new-w" value="800" class="flex-grow p-2 g-bg g-text border g-border rounded outline-none font-bold" oninput="artystaApp.calcNewDim('w')">
-                            <select id="art-new-unit-w" class="w-16 p-2 g-bg g-text border g-border rounded outline-none" onchange="artystaApp.calcNewDim('w', true)">
-                                <option value="px">px</option><option value="cm">cm</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] g-text-muted font-bold uppercase tracking-wider mb-1">Wysokość</label>
-                        <div class="flex gap-2">
-                            <input type="number" id="art-new-h" value="600" class="flex-grow p-2 g-bg g-text border g-border rounded outline-none font-bold" oninput="artystaApp.calcNewDim('h')">
-                            <select id="art-new-unit-h" class="w-16 p-2 g-bg g-text border g-border rounded outline-none" onchange="artystaApp.calcNewDim('h', true)">
-                                <option value="px">px</option><option value="cm">cm</option>
-                            </select>
-                        </div>
-                    </div>
+                    <div><label class="block text-[10px] g-text-muted font-bold uppercase tracking-wider mb-1">Szerokość</label><div class="flex gap-2"><input type="number" id="art-new-w" value="800" class="flex-grow p-2 g-bg g-text border g-border rounded outline-none font-bold" oninput="artystaApp.calcNewDim('w')"><select id="art-new-unit-w" class="w-16 p-2 g-bg g-text border g-border rounded outline-none" onchange="artystaApp.calcNewDim('w', true)"><option value="px">px</option><option value="cm">cm</option></select></div></div>
+                    <div><label class="block text-[10px] g-text-muted font-bold uppercase tracking-wider mb-1">Wysokość</label><div class="flex gap-2"><input type="number" id="art-new-h" value="600" class="flex-grow p-2 g-bg g-text border g-border rounded outline-none font-bold" oninput="artystaApp.calcNewDim('h')"><select id="art-new-unit-h" class="w-16 p-2 g-bg g-text border g-border rounded outline-none" onchange="artystaApp.calcNewDim('h', true)"><option value="px">px</option><option value="cm">cm</option></select></div></div>
                 </div>
                 <div class="flex justify-end gap-2 shrink-0">
                     <button onclick="document.getElementById('${modalId}').remove()" class="px-4 py-2 g-bg g-text hover:bg-white/10 rounded-lg transition font-medium border g-border shadow-sm">Anuluj</button>
@@ -1513,10 +1616,8 @@ window.artystaApp = {
         const inp = document.getElementById(`art-new-${axis}`);
         const unit = document.getElementById(`art-new-unit-${axis}`).value;
         const pxPerCm = 37.79527559;
-        
         let val = parseFloat(inp.value);
         if(isNaN(val)) return;
-
         if (unitChanged) {
             if (unit === 'cm') inp.value = (val / pxPerCm).toFixed(2);
             else inp.value = Math.round(val * pxPerCm);
@@ -1528,24 +1629,18 @@ window.artystaApp = {
         const hInp = document.getElementById('art-new-h');
         const wUnit = document.getElementById('art-new-unit-w').value;
         const hUnit = document.getElementById('art-new-unit-h').value;
-        
         let w = parseFloat(wInp.value);
         let h = parseFloat(hInp.value);
-        
         if(wUnit === 'cm') w = Math.round(w * 37.79527559);
         if(hUnit === 'cm') h = Math.round(h * 37.79527559);
-
         if(isNaN(w) || isNaN(h) || w < 10 || h < 10) return;
-
         artystaApp.layers.forEach(l => l.canvas.remove());
         artystaApp.layers = [];
         artystaApp.history = []; artystaApp.historyStep = -1;
-        
         artystaApp.applyCanvasSize(w, h);
         artystaApp.addLayer('Tło', true);
         artystaApp.addLayer('Warstwa 1');
         artystaApp.saveHistory('Nowy Projekt');
-        
         artystaApp.panX = 0; artystaApp.panY = 0; artystaApp.zoom = 1;
         document.getElementById('art-zoom-val').innerText = '100%';
         artystaApp.updateView();
@@ -1554,28 +1649,21 @@ window.artystaApp = {
 
     showResizeModal: () => {
         if(typeof ui !== 'undefined') {
-            ui.showPrompt(`Obecny rozmiar: ${artystaApp.width} x ${artystaApp.height} px\nPodaj NOWĄ SZEROKOŚĆ (wysokość dopasuje się sama):`, artystaApp.width, "Zmień Rozmiar", (val) => {
+            ui.showPrompt(`Obecny rozmiar: ${artystaApp.width} x ${artystaApp.height} px\nPodaj NOWĄ SZEROKOŚĆ:`, artystaApp.width, "Zmień Rozmiar", (val) => {
                 let newW = parseInt(val);
                 if(isNaN(newW) || newW < 10) return;
-                
                 let ratio = artystaApp.height / artystaApp.width;
                 let newH = Math.round(newW * ratio);
-                
                 const snapshots = artystaApp.layers.map(l => {
                     const c = document.createElement('canvas'); c.width = l.canvas.width; c.height = l.canvas.height;
                     c.getContext('2d').drawImage(l.canvas, 0, 0); return c;
                 });
-                
                 artystaApp.applyCanvasSize(newW, newH);
-                
                 artystaApp.layers.forEach((l, i) => {
                     l.canvas.width = newW; l.canvas.height = newH;
-                    if (i === artystaApp.layers.length - 1) {
-                        l.ctx.fillStyle = '#ffffff'; l.ctx.fillRect(0,0,newW,newH);
-                    }
+                    if (i === artystaApp.layers.length - 1) { l.ctx.fillStyle = '#ffffff'; l.ctx.fillRect(0,0,newW,newH); }
                     l.ctx.drawImage(snapshots[i], 0, 0, newW, newH);
                 });
-                
                 artystaApp.saveHistory('Zmieniono Rozmiar Płótna');
             });
         }
@@ -1585,7 +1673,6 @@ window.artystaApp = {
         const modalId = 'art-save-bigos-modal';
         let modal = document.getElementById(modalId);
         if(modal) modal.remove();
-
         let folderOptions = '<option value="root">Pulpit (Katalog Główny)</option>';
         if(typeof fileSystem !== 'undefined') {
             fileSystem.filter(f => f.type === 'folder' && f.id !== 'hasiok').forEach(folder => {
@@ -1593,40 +1680,15 @@ window.artystaApp = {
                 folderOptions += `<option value="${folder.id}" ${isSelected}>📂 ${typeof desktop !== 'undefined' ? desktop.escapeHTML(folder.name) : folder.name}</option>`;
             });
         }
-
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm';
         modal.innerHTML = `
             <div class="g-panel p-6 rounded-2xl shadow-2xl max-w-sm w-full border g-border flex flex-col">
                 <h2 class="text-xl font-bold g-text mb-4 border-b g-border pb-2 flex items-center gap-2"><span>💾</span> Zapisz w BigOS</h2>
-                
-                <div class="mb-4">
-                    <label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Nazwa pliku</label>
-                    <input type="text" id="art-save-bigos-name" value="Moje_Dzielo" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none focus:border-blue-500 font-bold shadow-inner text-sm">
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Format pliku</label>
-                    <select id="art-save-bigos-format" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none cursor-pointer focus:border-blue-500 text-sm shadow-inner font-semibold">
-                        <option value="bigpaint">Projekt Edytowalny (.bigpaint z warstwami)</option>
-                        <option value="png">PNG (.png) - Bezstratnie z przezroczystością</option>
-                        <option value="jpg">JPEG (.jpg) - Optymalny rozmiar</option>
-                        <option value="webp">WebP (.webp) - Nowoczesny format do sieci</option>
-                        <option value="bmp">BMP (.bmp) - Mapa Bitowa</option>
-                        <option value="gif">GIF (.gif) - Obraz Statyczny</option>
-                        <option value="svg">SVG (.svg) - Nakładka wektorowa</option>
-                        <option value="ico">ICO (.ico) - Ikona</option>
-                    </select>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Lokalizacja</label>
-                    <select id="art-save-bigos-folder" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none cursor-pointer focus:border-blue-500 text-sm shadow-inner font-semibold">
-                        ${folderOptions}
-                    </select>
-                </div>
-
+                <div class="mb-4"><label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Nazwa pliku</label><input type="text" id="art-save-bigos-name" value="Moje_Dzielo" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none focus:border-blue-500 font-bold shadow-inner text-sm"></div>
+                <div class="mb-4"><label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Format pliku</label><select id="art-save-bigos-format" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none cursor-pointer focus:border-blue-500 text-sm shadow-inner font-semibold"><option value="bigpaint">Projekt Edytowalny (.bigpaint)</option><option value="png">PNG (.png)</option><option value="jpg">JPEG (.jpg)</option><option value="webp">WebP (.webp)</option><option value="bmp">BMP (.bmp)</option><option value="gif">GIF (.gif)</option><option value="svg">SVG (.svg)</option><option value="ico">ICO (.ico)</option></select></div>
+                <div class="mb-6"><label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Lokalizacja</label><select id="art-save-bigos-folder" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none cursor-pointer focus:border-blue-500 text-sm shadow-inner font-semibold">${folderOptions}</select></div>
                 <div class="flex justify-end gap-2 shrink-0">
                     <button onclick="document.getElementById('${modalId}').remove()" class="px-5 py-2.5 g-bg g-text hover:bg-white/10 rounded-lg transition font-medium border g-border shadow-sm text-sm">Anuluj</button>
                     <button onclick="artystaApp.executeSaveBigOS()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/30 transition font-bold border border-blue-700 text-sm">Zapisz</button>
@@ -1641,12 +1703,10 @@ window.artystaApp = {
         const format = document.getElementById('art-save-bigos-format').value;
         const folderId = document.getElementById('art-save-bigos-folder').value;
         if(!nameInput) return;
-
         let finalName = nameInput.replace(/\.[^/.]+$/, "") + '.' + format;
         let fileType = format === 'bigpaint' ? 'file' : 'image';
         let fileIcon = format === 'bigpaint' ? '📁' : '🖼️';
         let fileContent = '';
-
         if (format === 'bigpaint') {
             const projectData = {
                 width: artystaApp.width, height: artystaApp.height,
@@ -1661,19 +1721,16 @@ window.artystaApp = {
             const { dataUrl } = artystaApp.generateFlatImage(format);
             fileContent = dataUrl;
         }
-
         if (typeof fileSystem !== 'undefined') {
             let existing = fileSystem.find(f => f.name === finalName && f.parentId === folderId);
             if (existing) existing.content = fileContent;
             else fileSystem.push({ id: 'file_' + Date.now(), type: fileType, name: finalName, icon: fileIcon, content: fileContent, parentId: folderId, x: 40, y: 40 });
-            
             if(typeof fsManager !== 'undefined') fsManager.save(); 
             if(typeof desktop !== 'undefined') desktop.render(); 
             const aW = document.getElementById('app-aktowka');
             if(aW && aW.classList.contains('active') && typeof fsManager !== 'undefined') fsManager.renderExplorerContent(fsManager.currentFolder);
             if(typeof apps !== 'undefined') apps.showToast('Artysta', `Zapisano ${finalName} w systemie!`, 'success'); 
         }
-
         document.getElementById('art-save-bigos-modal').remove();
     },
 
@@ -1682,20 +1739,13 @@ window.artystaApp = {
         const modalId = 'art-export-modal';
         let modal = document.getElementById(modalId);
         if(modal) modal.remove();
-
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm p-4';
-        
         modal.innerHTML = `
             <div class="g-panel p-6 rounded-2xl shadow-2xl max-w-sm w-full border g-border">
                 <h2 class="text-xl font-bold g-text mb-4 border-b g-border pb-2 flex items-center gap-2"><span>📥</span> Eksport na dysk PC</h2>
-                
-                <div class="mb-4">
-                    <label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Nazwa pliku</label>
-                    <input type="text" id="art-export-name" value="Moje_Dzielo" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none focus:border-emerald-500 font-bold shadow-inner text-sm">
-                </div>
-
+                <div class="mb-4"><label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Nazwa pliku</label><input type="text" id="art-export-name" value="Moje_Dzielo" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none focus:border-emerald-500 font-bold shadow-inner text-sm"></div>
                 <div class="flex flex-col gap-2 mb-6">
                     <button class="w-full text-left px-3 py-2.5 g-bg g-text hover:bg-white/10 rounded-lg transition border g-border text-sm font-bold flex gap-3 items-center shadow-sm" onclick="artystaApp.exportFile('bigpaint')"><span class="text-lg">📁</span> Projekt edytowalny (.bigpaint)</button>
                     <button class="w-full text-left px-3 py-2.5 g-bg g-text hover:bg-white/10 rounded-lg transition border g-border text-sm font-bold flex gap-3 items-center shadow-sm" onclick="artystaApp.exportFile('png')"><span class="text-lg">🖼️</span> Plik PNG (.png)</button>
@@ -1713,12 +1763,10 @@ window.artystaApp = {
         const comp = document.createElement('canvas');
         comp.width = artystaApp.width; comp.height = artystaApp.height;
         const ctx = comp.getContext('2d');
-        
         let mime = 'image/png';
         if (format === 'jpg') { mime = 'image/jpeg'; ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,comp.width,comp.height); }
         else if (format === 'webp') mime = 'image/webp';
         else if (format === 'bmp') mime = 'image/bmp';
-        
         for (let i = artystaApp.layers.length - 1; i >= 0; i--) {
             let l = artystaApp.layers[i];
             if (l.visible) {
@@ -1727,23 +1775,19 @@ window.artystaApp = {
                 ctx.drawImage(l.canvas, 0, 0);
             }
         }
-
         if (format === 'svg') {
             const dataUrlPng = comp.toDataURL('image/png', 1.0);
             const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${artystaApp.width}" height="${artystaApp.height}"><image href="${dataUrlPng}" width="${artystaApp.width}" height="${artystaApp.height}" /></svg>`;
             const b64 = btoa(unescape(encodeURIComponent(svgContent)));
             return { dataUrl: `data:image/svg+xml;base64,${b64}`, mime: 'image/svg+xml', ext: '.svg' };
         }
-
-        return { dataUrl: comp.toDataURL(mime, 1.0), mime: mime, ext: '.' + format };
+        return { dataUrl: comp.toDataURL(mime, 1.0), mime, ext: '.' + format };
     },
 
     exportFile: (format) => {
         const nameInput = document.getElementById('art-export-name').value.trim();
         if(!nameInput) return;
-
         let dataUrl, ext;
-
         if (format === 'bigpaint') {
             const projectData = {
                 width: artystaApp.width, height: artystaApp.height,
@@ -1762,35 +1806,25 @@ window.artystaApp = {
             dataUrl = flat.dataUrl;
             ext = flat.ext;
         }
-
         const finalName = nameInput.replace(/\.[^/.]+$/, "") + ext;
         const a = document.createElement('a');
         a.href = dataUrl; a.download = finalName; a.click();
-        
         document.getElementById('art-export-modal').remove();
         if(typeof apps !== 'undefined') apps.showToast('Sukces', `Wyeksportowano ${finalName} na dysk PC!`, 'success');
     },
 
     showOpenBigOSModal: () => {
         if(typeof fileSystem === 'undefined') return;
-        
         let listHTML = '';
         const files = fileSystem.filter(f => f.parentId !== 'hasiok' && (f.type === 'image' || (f.type === 'file' && f.name.endsWith('.bigpaint'))));
-        
         if (files.length === 0) listHTML = '<div class="text-center g-text-muted py-4 text-xs">Brak projektów i obrazów.</div>';
         else {
             files.forEach(f => {
                 const isProject = f.name.endsWith('.bigpaint');
                 let thumbHtml = isProject ? '<span class="text-2xl drop-shadow-md">📁</span>' : `<img src="${f.content}" class="w-8 h-8 object-cover rounded shadow-sm">`;
-                listHTML += `
-                    <button class="w-full text-left px-3 py-2 g-bg g-text hover:bg-white/10 rounded transition border g-border mb-2 font-medium flex items-center gap-3 shadow-sm" onclick="document.getElementById('art-open-modal').remove(); artystaApp.loadFromBigOS('${f.id}')">
-                        <div class="w-8 h-8 shrink-0 flex items-center justify-center">${thumbHtml}</div>
-                        <div class="truncate">${typeof desktop !== 'undefined' ? desktop.escapeHTML(f.name) : f.name}</div>
-                    </button>
-                `;
+                listHTML += `<button class="w-full text-left px-3 py-2 g-bg g-text hover:bg-white/10 rounded transition border g-border mb-2 font-medium flex items-center gap-3 shadow-sm" onclick="document.getElementById('art-open-modal').remove(); artystaApp.loadFromBigOS('${f.id}')"><div class="w-8 h-8 shrink-0 flex items-center justify-center">${thumbHtml}</div><div class="truncate">${typeof desktop !== 'undefined' ? desktop.escapeHTML(f.name) : f.name}</div></button>`;
             });
         }
-
         const modal = document.createElement('div');
         modal.id = 'art-open-modal';
         modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm';
@@ -1808,7 +1842,6 @@ window.artystaApp = {
         const file = e.target.files[0];
         if(!file) return;
         const reader = new FileReader();
-
         if (file.name.endsWith('.bigpaint')) {
             reader.onload = (ev) => {
                 try {
@@ -1824,13 +1857,10 @@ window.artystaApp = {
                     artystaApp.layers.forEach(l => l.canvas.remove());
                     artystaApp.layers = [];
                     artystaApp.history = []; artystaApp.historyStep = -1;
-                    
                     artystaApp.applyCanvasSize(img.naturalWidth, img.naturalHeight);
                     artystaApp.addLayer(file.name, false, 'normal');
-                    
                     const l = artystaApp.getCurrentLayer();
                     l.ctx.drawImage(img, 0, 0);
-                    
                     artystaApp.saveHistory('Zaimportowano Obraz');
                     artystaApp.fitView();
                 };
@@ -1844,7 +1874,6 @@ window.artystaApp = {
     loadFromBigOS: (id) => {
         const item = fileSystem.find(i => i.id === id);
         if(!item) return;
-
         if (item.name.endsWith('.bigpaint')) {
             try {
                 const data = JSON.parse(item.content);
@@ -1856,13 +1885,10 @@ window.artystaApp = {
                 artystaApp.layers.forEach(l => l.canvas.remove());
                 artystaApp.layers = [];
                 artystaApp.history = []; artystaApp.historyStep = -1;
-                
                 artystaApp.applyCanvasSize(img.naturalWidth, img.naturalHeight);
                 artystaApp.addLayer(item.name, false, 'normal');
-                
                 const l = artystaApp.getCurrentLayer();
                 l.ctx.drawImage(img, 0, 0);
-                
                 artystaApp.saveHistory('Zaimportowano Obraz');
                 artystaApp.fitView();
             };
@@ -1874,27 +1900,22 @@ window.artystaApp = {
         artystaApp.layers.forEach(l => l.canvas.remove());
         artystaApp.layers = [];
         artystaApp.history = []; artystaApp.historyStep = -1;
-        
         artystaApp.applyCanvasSize(data.width, data.height);
-        
         const workspace = document.getElementById('art-canvas-container');
         let loaded = 0;
-
         for (let i = data.layers.length - 1; i >= 0; i--) {
             const lData = data.layers[i];
             const canvas = document.createElement('canvas');
             canvas.width = data.width; canvas.height = data.height;
             canvas.className = 'absolute top-0 left-0 pointer-events-none';
             workspace.insertBefore(canvas, artystaApp.previewCanvas);
-            
             const layer = { 
-                id: 'l_'+Date.now()+i, name: lData.name, canvas: canvas, 
+                id: 'l_'+Date.now()+i, name: lData.name, canvas, 
                 ctx: canvas.getContext('2d', { willReadFrequently: true }), 
                 visible: lData.visible, locked: lData.locked, opacity: lData.opacity, blendMode: lData.blendMode,
                 type: lData.type || 'normal', textData: lData.textData || null 
             };
             artystaApp.layers.unshift(layer);
-            
             const img = new Image();
             img.onload = () => {
                 layer.ctx.drawImage(img, 0, 0);
