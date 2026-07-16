@@ -444,15 +444,25 @@
 
 
    <!-- 2. Szkicownik-->
-    <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+    <!-- <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
         <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
-            <span class="text-sm font-bold">🎨 Szkicownik</span>
+            <span class="text-sm font-bold">🎨 Artysta</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('szkicownik')" class="hover:bg-white/20 px-2 rounded">_</button>
+                <button onclick="winManager.minimize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">_</button>
                 <button onclick="winManager.maximize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('szkicownik')" class="hover:bg-red-600 px-2 rounded">✖</button>
+                <button onclick="winManager.close('app-szkicownik')" class="hover:bg-red-600 px-2 rounded">✖</button>
             </div>
+        </div> -->
+
+        <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+    <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
+        <span class="text-sm font-bold">🎨 Artysta</span>
+        <div class="flex gap-2">
+            <button onclick="winManager.minimize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">_</button>
+            <button onclick="winManager.maximize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">□</button>
+            <button onclick="winManager.close('app-szkicownik')" class="hover:bg-red-600 px-2 rounded">✖</button>
         </div>
+    </div>
         
         <!-- Pasek Menu Górnego -->
         <div class="flex gap-2 px-2 py-1 bg-gray-100 dark:bg-[#222] text-xs border-b border-gray-300 dark:border-[#333] z-50">
@@ -975,7 +985,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
             <button onclick="winManager.open('wladca'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">💻</span> <span class="app-name">Władca Poleceń</span></button>
             <button onclick="winManager.open('kalkulator'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🧮</span> <span class="app-name">Rachmistrz</span></button>
             <button onclick="winManager.open('grajek'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🎵</span> <span class="app-name">Grajek</span></button>
-            <button onclick="winManager.open('podpowiadacz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🤖</span> <span class="app-name">Podpowiadacz AI</span></button>
+            <button onclick="winManager.open('podpowiadacz'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">🤖</span> <span class="app-name">Big AI</span></button>
             
             <div class="start-header text-[10px] g-text-muted mt-2 mb-1 px-2 font-bold uppercase tracking-wider border-t g-border pt-2">Narzędzia</div>
             <button onclick="winManager.open('nadzorca'); apps.toggleStartMenu()" class="start-item flex items-center gap-3 p-2 hover:bg-white/10 rounded w-full text-left transition g-text font-medium"><span class="text-xl drop-shadow-sm">📊</span> <span class="app-name">Nadzorca</span></button>
@@ -1013,6 +1023,8 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- Kasiarz  -->
    <div id="app-kasiarz" class="window absolute"></div>
+   <!-- Montażysta -->
+   <div id="app-montazysta" class="window hidden"></div>
 
    <div id="app-kompresor" class="window absolute"></div>
 
@@ -1060,7 +1072,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     <script src="js/aplikacje/patrzalka.js"></script>
     <script src="js/aplikacje/pogodynka.js"></script>
     <script src="js/aplikacje/skryba.js"></script>
-    <script src="js/aplikacje/szkicownik.js"></script>
+    <script src="js/aplikacje/paint.js"></script>
     <script src="js/aplikacje/tablica.js"></script>
     <script src="js/aplikacje/zadaniowiec.js"></script>
     <script src="js/aplikacje/wladca.js"></script>
@@ -1080,8 +1092,9 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     <!-- FFmpeg.wasm (wymagane do eksportu wideo) -->
     <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js"></script>
 
-    <!-- Edytor BigCut -->
-    <script src="js/aplikacje/bigcut.js"></script>
+    <!-- Edytor Wideo montazysta -->
+    <script src="js/aplikacje/montazysta.js"></script>
+    
     
    
     <!-- GRY -->

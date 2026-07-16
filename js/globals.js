@@ -14,7 +14,7 @@ let currentTheme = 'dark';
 const defaultApps = [
     { id: 'app_podpowiadacz', type: 'app', name: 'BIG AI', icon: '🤖', appId: 'biai' },
     { id: 'app_skryba', type: 'app', name: 'Skryba', icon: '📝', appId: 'skryba' },
-    { id: 'app_szkicownik', type: 'app', name: 'Artysta', icon: '🎨', appId: 'artystaApp' },
+    { id: 'app-szkicownik', type: 'app', name: 'Artysta', icon: '🎨', appId: 'szkicownik' },
     { id: 'app_aktowka', type: 'app', name: 'Aktówka', icon: '📁', appId: 'aktowka' },
     { id: 'app_patrzalka', type: 'app', name: 'Patrzałka', icon: '🖼️', appId: 'patrzalka' },
     { id: 'app_grajacz', type: 'app', name: 'Grajacz Filmów', icon: '🎬', appId: 'grajacz' },
@@ -43,8 +43,7 @@ const defaultApps = [
     { id: 'app-kasiarz', type: 'app', name: 'Kasiarz', icon: '💰', appId: 'kasiarz' },
     { id: 'app_przelicznik', type: 'app', name: 'Przelicznik', icon: '🔄', appId: 'przelicznik' },
     { id: 'app_kompresor', type: 'app', name: 'Upychacz ZIP', icon: '🗜️', appId: 'kompresor' },
-    // { id: 'app-bigcut', type: 'app', name: 'BigCut', icon: '🎬', appId: 'bigcut' },
-    { id: 'app-bigcut', type: 'app', name: 'BigCut', icon: '🎬', appId: 'bigcut', action: () => { BigCut.init(); winManager.open('app-bigcut'); } },
+    { id: 'app_montazysta', type: 'app', name: 'Montażysta', icon: '🎬', appId: 'montazysta' },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 

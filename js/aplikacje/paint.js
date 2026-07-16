@@ -30,6 +30,12 @@ window.artystaApp = {
     gradientColor2: '#0000ff',
     dragLayerIndex: null,
 
+    // --- TEKST ZAAWANSOWANY ---
+    textShadow: false, textShadowColor: '#000000', textShadowBlur: 5,
+    textOutline: false, textOutlineWidth: 2, textOutlineColor: '#000000',
+    textEffect: 'none',
+    textCircular: false, textCircleRadius: 100,
+
     // --- AI ---
     aiMessages: [],
     isAIThinking: false,
@@ -73,7 +79,10 @@ window.artystaApp = {
         window.addEventListener('keydown', (e) => {
             const win = document.getElementById('app-szkicownik');
             if(win && win.classList.contains('active') && !artystaApp.textActive) {
-                if(e.code === 'Space' && !artystaApp.isDrawing) { workspace.style.cursor = 'grab'; artystaApp.tempPanMode = true; }
+                if(e.code === 'Space' && !artystaApp.isDrawing) { 
+                    e.preventDefault(); 
+                    workspace.style.cursor = 'grab'; artystaApp.tempPanMode = true; 
+                }
                 if(e.ctrlKey && e.code === 'KeyZ') { e.preventDefault(); artystaApp.undo(); }
                 if(e.ctrlKey && e.code === 'KeyY') { e.preventDefault(); artystaApp.redo(); }
                 if(e.ctrlKey && e.code === 'KeyS') { e.preventDefault(); artystaApp.showSaveBigOSModal(); }
@@ -476,7 +485,7 @@ window.artystaApp = {
         }
         else if (artystaApp.activeTool === 'text') {
             html += `
-                <select id="art-txt-font" class="p-1 rounded g-bg g-text border g-border text-xs outline-none shadow-inner" onchange="artystaApp.updateTextPreview()">
+                <select id="art-txt-font" class="p-1 rounded g-bg g-text border g-border text-xs outline-none shadow-inner" onchange="if(artystaApp.textElement) artystaApp.updateTextPreview()">
                     <optgroup label="Systemowe">
                         <option value="Arial">Arial</option>
                         <option value="Times New Roman">Times New Roman</option>
@@ -520,6 +529,25 @@ window.artystaApp = {
                     <span class="text-[10px] font-bold g-text-muted uppercase">Obrót</span>
                     <input type="range" id="art-txt-rotation" min="-180" max="180" value="0" class="w-14 h-1.5 g-range" oninput="if(artystaApp.textElement) artystaApp.updateTextPreview()">
                 </div>
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                    <label class="text-[10px] font-bold g-text-muted flex items-center gap-1"><input type="checkbox" id="art-txt-shadow" class="accent-yellow-500" onchange="artystaApp.textShadow=this.checked; if(artystaApp.textElement) artystaApp.updateTextPreview()"> Cień</label>
+                    <input type="color" id="art-txt-shadow-color" value="#000000" class="w-6 h-5 rounded cursor-pointer" onchange="artystaApp.textShadowColor=this.value; if(artystaApp.textElement) artystaApp.updateTextPreview()" title="Kolor cienia">
+                    <input type="range" id="art-txt-shadow-blur" min="0" max="20" value="5" class="w-14 h-1.5 g-range" oninput="artystaApp.textShadowBlur=parseInt(this.value); if(artystaApp.textElement) artystaApp.updateTextPreview()" title="Rozmycie cienia">
+                </div>
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                    <label class="text-[10px] font-bold g-text-muted flex items-center gap-1"><input type="checkbox" id="art-txt-outline" class="accent-red-500" onchange="artystaApp.textOutline=this.checked; if(artystaApp.textElement) artystaApp.updateTextPreview()"> Obrys</label>
+                    <input type="color" id="art-txt-outline-color" value="#000000" class="w-6 h-5 rounded cursor-pointer" onchange="artystaApp.textOutlineColor=this.value; if(artystaApp.textElement) artystaApp.updateTextPreview()">
+                    <input type="range" id="art-txt-outline-width" min="1" max="10" value="2" class="w-10 h-1.5 g-range" oninput="artystaApp.textOutlineWidth=parseInt(this.value); if(artystaApp.textElement) artystaApp.updateTextPreview()" title="Grubość obrysu">
+                </div>
+                <select id="art-txt-effect" class="text-[10px] p-0.5 rounded g-bg g-text border g-border ml-2" onchange="artystaApp.textEffect=this.value; if(artystaApp.textElement) artystaApp.updateTextPreview()">
+                    <option value="none">Bez efektu</option>
+                    <option value="glow">Poświata</option>
+                    <option value="neon">Neon</option>
+                </select>
+                <label class="flex items-center gap-1 ml-2 text-[10px] font-bold g-text-muted">
+                    <input type="checkbox" id="art-txt-circular" class="accent-green-500" onchange="artystaApp.textCircular=this.checked; if(artystaApp.textElement) artystaApp.updateTextPreview()"> Tekst po okręgu
+                </label>
+                <input type="number" id="art-txt-circle-radius" value="100" min="20" max="500" class="w-12 p-0.5 rounded g-bg g-text border g-border text-xs outline-none text-center" onchange="artystaApp.textCircleRadius=parseInt(this.value); if(artystaApp.textElement) artystaApp.updateTextPreview()" title="Promień okręgu">
             `;
         }
         else if (artystaApp.activeTool === 'move') {
@@ -729,7 +757,7 @@ window.artystaApp = {
         if(menu) menu.remove();
         menu = document.createElement('div');
         menu.id = menuId;
-        menu.className = 'absolute z-[10001] g-panel border g-border rounded-lg shadow-2xl py-1 min-w-[180px] text-xs';
+        menu.className = 'absolute z-[10001] g-panel border g-border rounded-lg shadow-2xl py-1 w-[150px] text-xs';
         menu.style.left = e.clientX + 'px';
         menu.style.top = e.clientY + 'px';
 
@@ -1157,12 +1185,13 @@ window.artystaApp = {
         }
         else if (artystaApp.activeTool === 'shape') {
             const coords = artystaApp.getCanvasCoords(e);
-            const color = e.buttons === 2 ? artystaApp.secondaryColor : artystaApp.primaryColor;
+            const isRight = e.button === 2; // Fixed: use e.button instead of e.buttons
+            const color = isRight ? artystaApp.secondaryColor : artystaApp.primaryColor;
             const size = Math.max(1, artystaApp.brushSize);
             const doFill = document.getElementById('art-prop-fill')?.checked || false;
             l.ctx.strokeStyle = color;
             l.ctx.lineWidth = size;
-            l.ctx.fillStyle = e.buttons === 2 ? artystaApp.primaryColor : artystaApp.secondaryColor;
+            l.ctx.fillStyle = isRight ? artystaApp.primaryColor : artystaApp.secondaryColor;
             artystaApp.drawShape(l.ctx, artystaApp.shapeType, artystaApp.startDrawX, artystaApp.startDrawY, coords.x, coords.y, doFill);
             artystaApp.previewCtx.clearRect(0,0, artystaApp.width, artystaApp.height);
             artystaApp.saveHistory('Kształt: ' + artystaApp.shapeType);
@@ -1243,10 +1272,19 @@ window.artystaApp = {
                 }
                 break;
             case 'heart':
-                const topCurveHeight = h * 0.3;
-                ctx.moveTo(x0 + w/2, y1);
-                ctx.bezierCurveTo(x0, y1 - topCurveHeight, x0, y0 + topCurveHeight, x0 + w/2, y0);
-                ctx.bezierCurveTo(x1, y0 + topCurveHeight, x1, y1 - topCurveHeight, x0 + w/2, y1);
+                const cx2 = x0 + w/2;
+                const cy2 = y0 + h * 0.8;
+                ctx.moveTo(cx2, y1);
+                ctx.bezierCurveTo(
+                    x0 - w*0.1, y1 - h*0.4,
+                    x0, y0 + h*0.2,
+                    cx2, y0
+                );
+                ctx.bezierCurveTo(
+                    x1, y0 + h*0.2,
+                    x1 + w*0.1, y1 - h*0.4,
+                    cx2, y1
+                );
                 break;
             case 'speechBubble':
                 const bubbleW = w, bubbleH = h, tailW = 20, tailH = 20;
@@ -1281,16 +1319,45 @@ window.artystaApp = {
             input.style.left = `${td.x}px`;
             input.style.top = `${td.y}px`;
             input.innerText = td.text;
-            document.getElementById('art-txt-font').value = td.font;
-            document.getElementById('art-txt-size').value = td.size;
+            const fontEl = document.getElementById('art-txt-font');
+            if(fontEl) fontEl.value = td.font;
+            const sizeEl = document.getElementById('art-txt-size');
+            if(sizeEl) sizeEl.value = td.size;
             artystaApp.primaryColor = td.color;
-            document.getElementById('art-color-primary').value = td.color;
-            if(td.isB) document.getElementById('art-txt-b').classList.add('border-blue-500','text-blue-500');
-            if(td.isI) document.getElementById('art-txt-i').classList.add('border-blue-500','text-blue-500');
-            if(td.isU) document.getElementById('art-txt-u').classList.add('border-blue-500','text-blue-500');
+            const primaryColorEl = document.getElementById('art-color-primary');
+            if(primaryColorEl) primaryColorEl.value = td.color;
+            if(td.isB) document.getElementById('art-txt-b')?.classList.add('border-blue-500','text-blue-500');
+            if(td.isI) document.getElementById('art-txt-i')?.classList.add('border-blue-500','text-blue-500');
+            if(td.isU) document.getElementById('art-txt-u')?.classList.add('border-blue-500','text-blue-500');
             if(td.isS) document.getElementById('art-txt-s')?.classList.add('border-blue-500','text-blue-500');
             if(td.align) document.getElementById('art-txt-align').value = td.align;
             if(td.rotation) document.getElementById('art-txt-rotation').value = td.rotation;
+            if(td.shadow !== undefined) {
+                artystaApp.textShadow = td.shadow;
+                document.getElementById('art-txt-shadow').checked = td.shadow;
+                artystaApp.textShadowColor = td.shadowColor || '#000000';
+                document.getElementById('art-txt-shadow-color').value = td.shadowColor || '#000000';
+                artystaApp.textShadowBlur = td.shadowBlur || 5;
+                document.getElementById('art-txt-shadow-blur').value = td.shadowBlur || 5;
+            }
+            if(td.outline !== undefined) {
+                artystaApp.textOutline = td.outline;
+                document.getElementById('art-txt-outline').checked = td.outline;
+                artystaApp.textOutlineWidth = td.outlineWidth || 2;
+                document.getElementById('art-txt-outline-width').value = td.outlineWidth || 2;
+                artystaApp.textOutlineColor = td.outlineColor || '#000000';
+                document.getElementById('art-txt-outline-color').value = td.outlineColor || '#000000';
+            }
+            if(td.effect) {
+                artystaApp.textEffect = td.effect;
+                document.getElementById('art-txt-effect').value = td.effect;
+            }
+            if(td.circular !== undefined) {
+                artystaApp.textCircular = td.circular;
+                document.getElementById('art-txt-circular').checked = td.circular;
+                artystaApp.textCircleRadius = td.circleRadius || 100;
+                document.getElementById('art-txt-circle-radius').value = td.circleRadius || 100;
+            }
             existingLayer.ctx.clearRect(0,0, artystaApp.width, artystaApp.height);
         } else {
             input.style.left = `${x}px`;
@@ -1348,51 +1415,125 @@ window.artystaApp = {
             const align = document.getElementById('art-txt-align').value;
             const rotation = parseInt(document.getElementById('art-txt-rotation').value) || 0;
             const color = artystaApp.primaryColor;
+
+            const shadow = artystaApp.textShadow;
+            const shadowColor = artystaApp.textShadowColor;
+            const shadowBlur = artystaApp.textShadowBlur;
+            let outline = artystaApp.textOutline; // Zmieniono na let, by mozna bylo nadpisac przy efekcie 'neon'
+            const outlineWidth = artystaApp.textOutlineWidth;
+            const outlineColor = artystaApp.textOutlineColor;
+            const effect = artystaApp.textEffect;
+            const circular = artystaApp.textCircular;
+            const circleRadius = artystaApp.textCircleRadius;
+
             const startX = parseFloat(artystaApp.textElement.style.left);
             const startY = parseFloat(artystaApp.textElement.style.top);
-            l.textData = { text, x: startX, y: startY, font, size, isB, isI, isU, isS, align, rotation, color };
+
+            l.textData = {
+                text, x: startX, y: startY, font, size, isB, isI, isU, isS, align, rotation, color,
+                shadow, shadowColor, shadowBlur,
+                outline, outlineWidth, outlineColor,
+                effect, circular, circleRadius
+            };
+
             let shortText = text.replace(/\n/g, ' ').trim();
             l.name = shortText.substring(0, 15) + (shortText.length > 15 ? '...' : '');
+
             l.ctx.clearRect(0,0, artystaApp.width, artystaApp.height);
             l.ctx.save();
+
             if (rotation !== 0) {
                 l.ctx.translate(startX, startY);
                 l.ctx.rotate(rotation * Math.PI / 180);
                 l.ctx.translate(-startX, -startY);
             }
+
             l.ctx.font = `${isI ? 'italic ' : ''}${isB ? 'bold ' : ''}${size}px "${font}"`;
             l.ctx.fillStyle = color;
             l.ctx.textBaseline = 'top';
+
+            if (shadow) {
+                l.ctx.shadowColor = shadowColor;
+                l.ctx.shadowBlur = shadowBlur;
+                l.ctx.shadowOffsetX = 2;
+                l.ctx.shadowOffsetY = 2;
+            }
+
+            if (outline) {
+                l.ctx.strokeStyle = outlineColor;
+                l.ctx.lineWidth = outlineWidth;
+            }
+
+            if (effect === 'glow') {
+                l.ctx.shadowColor = color;
+                l.ctx.shadowBlur = 10;
+                l.ctx.shadowOffsetX = 0;
+                l.ctx.shadowOffsetY = 0;
+            } else if (effect === 'neon') {
+                l.ctx.shadowColor = color;
+                l.ctx.shadowBlur = 5;
+                l.ctx.shadowOffsetX = 0;
+                l.ctx.shadowOffsetY = 0;
+                l.ctx.lineWidth = 2;
+                l.ctx.strokeStyle = color;
+                outline = true; // Bezpieczna modyfikacja zmiennej "let"
+            }
+
             const lines = text.split('\n');
             let curY = startY;
             const lineHeight = size * 1.2;
-            let maxWidth = 0;
-            lines.forEach(line => { const m = l.ctx.measureText(line); maxWidth = Math.max(maxWidth, m.width); });
-            lines.forEach(line => {
-                let drawX = startX;
-                const m = l.ctx.measureText(line);
-                if (align === 'center') drawX = startX + (maxWidth - m.width)/2;
-                else if (align === 'right') drawX = startX + maxWidth - m.width;
-                l.ctx.fillText(line, drawX, curY);
-                if (isU) {
-                    l.ctx.beginPath();
-                    l.ctx.moveTo(drawX, curY + size * 1.1);
-                    l.ctx.lineTo(drawX + m.width, curY + size * 1.1);
-                    l.ctx.strokeStyle = color;
-                    l.ctx.lineWidth = Math.max(1, size / 15);
-                    l.ctx.stroke();
+
+            if (circular) {
+                const centerX = startX;
+                const centerY = startY + circleRadius;
+                const angleStep = (size * 0.8) / circleRadius;
+                let currentAngle = -Math.PI / 2;
+                const fullText = lines.join(' ');
+                l.ctx.save();
+                l.ctx.translate(centerX, centerY);
+                for (let i = 0; i < fullText.length; i++) {
+                    const char = fullText[i];
+                    l.ctx.save();
+                    l.ctx.rotate(currentAngle);
+                    if (outline) l.ctx.strokeText(char, 0, -circleRadius);
+                    l.ctx.fillText(char, 0, -circleRadius);
+                    l.ctx.restore();
+                    currentAngle += angleStep;
                 }
-                if (isS) {
-                    l.ctx.beginPath();
-                    const strikeY = curY + size * 0.5;
-                    l.ctx.moveTo(drawX, strikeY);
-                    l.ctx.lineTo(drawX + m.width, strikeY);
-                    l.ctx.strokeStyle = color;
-                    l.ctx.lineWidth = Math.max(1, size / 15);
-                    l.ctx.stroke();
-                }
-                curY += lineHeight;
-            });
+                l.ctx.restore();
+            } else {
+                let maxWidth = 0;
+                lines.forEach(line => { const m = l.ctx.measureText(line); maxWidth = Math.max(maxWidth, m.width); });
+                lines.forEach(line => {
+                    let drawX = startX;
+                    const m = l.ctx.measureText(line);
+                    if (align === 'center') drawX = startX + (maxWidth - m.width)/2;
+                    else if (align === 'right') drawX = startX + maxWidth - m.width;
+
+                    if (outline) l.ctx.strokeText(line, drawX, curY);
+                    l.ctx.fillText(line, drawX, curY);
+
+                    if (isU) {
+                        l.ctx.beginPath();
+                        l.ctx.moveTo(drawX, curY + size * 1.1);
+                        l.ctx.lineTo(drawX + m.width, curY + size * 1.1);
+                        l.ctx.strokeStyle = color;
+                        l.ctx.lineWidth = Math.max(1, size / 15);
+                        l.ctx.stroke();
+                    }
+                    if (isS) {
+                        l.ctx.beginPath();
+                        const strikeY = curY + size * 0.5;
+                        l.ctx.moveTo(drawX, strikeY);
+                        l.ctx.lineTo(drawX + m.width, strikeY);
+                        l.ctx.strokeStyle = color;
+                        l.ctx.lineWidth = Math.max(1, size / 15);
+                        l.ctx.stroke();
+                    }
+                    curY += lineHeight;
+                });
+            }
+
             l.ctx.restore();
             artystaApp.renderLayersList();
             artystaApp.saveHistory('Wprowadzono Tekst');
@@ -1419,10 +1560,12 @@ window.artystaApp = {
         const hex = "#" + ("000000" + ((pixel[0] << 16) | (pixel[1] << 8) | pixel[2]).toString(16)).slice(-6);
         if (isSecondary) {
             artystaApp.secondaryColor = hex;
-            document.getElementById('art-color-secondary').value = hex;
+            const secEl = document.getElementById('art-color-secondary');
+            if(secEl) secEl.value = hex;
         } else {
             artystaApp.primaryColor = hex;
-            document.getElementById('art-color-primary').value = hex;
+            const primEl = document.getElementById('art-color-primary');
+            if(primEl) primEl.value = hex;
             if(artystaApp.textElement) artystaApp.updateTextPreview();
         }
         if(typeof apps !== 'undefined') apps.showToast('Kroplomierz', `Pobrano kolor: ${hex}`, 'info');
@@ -1539,10 +1682,11 @@ window.artystaApp = {
         else if (filterName === 'sepia') tCtx.filter = 'sepia(100%) contrast(120%)';
         else if (filterName === 'blur') tCtx.filter = `blur(${value}px)`;
         else if (filterName === 'noise' || filterName === 'pixelate') {
+            let v = parseInt(value);
+            if (isNaN(v) || v <= 0) v = 1; // Zabezpieczenie przed pętlą nieskończoną
             const imgData = l.ctx.getImageData(0,0, l.canvas.width, l.canvas.height);
             const data = imgData.data;
             if (filterName === 'noise') {
-                let v = parseInt(value);
                 for(let i=0; i<data.length; i+=4) {
                     if(data[i+3] > 0) {
                         let rand = (0.5 - Math.random()) * v;
@@ -1552,7 +1696,6 @@ window.artystaApp = {
                     }
                 }
             } else if (filterName === 'pixelate') {
-                let v = parseInt(value);
                 for(let y=0; y<l.canvas.height; y+=v) {
                     for(let x=0; x<l.canvas.width; x+=v) {
                         let idx = (y * l.canvas.width + x) * 4;
@@ -1809,6 +1952,7 @@ window.artystaApp = {
         const finalName = nameInput.replace(/\.[^/.]+$/, "") + ext;
         const a = document.createElement('a');
         a.href = dataUrl; a.download = finalName; a.click();
+        if (format === 'bigpaint') URL.revokeObjectURL(dataUrl); // Zapobieganie wyciekom pamięci
         document.getElementById('art-export-modal').remove();
         if(typeof apps !== 'undefined') apps.showToast('Sukces', `Wyeksportowano ${finalName} na dysk PC!`, 'success');
     },

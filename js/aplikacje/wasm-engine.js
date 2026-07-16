@@ -10,10 +10,10 @@ window.wasmEngineApp = {
             existingWin.remove();
         }
 
-        // 1. Przygotowanie interfejsu okna silnika (WASM Engine)
+        // 1. Przygotowanie interfejsu okna silnika (WASM Engine) z motywami theme.js
         const wasmWin = document.createElement('div');
         wasmWin.id = 'app-wasm';
-        wasmWin.className = 'window bg-gray-900 border border-gray-700 shadow-2xl flex flex-col';
+        wasmWin.className = 'window themed-app g-panel border g-border shadow-2xl flex flex-col';
         wasmWin.style.width = '840px';
         wasmWin.style.height = '840px';
         
@@ -22,36 +22,37 @@ window.wasmEngineApp = {
             if(typeof winManager !== 'undefined') winManager.bringToFront(this); 
         });
         
-        // Okno z dodanym wsparciem na wrzucanie plików (Drag & Drop)
+        // Okno z dodanym wsparciem na wrzucanie plików (Drag & Drop) oraz klasami motywów
         wasmWin.innerHTML = `
-            <div class="title-bar bg-gradient-to-r from-red-800 to-red-950 text-white px-3 py-2 flex justify-between items-center cursor-move" onmousedown="winManager.startDrag(event, 'app-wasm')">
+            <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-wasm')">
                 <div class="flex items-center gap-2 font-semibold">
-                    <span id="wasm-icon">⚙️</span> 
-                    <span id="wasm-title">DOOM</span>
-                    <span class="text-xs text-red-300 ml-2 italic font-normal" id="wasm-hint"></span>
+                    <span id="wasm-icon" class="text-lg drop-shadow-md">⚙️</span> 
+                    <span id="wasm-title" class="text-sm font-bold g-text drop-shadow-md">DOOM</span>
+                    <span class="text-[10px] g-text-muted ml-2 italic font-normal uppercase tracking-wider" id="wasm-hint"></span>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="winManager.minimize('wasm')" class="hover:bg-white/20 px-2 rounded transition">_</button>
-                    <button onclick="winManager.maximize('app-wasm')" class="hover:bg-white/20 px-2 rounded transition">□</button>
-                    <button onclick="window.wasmEngineApp.stop()" class="hover:bg-red-500 hover:text-white px-2 rounded transition z-50">✕</button>
+                    <button onclick="winManager.minimize('wasm')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                    <button onclick="winManager.maximize('app-wasm')" class="g-icon-btn px-1 hover:text-white transition">□</button>
+                    <button onclick="window.wasmEngineApp.stop()" class="text-red-500 hover:text-red-400 px-1 font-bold transition z-50">✖</button>
                 </div>
             </div>
-            <div class="flex-grow bg-black flex flex-col items-center justify-center relative overflow-hidden transition-colors" id="wasm-drop-zone">
+            
+            <div class="flex-grow bg-black/5 flex flex-col items-center justify-center relative overflow-hidden transition-colors" id="wasm-drop-zone">
                 <canvas id="wasm-canvas" class="bg-black hidden" style="image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain;" tabindex="0"></canvas>
                 
                 <!-- Ekran wyboru/wrzucania pliku -->
-                <div id="wasm-welcome" class="absolute inset-0 flex flex-col items-center justify-center text-white bg-gray-900 p-6 text-center">
-                    <div class="text-6xl mb-4 pointer-events-none">👾</div>
-                    <h2 class="text-2xl font-bold mb-2 pointer-events-none">Gra DOOM w BigOS</h2>
-                    <p class="text-gray-400 mb-6 max-w-sm pointer-events-none">Załaduj plik <b>.wasm</b> bezpośrednio do pamięci RAM komputera!</p>
+                <div id="wasm-welcome" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                    <div class="text-6xl mb-4 pointer-events-none drop-shadow-xl">👾</div>
+                    <h2 class="text-2xl font-bold mb-2 pointer-events-none g-text drop-shadow-md">Gra DOOM w BigOS</h2>
+                    <p class="g-text-muted mb-6 max-w-sm pointer-events-none text-sm leading-relaxed">Załaduj plik <b class="g-text">.wasm</b> bezpośrednio do pamięci RAM komputera!</p>
                     
                     <input type="file" id="wasm-file-input" accept=".wasm" class="hidden">
-                    <button onclick="document.getElementById('wasm-file-input').click()" class="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-lg font-bold shadow-lg transition cursor-pointer">Wybierz plik z dysku</button>
+                    <button onclick="document.getElementById('wasm-file-input').click()" class="g-btn px-6 py-3 rounded-xl font-bold shadow-lg transition cursor-pointer bg-blue-600/20 text-blue-400 hover:bg-blue-500 hover:text-white border-blue-500/50">Wybierz plik z dysku</button>
                     
-                    <p class="text-gray-500 mt-4 text-sm pointer-events-none">lub przeciągnij i upuść plik tutaj</p>
+                    <p class="g-text-muted mt-6 text-[10px] font-bold uppercase tracking-widest pointer-events-none">lub przeciągnij i upuść plik tutaj</p>
                 </div>
 
-                <div id="wasm-loading" class="absolute inset-0 flex items-center justify-center text-white font-mono bg-black/90 hidden z-40">Inicjalizacja modułu...</div>
+                <div id="wasm-loading" class="absolute inset-0 flex items-center justify-center g-text font-mono bg-black/80 backdrop-blur-sm hidden z-40 text-sm shadow-inner">Inicjalizacja modułu...</div>
             </div>
         `;
         
@@ -66,11 +67,11 @@ window.wasmEngineApp = {
         };
 
         const dropZone = document.getElementById('wasm-drop-zone');
-        dropZone.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-gray-800'); };
-        dropZone.ondragleave = (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-gray-800'); };
+        dropZone.ondragover = (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.add('bg-white/10'); };
+        dropZone.ondragleave = (e) => { e.preventDefault(); e.stopPropagation(); dropZone.classList.remove('bg-white/10'); };
         dropZone.ondrop = async (e) => {
             e.preventDefault(); e.stopPropagation();
-            dropZone.classList.remove('bg-gray-800');
+            dropZone.classList.remove('bg-white/10');
             const file = e.dataTransfer.files[0];
             if(!file || !file.name.endsWith('.wasm')) {
                 if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Upuść prawidłowy plik .wasm', 'error');
