@@ -1,11 +1,9 @@
 // ======================================================================
-// PLIK: js/aplikacje/montazysta.js (Montażysta PRO - Zaawansowany Edytor Wideo)
+// PLIK: js/aplikacje/montazysta.js (Montażysta PRO - Silnik Natywny WebM)
 // ======================================================================
 
 window.montazystaApp = {
     _initialized: false,
-    ffmpeg: null,
-    isFFmpegLoaded: false,
     isExporting: false,
 
     // ==================================================================
@@ -16,7 +14,7 @@ window.montazystaApp = {
         width: 1920,
         height: 1080,
         fps: 30,
-        duration: 30, // w sekundach (domyślnie 30s)
+        duration: 30, 
         tracks: [
             { id: 'tr_v2', type: 'video', name: 'Wideo 2 (Nakładki)', items: [], zIndex: 3 },
             { id: 'tr_v1', type: 'video', name: 'Wideo 1 (Główne)', items: [], zIndex: 2 },
@@ -26,26 +24,23 @@ window.montazystaApp = {
         ]
     },
 
-    library: [], // Zaimportowane pliki (Video, Audio, Obrazy)
+    library: [], 
     
-    // Stan Osi Czasu i Odtwarzacza
     timeline: {
         time: 0,
         isPlaying: false,
-        zoom: 10, // px na sekundę
+        zoom: 10, 
         scrollX: 0,
         selectedItemId: null,
         clipboard: null
     },
 
-    // Cache obiektów multimedialnych do podglądu (ukryte <video>, <audio>, <img>)
     mediaCache: {}, 
     previewCanvas: null,
     previewCtx: null,
     renderLoopId: null,
 
-    // Zmienne do przeciągania na osi czasu
-    dragState: null, // null, 'move', 'trimStart', 'trimEnd', 'playhead'
+    dragState: null,
 
     init: () => {
         if (montazystaApp._initialized) return;
@@ -64,41 +59,34 @@ window.montazystaApp = {
             }
         }
         
-        // --- FFMPEG ---
-        if (!window.FFmpeg) {
-            const script = document.createElement('script');
-            script.src = "https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js";
-            document.head.appendChild(script);
-            script.onload = () => montazystaApp.loadFFmpeg();
-        } else {
-            montazystaApp.loadFFmpeg();
-        }
+        // --- SILNIK NATYWNY ---
+        const status = document.getElementById('montazysta-ffmpeg-status');
+        if (status) status.innerHTML = '<span class="text-emerald-400 font-bold">✅ Silnik Natywny (WebM)</span>';
 
         if (typeof winManager !== 'undefined' && winManager.register) {
             winManager.register('app-montazysta');
         }
 
         window.addEventListener('keydown', montazystaApp.handleShortcuts);
+        
+        // NAPRAWA: Wymuszenie wyrenderowania interfejsu osi czasu od razu po otwarciu programu!
+        montazystaApp.renderAll();
     },
 
     close: () => {
-        montazystaApp.timeline.isPlaying = false;
-        if(montazystaApp.renderLoopId) cancelAnimationFrame(montazystaApp.renderLoopId);
+        // Zamiast niszczyć środowisko, po prostu pauzujemy odtwarzanie i wyciszamy
+        if (montazystaApp.timeline.isPlaying) {
+            montazystaApp.togglePlay();
+        }
         
-        // Zwalnianie pamięci
         Object.values(montazystaApp.mediaCache).forEach(media => {
             if(media.el) {
                 media.el.pause();
-                media.el.src = '';
-                media.el.remove();
+                media.el.muted = true;
             }
-            if(media.url && media.isLocal) URL.revokeObjectURL(media.url);
         });
-        montazystaApp.mediaCache = {};
-        
-        const win = document.getElementById('app-montazysta');
-        if (win) win.remove();
-        montazystaApp._initialized = false;
+        // Nie zmieniamy _initialized na false ani nie usuwamy okna z DOM,
+        // winManager po prostu ukrywa okno usuwając mu klasę .active
     },
 
     // ==================================================================
@@ -145,33 +133,42 @@ window.montazystaApp = {
                 montazystaApp.renderProperties(); 
             }
         },
-        exportVideo: (res = "1080p", format = "mp4", target = 'bigos') => {
+        exportVideo: (res = "1080p", target = 'bigos') => {
             const map = {"720p": 720, "1080p": 1080, "1440p": 1440, "4K": 2160};
             montazystaApp.project.height = map[res] || 1080;
             montazystaApp.project.width = Math.round(montazystaApp.project.height * (16/9));
-            if (target === 'pc') montazystaApp.exportToPC(format);
-            else montazystaApp.exportToBigOS(format);
+            if (target === 'pc') montazystaApp.exportToPC();
+            else montazystaApp.exportToBigOS();
         },
         playPause: () => montazystaApp.togglePlay(),
-        seek: (timeSeconds) => { montazystaApp.timeline.time = timeSeconds; montazystaApp.renderTimeline(); }
-    },
-
-    // ==================================================================
-    // ŁADOWANIE FFMPEG
-    // ==================================================================
-    loadFFmpeg: async () => {
-        if (montazystaApp.isFFmpegLoaded) return;
-        const status = document.getElementById('montazysta-ffmpeg-status');
-        if (status) status.innerHTML = '<span class="text-blue-400 animate-pulse">⏳ Ładowanie FFmpeg...</span>';
-        try {
-            const { createFFmpeg } = FFmpeg;
-            montazystaApp.ffmpeg = createFFmpeg({ log: false, corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js' });
-            await montazystaApp.ffmpeg.load();
-            montazystaApp.isFFmpegLoaded = true;
-            if (status) status.innerHTML = '<span class="text-emerald-400 font-bold">✅ Render gotowy</span>';
-        } catch(e) {
-            console.error(e);
-            if (status) status.innerHTML = '<span class="text-red-400 font-bold">❌ Błąd FFmpeg</span>';
+        seek: (timeSeconds) => { montazystaApp.timeline.time = timeSeconds; montazystaApp.renderTimeline(); },
+        
+        // NAPRAWA: Dostosowanie API przycinania do nowej mechaniki klipów na osi czasu
+        setTrim: (start, end) => {
+            const clipId = montazystaApp.timeline.selectedItemId;
+            if(clipId) {
+                const clip = montazystaApp.findClip(clipId);
+                if (clip) {
+                    clip.trimStart = start;
+                    clip.duration = end - start;
+                    clip.end = clip.start + clip.duration;
+                    montazystaApp.renderAll();
+                }
+            } else {
+                if(typeof apps !== 'undefined') apps.showToast('BigAI', 'Wybierz klip na osi czasu, aby go przyciąć.', 'warning');
+            }
+        },
+        setOverlayText: (text, x, y, size, color) => {
+            const clipId = montazystaApp.timeline.selectedItemId;
+            if(clipId) {
+                const clip = montazystaApp.findClip(clipId);
+                if (clip && clip.type === 'text') {
+                    clip.text = text;
+                    clip.x = x || clip.x; clip.y = y || clip.y; 
+                    clip.fontSize = size || clip.fontSize; clip.fontColor = color || clip.fontColor;
+                    montazystaApp.renderAll();
+                }
+            }
         }
     },
 
@@ -203,23 +200,23 @@ window.montazystaApp = {
                                 <button onclick="montazystaApp.showOpenProjectModal()" class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition text-xs">Otwórz z BigOS...</button>
                                 <button onclick="montazystaApp.showSaveProjectModal()" class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition text-xs">Zapisz Projekt</button>
                                 <div class="border-t g-border my-1"></div>
-                                <button onclick="document.getElementById('mz-import-pc').click()" class="text-left px-4 py-1.5 hover:bg-emerald-600 hover:text-white transition text-xs text-emerald-400">Importuj z komputera...</button>
+                                <button onclick="document.getElementById('mz-import-pc').click()" class="text-left px-4 py-1.5 hover:bg-emerald-600 hover:text-white transition text-xs text-emerald-400">Import z PC...</button>
                             </div>
                         </div>
                         <div class="relative group">
                             <button class="g-text text-xs hover:bg-white/10 px-2 py-1 rounded transition font-bold">Edycja</button>
-                            <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded py-1 z-50 min-w-[150px]">
+                            <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded py-1 z-50 min-w-[170px]">
                                 <button onclick="montazystaApp.copyClip()" class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition text-xs">Kopiuj (Ctrl+C)</button>
                                 <button onclick="montazystaApp.pasteClip()" class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition text-xs">Wklej (Ctrl+V)</button>
                                 <button onclick="montazystaApp.deleteClip()" class="text-left px-4 py-1.5 hover:bg-red-500 hover:text-white transition text-xs text-red-400">Usuń (Del)</button>
                                 <div class="border-t g-border my-1"></div>
-                                <button onclick="montazystaApp.splitClip()" class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition text-xs font-bold">Podziel w miejscu kursora (S)</button>
+                                <button onclick="montazystaApp.splitClip()" class="text-left px-4 py-1.5 hover:bg-blue-500 hover:text-white transition text-xs font-bold">Podziel (S)</button>
                             </div>
                         </div>
                         <div class="relative group">
                             <button class="g-text text-xs hover:bg-white/10 px-2 py-1 rounded transition font-bold text-blue-400">Eksport</button>
                             <div class="absolute left-0 top-full hidden group-hover:flex flex-col g-panel border g-border shadow-2xl rounded py-1 z-50 min-w-[220px]">
-                                <button onclick="montazystaApp.showExportModal()" class="text-left px-4 py-2 hover:bg-blue-600 hover:text-white transition text-sm font-bold bg-blue-500/20 text-blue-400">🎬 Renderuj Wideo...</button>
+                                <button onclick="montazystaApp.showExportModal()" class="text-left px-4 py-2 hover:bg-blue-600 hover:text-white transition text-sm font-bold bg-blue-500/20 text-blue-400">🎬 Renderuj wideo...</button>
                             </div>
                         </div>
                     </div>
@@ -234,10 +231,10 @@ window.montazystaApp = {
             
             <input type="file" id="mz-import-pc" multiple accept="video/*,audio/*,image/*" class="hidden" onchange="montazystaApp.importFilesPC(event)">
 
-            <!-- GÓRNA SEKCJA (Biblioteka + Podgląd + Właściwości) -->
+            <!-- GÓRNA SEKCJA -->
             <div class="flex h-[45%] border-b g-border shrink-0 bg-black/10">
                 
-                <!-- BIBLIOTEKA (Lewo) -->
+                <!-- BIBLIOTEKA -->
                 <div class="w-[25%] min-w-[200px] border-r g-border flex flex-col bg-black/20">
                     <div class="p-2 border-b g-border flex justify-between items-center bg-black/30 shrink-0">
                         <span class="text-xs font-bold g-text uppercase tracking-widest">Zasoby</span>
@@ -248,13 +245,12 @@ window.montazystaApp = {
                     </div>
                 </div>
 
-                <!-- PODGLĄD (Środek) -->
+                <!-- PODGLĄD (CANVAS) -->
+                <!-- NAPRAWA: Zwiększona ilość miejsca po wyrzuceniu starych kafelków przycinania -->
                 <div class="flex-grow flex flex-col bg-black relative overflow-hidden">
-                    <div class="absolute inset-0 flex items-center justify-center p-2" id="mz-preview-container">
-                        <!-- Zamiast tagu video, rysujemy wszystko na Canvas w 60fps -->
+                    <div class="absolute inset-0 flex items-center justify-center p-2 pb-14" id="mz-preview-container">
                         <canvas id="mz-preview-canvas" class="max-w-full max-h-full shadow-2xl bg-black border border-gray-700 aspect-video"></canvas>
                         
-                        <!-- Overlay do rysowania siatki i kontrolek transformacji na podglądzie -->
                         <div id="mz-canvas-overlay" class="absolute inset-0 pointer-events-none flex items-center justify-center hidden">
                             <div class="w-full h-full max-w-[100%] max-h-[100%] border border-dashed border-gray-500/50 grid grid-cols-3 grid-rows-3" style="aspect-ratio: 16/9;">
                                 <div class="border-r border-b border-gray-500/30"></div><div class="border-r border-b border-gray-500/30"></div><div class="border-b border-gray-500/30"></div>
@@ -264,18 +260,17 @@ window.montazystaApp = {
                         </div>
                     </div>
                     
-                    <!-- Pasek Transportu -->
-                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2 flex justify-center gap-4 items-center">
+                    <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2 flex justify-center gap-4 items-center z-50">
                         <span id="mz-time-display" class="font-mono text-xs g-text font-bold w-20 text-right">00:00.00</span>
                         <button onclick="montazystaApp.togglePlay()" id="mz-btn-play" class="text-white text-3xl hover:text-blue-400 hover:scale-110 transition drop-shadow-md">▶</button>
                         <button onclick="montazystaApp.toggleGrid()" class="g-icon-btn text-xs px-2 border g-border rounded bg-black/50 hover:bg-white/20"># Siatka</button>
                     </div>
                 </div>
 
-                <!-- WŁAŚCIWOŚCI (Prawo) -->
+                <!-- WŁAŚCIWOŚCI -->
                 <div class="w-[25%] min-w-[240px] border-l g-border flex flex-col bg-black/20 overflow-hidden">
                     <div class="p-2 border-b g-border bg-black/30 shrink-0">
-                        <span class="text-xs font-bold g-text uppercase tracking-widest">Właściwości</span>
+                        <span class="text-xs font-bold g-text uppercase tracking-widest">Właściwości klipu</span>
                     </div>
                     <div id="mz-properties-panel" class="flex-grow overflow-y-auto custom-scrollbar p-3 flex flex-col gap-4">
                         <div class="text-center text-[10px] g-text-muted mt-10">Zaznacz klip na osi czasu.</div>
@@ -284,16 +279,14 @@ window.montazystaApp = {
 
             </div>
 
-            <!-- DOLNA SEKCJA (Oś Czasu / Timeline) -->
+            <!-- DOLNA SEKCJA (Oś Czasu) -->
             <div class="flex-grow flex flex-col bg-[#1e1e1e] relative">
-                
-                <!-- Pasek Narzędzi Osi Czasu -->
                 <div class="h-8 bg-black/30 border-b g-border flex items-center px-2 gap-2 shrink-0 z-20">
                     <button class="g-icon-btn hover:text-white px-2" title="Wybór (V)">↖</button>
-                    <button class="g-icon-btn hover:text-red-400 px-2" onclick="montazystaApp.splitClip()" title="Podziel w miejscu kursora (S)">✂️</button>
-                    <button class="g-icon-btn hover:text-red-400 px-2" onclick="montazystaApp.deleteClip()" title="Usuń zaznaczony (Del)">🗑️</button>
+                    <button class="g-icon-btn hover:text-red-400 px-2" onclick="montazystaApp.splitClip()" title="Podziel (S)">✂️</button>
+                    <button class="g-icon-btn hover:text-red-400 px-2" onclick="montazystaApp.deleteClip()" title="Usuń (Del)">🗑️</button>
                     <div class="w-px h-4 bg-gray-600 mx-1"></div>
-                    <button class="g-btn text-[10px] px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border-blue-500/50 hover:bg-blue-500 hover:text-white font-bold" onclick="montazystaApp.api.addText('tr_t1', 'Nowy Tekst', montazystaApp.timeline.time, 5)">+ Dodaj Tekst</button>
+                    <button class="g-btn text-[10px] px-2 py-0.5 rounded bg-blue-600/20 text-blue-400 border-blue-500/50 hover:bg-blue-500 hover:text-white font-bold" onclick="montazystaApp.api.addText('tr_t1', 'Nowy tekst', montazystaApp.timeline.time, 5)">+ Dodaj Tekst</button>
                     
                     <div class="ml-auto flex items-center gap-2">
                         <span class="text-[10px] g-text-muted font-bold">Skala:</span>
@@ -301,21 +294,11 @@ window.montazystaApp = {
                     </div>
                 </div>
 
-                <!-- Kontener Osi Czasu (Lewo: Nagłówki, Prawo: Tracki) -->
                 <div class="flex-grow flex overflow-hidden relative">
-                    <!-- Nagłówki Ścieżek -->
-                    <div id="mz-track-headers" class="w-[120px] bg-black/40 border-r g-border flex flex-col shrink-0 overflow-hidden z-20 relative"></div>
-                    
-                    <!-- Właściwa Oś Czasu (Z przewijaniem) -->
+                    <div id="mz-track-headers" class="w-[140px] bg-black/40 border-r g-border flex flex-col shrink-0 overflow-hidden z-20 relative"></div>
                     <div id="mz-timeline-scroll" class="flex-grow overflow-auto custom-scrollbar relative" onscroll="montazystaApp.syncTimelineScroll(this)">
-                        
-                        <!-- Linijka Czasu -->
                         <div id="mz-timeline-ruler" class="h-6 bg-black/20 border-b g-border relative sticky top-0 z-10 w-[5000px] cursor-pointer" onmousedown="montazystaApp.handleRulerClick(event)"></div>
-                        
-                        <!-- Kontener na klipy -->
                         <div id="mz-timeline-tracks" class="relative w-[5000px] flex flex-col"></div>
-                        
-                        <!-- Głowa odtwarzania (Playhead) -->
                         <div id="mz-playhead" class="absolute top-0 bottom-0 w-[1px] bg-red-500 z-30 pointer-events-none" style="left: 0px;">
                             <div class="absolute -top-0 -translate-x-1/2 w-3 h-3 bg-red-500 rounded-sm" style="clip-path: polygon(0 0, 100% 0, 50% 100%);"></div>
                         </div>
@@ -328,7 +311,7 @@ window.montazystaApp = {
     },
 
     // ==================================================================
-    // SILNIK RENDEROWANIA (CANVAS 60FPS)
+    // SILNIK RENDEROWANIA CANVASA (60FPS z precyzyjną fizyką czasu)
     // ==================================================================
     initPreviewEngine: () => {
         montazystaApp.previewCanvas = document.getElementById('mz-preview-canvas');
@@ -337,20 +320,42 @@ window.montazystaApp = {
         montazystaApp.previewCanvas.width = montazystaApp.project.width;
         montazystaApp.previewCanvas.height = montazystaApp.project.height;
 
-        const loop = () => {
+        let lastFrameTime = performance.now();
+
+        const loop = (now) => {
+            // Prawdziwy czas Delta (w sekundach), uniezależnia to działanie od odświeżania monitora!
+            let dt = (now - lastFrameTime) / 1000;
+            // Ochrona przed dużymi skokami po powrocie do zminimalizowanej zakładki przeglądarki
+            if (dt > 0.2) dt = 1 / (montazystaApp.project.fps || 30);
+            lastFrameTime = now;
+
+            // Obliczanie długości projektu
+            let maxClipEnd = 0;
+            montazystaApp.project.tracks.forEach(track => {
+                track.items.forEach(item => {
+                    if (item.end > maxClipEnd) maxClipEnd = item.end;
+                });
+            });
+            montazystaApp.project.duration = maxClipEnd > 0 ? Math.ceil(maxClipEnd + 1) : 30;
+
             if (montazystaApp.timeline.isPlaying) {
-                montazystaApp.timeline.time += 1 / montazystaApp.project.fps;
-                if (montazystaApp.timeline.time > montazystaApp.project.duration) {
-                    montazystaApp.togglePlay(); // Stop
+                // Postępujemy na bazie Prawdziwego Czasu (dt) a nie sztywnych klatek
+                montazystaApp.timeline.time += dt;
+                
+                if (montazystaApp.timeline.time >= montazystaApp.project.duration) {
                     montazystaApp.timeline.time = montazystaApp.project.duration;
+                    if (montazystaApp.timeline.isPlaying) {
+                        montazystaApp.togglePlay(); 
+                    }
                 }
+                
                 montazystaApp.renderTimeline();
                 document.getElementById('mz-time-display').innerText = montazystaApp.formatTime(montazystaApp.timeline.time);
             }
             montazystaApp.renderCanvasFrame();
             montazystaApp.renderLoopId = requestAnimationFrame(loop);
         };
-        loop();
+        montazystaApp.renderLoopId = requestAnimationFrame(loop);
     },
 
     renderCanvasFrame: () => {
@@ -363,7 +368,6 @@ window.montazystaApp = {
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, w, h);
 
-        // Zbieramy wszystkie widoczne klipy
         let activeClips = [];
         montazystaApp.project.tracks.forEach(track => {
             track.items.forEach(item => {
@@ -373,7 +377,6 @@ window.montazystaApp = {
             });
         });
 
-        // Sortowanie po z-index (Audio nie ma z-indexu graficznego, ale je filtrujemy)
         activeClips.sort((a, b) => a.trackZ - b.trackZ);
 
         activeClips.forEach(entry => {
@@ -383,17 +386,30 @@ window.montazystaApp = {
                 const media = montazystaApp.mediaCache[clip.libId];
                 if (media && media.el) {
                     if (clip.type === 'video') {
-                        // Synchronizacja wideo
                         const localTime = (cTime - clip.start) + (clip.trimStart || 0);
-                        if (Math.abs(media.el.currentTime - localTime) > 0.1) {
-                            media.el.currentTime = localTime;
+                        
+                        if (!montazystaApp.timeline.isPlaying) {
+                            // Sztywne ustawianie klatek gdy użytkownik przewija pauzę
+                            if (Math.abs(media.el.currentTime - localTime) > 0.05) {
+                                media.el.currentTime = localTime;
+                            }
+                            if (!media.el.paused) media.el.pause();
+                        } else {
+                            // Odtwarzanie - ufamy przeglądarce i korygujemy tylko przy dużych lagach
+                            if (media.el.paused) {
+                                media.el.currentTime = localTime; 
+                                let p = media.el.play();
+                                if(p !== undefined) p.catch(()=>{});
+                            } else if (Math.abs(media.el.currentTime - localTime) > 0.3) {
+                                media.el.currentTime = localTime;
+                            }
                         }
-                        if (montazystaApp.timeline.isPlaying && media.el.paused) media.el.play().catch(()=>{});
-                        else if (!montazystaApp.timeline.isPlaying && !media.el.paused) media.el.pause();
+                        
+                        if(media.el.muted) media.el.muted = false; 
+                        media.el.volume = (clip.volume !== undefined ? clip.volume : 100) / 100;
                     }
 
                     ctx.save();
-                    // Transformacje
                     let px = clip.x !== undefined ? clip.x : w/2;
                     let py = clip.y !== undefined ? clip.y : h/2;
                     let scale = clip.scale !== undefined ? clip.scale : 1;
@@ -405,28 +421,17 @@ window.montazystaApp = {
                     ctx.rotate(rot * Math.PI / 180);
                     ctx.scale(scale, scale);
 
-                    // Efekty
                     if (clip.filters) {
                         ctx.filter = `brightness(${clip.filters.brightness||100}%) contrast(${clip.filters.contrast||100}%) saturate(${clip.filters.saturate||100}%)`;
                     }
 
-                    // Rysowanie z wyśrodkowaniem
                     let drawW = media.el.videoWidth || media.el.naturalWidth || w;
                     let drawH = media.el.videoHeight || media.el.naturalHeight || h;
                     
-                    // Skalowanie proporcjonalne domyślnie by pasowało do projektu
                     let ratio = Math.min(w / drawW, h / drawH);
                     drawW *= ratio; drawH *= ratio;
 
                     ctx.drawImage(media.el, -drawW/2, -drawH/2, drawW, drawH);
-                    
-                    // Chroma Key (Prymitywna symulacja na Canvasie do podglądu - FFmpeg zrobi to lepiej)
-                    if (clip.filters && clip.filters.chromaKey) {
-                        // Ze względu na wydajność w przeglądarce, pomijamy pixel-perfect chroma keying w podglądzie w czasie rzeczywistym
-                        // (Wymagałoby to get/putImageData na każdej klatce co zabiłoby FPS)
-                        // Pełny Chroma Key zostanie zaimplementowany w generatorze FFmpeg
-                    }
-
                     ctx.restore();
                 }
             } 
@@ -455,34 +460,50 @@ window.montazystaApp = {
                 const media = montazystaApp.mediaCache[clip.libId];
                 if (media && media.el) {
                     const localTime = (cTime - clip.start) + (clip.trimStart || 0);
-                    if (Math.abs(media.el.currentTime - localTime) > 0.1) media.el.currentTime = localTime;
                     
+                    if (!montazystaApp.timeline.isPlaying) {
+                        if (Math.abs(media.el.currentTime - localTime) > 0.05) {
+                            media.el.currentTime = localTime;
+                        }
+                        if (!media.el.paused) media.el.pause();
+                    } else {
+                        if (media.el.paused) {
+                            media.el.currentTime = localTime;
+                            let p = media.el.play();
+                            if(p !== undefined) p.catch(()=>{});
+                        } else if (Math.abs(media.el.currentTime - localTime) > 0.3) {
+                            media.el.currentTime = localTime;
+                        }
+                    }
+                    
+                    if(media.el.muted) media.el.muted = false;
                     media.el.volume = (clip.volume !== undefined ? clip.volume : 100) / 100;
-                    
-                    if (montazystaApp.timeline.isPlaying && media.el.paused) media.el.play().catch(()=>{});
-                    else if (!montazystaApp.timeline.isPlaying && !media.el.paused) media.el.pause();
                 }
             }
         });
 
-        // Wyciszanie multimediów które NIE SĄ aktywne w danej sekundzie
+        // Wyciszanie nieaktywnych multimediów (tych, które nie są widoczne na wideo w aktualnej sekundzie)
         Object.values(montazystaApp.mediaCache).forEach(media => {
             if (media.el && media.type !== 'image') {
                 let isActive = activeClips.some(e => e.clip.libId === media.id);
-                if (!isActive && !media.el.paused) media.el.pause();
+                if (!isActive) {
+                    if(!media.el.paused) media.el.pause();
+                    media.el.muted = true; 
+                }
             }
         });
     },
 
-    // ==================================================================
-    // STEROWANIE
-    // ==================================================================
     togglePlay: () => {
         montazystaApp.timeline.isPlaying = !montazystaApp.timeline.isPlaying;
         document.getElementById('mz-btn-play').innerText = montazystaApp.timeline.isPlaying ? '⏸' : '▶';
         if (!montazystaApp.timeline.isPlaying) {
-            // Pauzuj wszystko
-            Object.values(montazystaApp.mediaCache).forEach(m => { if(m.el && m.el.pause) m.el.pause(); });
+            Object.values(montazystaApp.mediaCache).forEach(m => { 
+                if(m.el && m.el.pause) {
+                    m.el.pause(); 
+                    m.el.muted = true;
+                }
+            });
         }
     },
 
@@ -500,7 +521,7 @@ window.montazystaApp = {
     },
 
     // ==================================================================
-    // OŚ CZASU (TIMELINE) I RENDEROWANIE KLIPÓW
+    // OŚ CZASU (TIMELINE)
     // ==================================================================
     renderAll: () => {
         montazystaApp.renderLibraryList();
@@ -540,20 +561,17 @@ window.montazystaApp = {
         tracksCont.innerHTML = '';
 
         montazystaApp.project.tracks.forEach(track => {
-            // Nagłówek ścieżki
             const hDiv = document.createElement('div');
             hDiv.className = 'h-16 border-b g-border bg-black/40 p-2 flex flex-col justify-center';
             let icon = track.type === 'video' ? '🎬' : (track.type === 'audio' ? '🎵' : '🔤');
             hDiv.innerHTML = `<span class="text-[10px] font-bold g-text uppercase tracking-wider truncate" title="${track.name}">${icon} ${track.name}</span>`;
             headers.appendChild(hDiv);
 
-            // Ciało ścieżki
             const tDiv = document.createElement('div');
             tDiv.className = 'h-16 border-b border-gray-600/30 bg-black/20 relative group';
             tDiv.ondragover = e => e.preventDefault();
             tDiv.ondrop = e => montazystaApp.handleTimelineDrop(e, track.id);
 
-            // Klipy na ścieżce
             track.items.forEach(clip => {
                 const cDiv = document.createElement('div');
                 const isSel = montazystaApp.timeline.selectedItemId === clip.id;
@@ -609,9 +627,14 @@ window.montazystaApp = {
         montazystaApp.renderAll();
     },
 
+    // NAPRAWA: Precyzyjna mechanika cięcia wideo w dowolnym momencie czasu
     splitClip: () => {
         const clipId = montazystaApp.timeline.selectedItemId;
-        if(!clipId) return;
+        if(!clipId) {
+            if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Zaznacz klip, który chcesz przeciąć', 'warning');
+            return;
+        }
+        
         const track = montazystaApp.findTrackByClipId(clipId);
         const clip = track.items.find(i => i.id === clipId);
         
@@ -623,13 +646,19 @@ window.montazystaApp = {
             newClip.id = 'c_' + Date.now();
             newClip.start = cTime;
             newClip.duration = clip.end - cTime;
+            newClip.end = newClip.start + newClip.duration;
             newClip.trimStart = (clip.trimStart || 0) + firstPartDur;
             
             clip.end = cTime;
             clip.duration = firstPartDur;
             
             track.items.push(newClip);
+            montazystaApp.timeline.selectedItemId = newClip.id; 
             montazystaApp.renderAll();
+            
+            if(typeof apps !== 'undefined') apps.showToast('Sukces', 'Podzielono klip wideo.', 'success');
+        } else {
+            if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Czerwona linia czasu musi znajdować się wewnątrz zaznaczonego klipu.', 'warning');
         }
     },
 
@@ -637,7 +666,7 @@ window.montazystaApp = {
         const clip = montazystaApp.findClip(montazystaApp.timeline.selectedItemId);
         if(clip) {
             montazystaApp.timeline.clipboard = JSON.parse(JSON.stringify(clip));
-            if(typeof apps !== 'undefined') apps.showToast('Skopiowano', 'Klip skopiowany do schowka', 'info');
+            if(typeof apps !== 'undefined') apps.showToast('Skopiowano', 'Klip skopiowany', 'info');
         }
     },
 
@@ -648,7 +677,6 @@ window.montazystaApp = {
         newClip.start = montazystaApp.timeline.time;
         newClip.end = newClip.start + newClip.duration;
         
-        // Szukamy odpowiedniego tracka
         let track = montazystaApp.project.tracks.find(t => t.type === newClip.type);
         if(track) {
             track.items.push(newClip);
@@ -670,9 +698,6 @@ window.montazystaApp = {
         }
     },
 
-    // ==================================================================
-    // DRAG & DROP W TIMELINE ORAZ TRIMOWANIE
-    // ==================================================================
     startClipDrag: (e, clip) => {
         e.stopPropagation();
         const startX = e.clientX;
@@ -691,7 +716,6 @@ window.montazystaApp = {
         const onUp = () => {
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
-            // Automatyczne wydłużanie projektu jeśli klip wykracza poza koniec
             if (clip.end > montazystaApp.project.duration) montazystaApp.project.duration = Math.ceil(clip.end + 10);
             montazystaApp.renderProperties();
         };
@@ -708,7 +732,6 @@ window.montazystaApp = {
         const startX = e.clientX;
         const initialStart = clip.start;
         const initialEnd = clip.end;
-        const initialDuration = clip.duration;
         const initialTrimStart = clip.trimStart || 0;
         const zoom = montazystaApp.timeline.zoom;
 
@@ -723,7 +746,6 @@ window.montazystaApp = {
                 const timeDiff = newStart - initialStart;
                 clip.start = newStart;
                 clip.duration = initialEnd - newStart;
-                // Jeśli to plik z biblioteki, przesuwamy punkt startowy źródła
                 if (clip.libId) {
                     clip.trimStart = Math.max(0, initialTrimStart + timeDiff);
                 }
@@ -775,7 +797,7 @@ window.montazystaApp = {
         const track = montazystaApp.project.tracks.find(t => t.id === trackId);
         if(!track) return;
 
-        const dur = libItem.duration || 5; // Domyślnie 5s dla obrazów
+        const dur = libItem.duration || 5; 
         
         const clip = {
             id: 'c_' + Date.now() + Math.random(),
@@ -788,7 +810,6 @@ window.montazystaApp = {
             trimStart: 0
         };
 
-        // Dodatkowe właściwości dla Video/Obrazów
         if (libItem.type === 'video' || libItem.type === 'image') {
             clip.x = montazystaApp.project.width / 2;
             clip.y = montazystaApp.project.height / 2;
@@ -821,7 +842,7 @@ window.montazystaApp = {
             const url = URL.createObjectURL(f);
             let type = f.type.startsWith('video') ? 'video' : (f.type.startsWith('audio') ? 'audio' : 'image');
             
-            const libItem = { id: 'lib_' + Date.now() + Math.random(), type: type, name: f.name, url: url, isLocal: true, duration: 5 };
+            const libItem = { id: 'lib_' + Date.now() + Math.random(), type: type, name: f.name, url: url, isLocal: true, duration: 5, fileObj: f };
             
             montazystaApp.library.push(libItem);
             montazystaApp.preloadMedia(libItem);
@@ -836,7 +857,9 @@ window.montazystaApp = {
         
         if (libItem.type === 'video') {
             const v = document.createElement('video');
-            v.src = libItem.url; v.muted = true; v.crossOrigin = "anonymous";
+            v.src = libItem.url; 
+            v.muted = true;
+            v.crossOrigin = "anonymous";
             v.onloadedmetadata = () => { libItem.duration = v.duration; montazystaApp.renderLibraryList(); };
             montazystaApp.mediaCache[libItem.id].el = v;
         } else if (libItem.type === 'audio') {
@@ -892,6 +915,7 @@ window.montazystaApp = {
             return;
         }
 
+        // NAPRAWA: Zaktualizowane panele z uwzględnieniem trimStart na potrzeby cięcia
         const genInput = (label, prop, type='number', step=1) => `
             <div class="flex items-center justify-between text-xs">
                 <span class="g-text-muted font-bold">${label}</span>
@@ -904,8 +928,9 @@ window.montazystaApp = {
         html += `
             <div class="flex flex-col gap-2 mb-4 bg-black/20 p-2 rounded border g-border shadow-inner">
                 <span class="text-[10px] g-text-muted uppercase font-bold">Oś Czasu (Sekundy)</span>
-                ${genInput('Start', 'start', 'number', 0.1)}
-                ${genInput('Długość', 'duration', 'number', 0.1)}
+                ${genInput('Początek na osi', 'start', 'number', 0.1)}
+                ${genInput('Długość klipu', 'duration', 'number', 0.1)}
+                ${(clip.type === 'video' || clip.type === 'audio') ? genInput('Przesunięcie Media (Trim)', 'trimStart', 'number', 0.1) : ''}
             </div>
         `;
 
@@ -986,11 +1011,9 @@ window.montazystaApp = {
     },
 
     // ==================================================================
-    // EKSPORT I GENEROWANIE KOMENDY FFMPEG
+    // EKSPORT NATYWNY WEBM (ZASTĘPSTWO DLA FFMPEG)
     // ==================================================================
     showExportModal: () => {
-        if (!window.JSZip || !montazystaApp.isFFmpegLoaded) return typeof apps !== 'undefined' ? apps.showToast('Błąd', 'Silnik FFmpeg.wasm ładuje się. Poczekaj.', 'error') : null;
-        
         const modalId = 'mz-export-modal';
         let modal = document.getElementById(modalId);
         if(modal) modal.remove();
@@ -1008,205 +1031,87 @@ window.montazystaApp = {
                     <input type="text" id="mz-exp-name" value="${montazystaApp.project.name}" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none focus:border-blue-500 font-bold shadow-inner text-sm">
                 </div>
                 
-                <div class="grid grid-cols-2 gap-3 mb-6">
-                    <div>
-                        <label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Rozdzielczość</label>
-                        <select id="mz-exp-res" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none cursor-pointer font-bold text-xs">
-                            <option value="720">HD 720p</option>
-                            <option value="1080" selected>Full HD 1080p</option>
-                            <option value="1440">QHD 1440p</option>
-                            <option value="2160">4K UHD</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-[10px] uppercase font-bold g-text-muted mb-1 tracking-wider">Format / Kodek</label>
-                        <select id="mz-exp-fmt" class="w-full p-2.5 g-bg g-text border g-border rounded outline-none cursor-pointer font-bold text-xs">
-                            <option value="mp4" selected>MP4 (H.264)</option>
-                            <option value="webm">WebM (VP8)</option>
-                            <option value="gif">GIF (Animacja)</option>
-                        </select>
-                    </div>
+                <div class="mb-6 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg text-xs g-text-muted">
+                    <span class="font-bold text-blue-400">Silnik Natywny:</span> Film zostanie wyrenderowany w czasie rzeczywistym do formatu <b>.webm</b> (kompatybilny ze wszystkimi przeglądarkami). Proszę nie minimalizować okna w trakcie procesu!
                 </div>
 
                 <div class="flex justify-end gap-2 shrink-0">
                     <button onclick="document.getElementById('${modalId}').remove()" class="px-5 py-2.5 g-bg g-text hover:bg-white/10 rounded-lg transition font-medium border g-border shadow-sm text-xs font-bold">Anuluj</button>
-                    <button onclick="montazystaApp.exportToPC(document.getElementById('mz-exp-fmt').value)" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/30 transition font-bold border border-blue-700 text-xs">💾 Na Dysk PC</button>
-                    <button onclick="montazystaApp.exportToBigOS(document.getElementById('mz-exp-fmt').value)" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-600/30 transition font-bold border border-emerald-700 text-xs">📥 Do BigOS</button>
+                    <button onclick="montazystaApp.exportToPC()" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg shadow-lg shadow-blue-600/30 transition font-bold border border-blue-700 text-xs">💾 Na dysk PC</button>
+                    <button onclick="montazystaApp.exportToBigOS()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-lg shadow-emerald-600/30 transition font-bold border border-emerald-700 text-xs">📥 Do BigOS</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
     },
 
-    runFFmpegExport: async (format) => {
-        const { fetchFile } = FFmpeg;
-        const ffmpeg = montazystaApp.ffmpeg;
-        montazystaApp.isExporting = true;
+    runNativeExport: async () => {
+        return new Promise((resolve, reject) => {
+            montazystaApp.isExporting = true;
+            if(typeof apps !== 'undefined') apps.showToast('Render', 'Rozpoczęto nagrywanie w czasie rzeczywistym. Proszę nie zamykać okna!', 'info');
 
-        if(typeof apps !== 'undefined') apps.showToast('Render', 'Przygotowywanie plików multimedialnych dla FFmpeg.wasm...', 'info');
+            const canvas = montazystaApp.previewCanvas;
+            const stream = canvas.captureStream(montazystaApp.project.fps || 30);
 
-        // 1. Załadowanie plików do FS FFmpeg
-        let inputFiles = [];
-        for (let i=0; i<montazystaApp.library.length; i++) {
-            let libItem = montazystaApp.library[i];
-            let filename = `input_${i}.${libItem.type === 'video' ? 'mp4' : (libItem.type === 'audio' ? 'mp3' : 'png')}`;
-            inputFiles.push({ id: libItem.id, fname: filename, type: libItem.type });
-            
-            let data;
-            if(libItem.isLocal && libItem.fileObj) data = await fetchFile(libItem.fileObj);
-            else if(libItem.url.startsWith('data:')) data = await fetchFile(libItem.url);
-            else data = await fetchFile(await (await fetch(libItem.url)).blob());
-            
-            ffmpeg.FS('writeFile', filename, data);
-        }
-
-        // 2. Budowa polecenia FFmpeg
-        let args = [];
-        inputFiles.forEach(f => { args.push('-i', f.fname); });
-        
-        // --- BUDOWA FILTER_COMPLEX ---
-        let filterGraph = [];
-        let videoStreams = []; // ['0:v', '1:v']
-        let audioStreams = []; // ['0:a']
-        
-        let outW = montazystaApp.project.width;
-        let outH = montazystaApp.project.height;
-
-        // Tło projektu
-        filterGraph.push(`color=c=black:s=${outW}x${outH}:d=${montazystaApp.project.duration}[bg];`);
-        let lastOut = 'bg';
-        let overlayCount = 0;
-
-        // Zbieramy aktywne klipy wideo/obrazy posortowane by zIndex (od najniższego - tła, do wierzchu)
-        let visualClips = [];
-        montazystaApp.project.tracks.filter(t => t.type === 'video' || t.type === 'image' || t.type === 'text').forEach(track => {
-            track.items.forEach(clip => visualClips.push({ clip, zIndex: track.zIndex, type: track.type }));
-        });
-        visualClips.sort((a,b) => a.zIndex - b.zIndex);
-
-        // Składanie wizualne
-        visualClips.forEach(entry => {
-            const c = entry.clip;
-            if (entry.type === 'text') {
-                // Rysowanie tekstu nakładką drawtext
-                const txt = c.text.replace(/'/g, "'\\''").replace(/:/g, '\\:');
-                // Prosty drawtext
-                let newOut = `v${overlayCount++}`;
-                filterGraph.push(`[${lastOut}]drawtext=text='${txt}':x=${c.x}:y=${c.y}:fontsize=${c.fontSize}:fontcolor=${c.fontColor}:enable='between(t,${c.start},${c.end})'[${newOut}];`);
-                lastOut = newOut;
-            } else {
-                let inputObj = inputFiles.find(f => f.id === c.libId);
-                if(!inputObj) return;
-                let inIdx = inputFiles.indexOf(inputObj);
-                
-                let scaleW = Math.round(outW * (c.scale || 1));
-                let scaleH = Math.round(outH * (c.scale || 1));
-                
-                let streamName = `clip_${overlayCount}`;
-                let pts = `PTS-STARTPTS+${c.start}/TB`;
-                
-                // Trimming i skalowanie wejścia
-                if (c.type === 'video') {
-                    filterGraph.push(`[${inIdx}:v]trim=start=${c.trimStart || 0}:duration=${c.duration},setpts=${pts},scale=${scaleW}:${scaleH}`);
-                } else {
-                    filterGraph.push(`[${inIdx}:v]scale=${scaleW}:${scaleH}`);
-                }
-
-                // Chroma Key
-                if (c.filters && c.filters.chromaKey) {
-                    filterGraph.push(`,colorkey=0x00FF00:0.3:0.2`); // Zakładamy idealny zielony, podobieństwo 30%
-                }
-
-                // Color correction
-                if (c.filters) {
-                    let eq = `eq=brightness=${((c.filters.brightness||100)-100)/100}:contrast=${(c.filters.contrast||100)/100}:saturation=${(c.filters.saturate||100)/100}`;
-                    filterGraph.push(`,${eq}`);
-                }
-
-                filterGraph.push(`[${streamName}];`);
-
-                // Nakładanie (Overlay) na główny bufor w danym czasie
-                let newOut = `v${overlayCount++}`;
-                filterGraph.push(`[${lastOut}][${streamName}]overlay=x=${c.x - scaleW/2}:y=${c.y - scaleH/2}:enable='between(t,${c.start},${c.end})'[${newOut}];`);
-                lastOut = newOut;
+            let recorder;
+            try { recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' }); }
+            catch(e) {
+                try { recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }); }
+                catch(e2) { recorder = new MediaRecorder(stream); }
             }
-        });
 
-        // Składanie Audio
-        let audioClips = [];
-        montazystaApp.project.tracks.filter(t => t.type === 'audio' || t.type === 'video').forEach(track => {
-            track.items.forEach(clip => {
-                let inputObj = inputFiles.find(f => f.id === clip.libId);
-                if(inputObj && (inputObj.type === 'audio' || inputObj.type === 'video')) {
-                    audioClips.push(clip);
+            const chunks = [];
+            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                montazystaApp.isExporting = false;
+                resolve(blob);
+            };
+
+            // Ustawienie na start i odtwarzanie
+            montazystaApp.timeline.time = 0;
+            montazystaApp.timeline.isPlaying = true;
+            
+            Object.values(montazystaApp.mediaCache).forEach(m => { 
+                if(m.el && m.el.pause) {
+                    m.el.pause(); 
+                    m.el.currentTime = 0;
                 }
             });
+
+            recorder.start();
+
+            const checkInterval = setInterval(() => {
+                const progress = montazystaApp.timeline.time / montazystaApp.project.duration;
+                const expStatus = document.getElementById('montazysta-export-status');
+                if (expStatus) expStatus.innerHTML = `<span class="text-blue-400">⏳ Nagrywanie: ${Math.round(progress * 100)}%</span>`;
+
+                if (montazystaApp.timeline.time >= montazystaApp.project.duration || !montazystaApp.timeline.isPlaying) {
+                    clearInterval(checkInterval);
+                    if (recorder.state !== 'inactive') recorder.stop();
+                    montazystaApp.timeline.isPlaying = false;
+                    montazystaApp.timeline.time = 0;
+                    montazystaApp.renderTimeline();
+                    if (expStatus) expStatus.innerHTML = '';
+                }
+            }, 500);
         });
-
-        let audioOut = null;
-        if (audioClips.length > 0) {
-            let amixInputs = "";
-            audioClips.forEach((c, idx) => {
-                let inIdx = inputFiles.findIndex(f => f.id === c.libId);
-                let aStream = `a_${idx}`;
-                // Trim + Delay (Aresample dla zgodności i adelay)
-                filterGraph.push(`[${inIdx}:a]atrim=start=${c.trimStart||0}:duration=${c.duration},asetpts=PTS-STARTPTS,adelay=${c.start*1000}|${c.start*1000},volume=${c.volume/100}[${aStream}];`);
-                amixInputs += `[${aStream}]`;
-            });
-            audioOut = 'aout';
-            filterGraph.push(`${amixInputs}amix=inputs=${audioClips.length}:duration=longest[${audioOut}]`);
-        }
-
-        // --- SKŁADANIE ARGUMENTÓW ---
-        let complexStr = filterGraph.join('').replace(/;$/, '');
-        if (complexStr) {
-            args.push('-filter_complex', complexStr);
-            args.push('-map', `[${lastOut}]`);
-            if (audioOut) args.push('-map', `[${audioOut}]`);
-        }
-
-        let outName = `output.${format}`;
-        
-        // Parametry kodeka
-        if (format === 'mp4') {
-            args.push('-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28', '-c:a', 'aac', '-b:a', '128k', '-t', montazystaApp.project.duration.toString());
-        } else if (format === 'gif') {
-            args.push('-r', '15', '-t', montazystaApp.project.duration.toString());
-        } else if (format === 'webm') {
-            args.push('-c:v', 'libvpx-vp9', '-crf', '30', '-b:v', '0', '-c:a', 'libopus', '-t', montazystaApp.project.duration.toString());
-        }
-        
-        args.push(outName);
-
-        console.log("FFmpeg Args:", args);
-        if(typeof apps !== 'undefined') apps.showToast('Render', 'Rozpoczęto kompilację wideo. Procesor jest obciążony.', 'info');
-
-        await ffmpeg.run(...args);
-        
-        const data = ffmpeg.FS('readFile', outName);
-        montazystaApp.isExporting = false;
-        
-        // Czyszczenie pamięci FS
-        try { 
-            inputFiles.forEach(f => ffmpeg.FS('unlink', f.fname)); 
-            ffmpeg.FS('unlink', outName); 
-        } catch(e){}
-
-        let mime = format === 'mp4' ? 'video/mp4' : (format === 'webm' ? 'video/webm' : 'image/gif');
-        return new Blob([data.buffer], { type: mime });
     },
 
-    exportToPC: async (format) => {
+    exportToPC: async () => {
         document.getElementById('mz-export-modal')?.remove();
         if (montazystaApp.project.tracks.every(t => t.items.length === 0)) return typeof apps !== 'undefined' ? apps.showToast('Błąd', 'Oś czasu jest pusta!', 'error') : null;
         
+        const status = document.getElementById('montazysta-export-status');
+        if(status) status.textContent = '⏳ Przygotowywanie plików...';
+
         try {
-            const blob = await montazystaApp.runFFmpegExport(format);
+            const blob = await montazystaApp.runNativeExport();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             const nameInput = document.getElementById('mz-exp-name');
-            a.download = (nameInput ? nameInput.value : montazystaApp.project.name) + '.' + format;
+            a.download = (nameInput ? nameInput.value : montazystaApp.project.name) + '.webm';
             a.click();
             URL.revokeObjectURL(url);
             if(typeof apps !== 'undefined') apps.showToast('Sukces', 'Wyeksportowano na PC!', 'success');
@@ -1214,18 +1119,22 @@ window.montazystaApp = {
             console.error(e);
             if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Renderowanie nie powiodło się.', 'error');
         }
+        if(status) status.textContent = '';
     },
 
-    exportToBigOS: async (format) => {
+    exportToBigOS: async () => {
         document.getElementById('mz-export-modal')?.remove();
         if (montazystaApp.project.tracks.every(t => t.items.length === 0)) return typeof apps !== 'undefined' ? apps.showToast('Błąd', 'Oś czasu jest pusta!', 'error') : null;
         
+        const status = document.getElementById('montazysta-export-status');
+        if(status) status.textContent = '⏳ Przygotowywanie plików...';
+
         try {
-            const blob = await montazystaApp.runFFmpegExport(format);
+            const blob = await montazystaApp.runNativeExport();
             const reader = new FileReader();
             reader.onload = () => {
                 const nameInput = document.getElementById('mz-exp-name');
-                const finalName = (nameInput ? nameInput.value : montazystaApp.project.name) + '.' + format;
+                const finalName = (nameInput ? nameInput.value : montazystaApp.project.name) + '.webm';
                 
                 if (typeof fileSystem !== 'undefined') {
                     fileSystem.push({
@@ -1243,6 +1152,7 @@ window.montazystaApp = {
             console.error(e);
             if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Renderowanie nie powiodło się.', 'error');
         }
+        if(status) status.textContent = '';
     }
 };
 

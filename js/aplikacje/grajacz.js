@@ -1,5 +1,5 @@
 // ======================================================================
-// PLIK: js/aplikacje/grajacz.js (Grajacz Filmów PRO v1.3)
+// PLIK: js/aplikacje/grajacz.js (Grajacz Filmów PRO v1.4 - Otwieranie WebM)
 // ======================================================================
 
 const grajaczApp = {
@@ -15,7 +15,7 @@ const grajaczApp = {
 
     parseSafe: (data, defaultVal) => {
         if (!data || data === 'null' || data === 'undefined') return defaultVal;
-        try { return JSON.parse(data) || defaultVal; } catch(e) { return defaultVal; }
+        try { return typeof data === 'string' ? JSON.parse(data) : data; } catch(e) { return defaultVal; }
     },
 
     log: (msg, type = "INFO") => {
@@ -25,7 +25,7 @@ const grajaczApp = {
         grajaczApp.renderLogs();
     },
 
-    init: () => {
+    init: async () => {
         if (grajaczApp._initialized) return;
         grajaczApp._initialized = true;
 
@@ -35,10 +35,22 @@ const grajaczApp = {
             document.head.appendChild(script);
         }
 
-        grajaczApp.queue = grajaczApp.parseSafe(localStorage.getItem('bigos_grajacz_queue'), []).filter(t => !t.isLocal);
-        grajaczApp.history = grajaczApp.parseSafe(localStorage.getItem('bigos_grajacz_history'), []);
-        grajaczApp.resumeData = grajaczApp.parseSafe(localStorage.getItem('bigos_grajacz_resume'), {});
-        grajaczApp.bookmarks = grajaczApp.parseSafe(localStorage.getItem('bigos_grajacz_bookmarks'), []);
+        // --- POBIERANIE Z INDEXED DB (ZAMIAST LOCAL STORAGE) ---
+        try {
+            const savedQueue = await bigosDB.get('bigos_grajacz_queue');
+            if (savedQueue) grajaczApp.queue = grajaczApp.parseSafe(savedQueue, []).filter(t => !t.isLocal);
+            
+            const savedHistory = await bigosDB.get('bigos_grajacz_history');
+            if (savedHistory) grajaczApp.history = grajaczApp.parseSafe(savedHistory, []);
+            
+            const savedResume = await bigosDB.get('bigos_grajacz_resume');
+            if (savedResume) grajaczApp.resumeData = grajaczApp.parseSafe(savedResume, {});
+            
+            const savedBookmarks = await bigosDB.get('bigos_grajacz_bookmarks');
+            if (savedBookmarks) grajaczApp.bookmarks = grajaczApp.parseSafe(savedBookmarks, []);
+        } catch (e) {
+            console.warn("Błąd ładowania danych Grajacza z IndexedDB:", e);
+        }
 
         grajaczApp.upgradeUI();
         window.addEventListener('keydown', grajaczApp.handleShortcuts);
@@ -53,7 +65,10 @@ const grajaczApp = {
 
         grajaczApp.renderQueue();
         grajaczApp.renderBookmarks();
+        
+        // --- HOOKI DLA SYSTEMU (Prawy Klik i Podwójny Klik dla wideo z Montażysty) ---
         grajaczApp.injectGlobalContextMenu();
+        grajaczApp.injectDoubleClickHandler();
 
         setInterval(grajaczApp.saveResumeState, 5000);
     },
@@ -110,11 +125,29 @@ const grajaczApp = {
         }
     },
 
+    injectDoubleClickHandler: () => {
+        if (typeof desktop !== 'undefined' && !grajaczApp._doubleClickPatched) {
+            const origExecute = desktop.executeItem;
+            desktop.executeItem = function(item) {
+                // Jeśli to plik z rozszerzeniem wideo, przejmij go przed Notatnikiem (Skrybą)
+                if (item && item.type === 'file' && item.name && item.name.match(/\.(mp4|webm|avi|mkv|mov|flv|m4v|ts|ogg)$/i)) {
+                    grajaczApp.openWithItem(item.id);
+                } else {
+                    origExecute.call(this, item);
+                }
+            };
+            grajaczApp._doubleClickPatched = true;
+        }
+    },
+
     saveData: () => {
+        // --- ZAPIS DO INDEXED DB ---
         const safeQueue = grajaczApp.queue.filter(q => !q.isLocal);
-        localStorage.setItem('bigos_grajacz_queue', JSON.stringify(safeQueue));
-        localStorage.setItem('bigos_grajacz_history', JSON.stringify(grajaczApp.history));
-        localStorage.setItem('bigos_grajacz_bookmarks', JSON.stringify(grajaczApp.bookmarks));
+        if (typeof bigosDB !== 'undefined') {
+            bigosDB.set('bigos_grajacz_queue', safeQueue);
+            bigosDB.set('bigos_grajacz_history', grajaczApp.history);
+            bigosDB.set('bigos_grajacz_bookmarks', grajaczApp.bookmarks);
+        }
     },
 
     saveResumeState: () => {
@@ -122,7 +155,10 @@ const grajaczApp = {
             const track = grajaczApp.queue[grajaczApp.currentIndex];
             if (grajaczApp.video && grajaczApp.video.currentTime > 5) {
                 grajaczApp.resumeData[track.url] = grajaczApp.video.currentTime;
-                localStorage.setItem('bigos_grajacz_resume', JSON.stringify(grajaczApp.resumeData));
+                // --- ZAPIS DO INDEXED DB ---
+                if (typeof bigosDB !== 'undefined') {
+                    bigosDB.set('bigos_grajacz_resume', grajaczApp.resumeData);
+                }
             }
         }
     },
@@ -166,7 +202,7 @@ const grajaczApp = {
                     <iframe id="grajacz-yt" class="w-full h-full hidden border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                     <div id="grajacz-placeholder" class="text-gray-500 flex flex-col items-center pointer-events-none transition-opacity">
                         <span class="text-7xl mb-4 drop-shadow-lg opacity-30">🍿</span>
-                        <p class="font-bold tracking-widest uppercase">Wybierz plik wideo lub wklej link</p>
+                        <p class="font-bold tracking-widest uppercase text-center">Wybierz plik wideo z kolejki<br>lub upuść go wprost na ten obszar</p>
                     </div>
                 </div>
 
@@ -205,6 +241,7 @@ const grajaczApp = {
                 </div>
             </div>
 
+            <!-- PRAWY PANEL -->
             <div id="grajacz-sidebar" class="w-[300px] border-l g-border bg-black/50 flex flex-col shrink-0 transition-all duration-300 relative z-10">
                 <div class="flex text-[10px] sm:text-xs font-bold border-b g-border shrink-0 bg-black/20">
                     <button onclick="grajaczApp.switchTab('queue')" id="tab-v-queue" class="g-tab active flex-1 py-3 uppercase tracking-wider">Kolejka</button>
@@ -212,6 +249,7 @@ const grajaczApp = {
                     <button onclick="grajaczApp.switchTab('stats')" id="tab-v-stats" class="g-tab flex-1 py-3 uppercase tracking-wider text-red-400">Stats</button>
                 </div>
 
+                <!-- 1. KOLEJKA -->
                 <div id="vtab-queue" class="tab-content flex-1 overflow-hidden flex flex-col">
                     <div class="flex flex-col gap-2 p-2 border-b g-border bg-black/10 shrink-0">
                         <div class="flex gap-2 w-full">
@@ -223,6 +261,7 @@ const grajaczApp = {
                     <div id="grajacz-queue-list" class="flex-1 overflow-y-auto custom-scrollbar p-2" ondragover="event.preventDefault()" ondrop="grajaczApp.handleDrop(event)"></div>
                 </div>
 
+                <!-- 2. NARZĘDZIA OBRAZU -->
                 <div id="vtab-tools" class="tab-content flex-1 overflow-y-auto custom-scrollbar p-4 hidden flex-col gap-4">
                     <h3 class="font-bold text-sm g-accent border-b g-border pb-2">Narzędzia Wideo</h3>
                     <div class="grid grid-cols-2 gap-2">
@@ -241,6 +280,7 @@ const grajaczApp = {
                     <button class="g-btn text-[10px] py-1 rounded border-red-500 text-red-400 mt-1" onclick="grajaczApp.resetFilters()">Resetuj filtry</button>
                 </div>
 
+                <!-- 3. STATYSTYKI -->
                 <div id="vtab-stats" class="tab-content flex-1 overflow-hidden hidden flex-col relative bg-black/20">
                     <div class="p-3 border-b g-border shrink-0 flex justify-between items-center bg-black/40">
                         <h3 class="font-bold text-[10px] g-accent uppercase tracking-wider">Statystyki Wideo</h3>
@@ -330,12 +370,35 @@ const grajaczApp = {
         if(grajaczApp.currentIndex === -1 || !grajaczApp.isPlaying) grajaczApp.playTrack(grajaczApp.queue.length - files.length);
     },
 
-    openWithItem: (itemId) => {
+    openWithItem: async (itemId) => {
         if(typeof winManager !== 'undefined') winManager.open('grajacz');
-        const item = fileSystem.find(i => i.id === itemId);
+        const item = typeof fileSystem !== 'undefined' ? fileSystem.find(i => i.id === itemId) : null;
+        
         if(item) {
-            grajaczApp.queue.push({ id: 't_'+Date.now(), url: item.content || '', title: item.name, isLocal: false });
-            grajaczApp.saveData(); grajaczApp.renderQueue(); grajaczApp.playTrack(grajaczApp.queue.length - 1);
+            let trackUrl = item.content || '';
+            let isDataUrl = trackUrl.startsWith('data:');
+            
+            // OPTYMALIZACJA PAMIĘCI RAM: Konwersja masywnego stringa Data URI na czysty i wydajny Blob URL
+            if (isDataUrl) {
+                try {
+                    const res = await fetch(trackUrl);
+                    const blob = await res.blob();
+                    trackUrl = URL.createObjectURL(blob);
+                } catch(e) {
+                    console.warn("Błąd konwersji data: URL na Blob", e);
+                }
+            }
+
+            grajaczApp.queue.push({ 
+                id: 't_'+Date.now(), 
+                url: trackUrl, 
+                title: item.name, 
+                isLocal: isDataUrl, // BARDZO WAŻNE: Zapobiega wrzuceniu 50MB stringa do LocalStorage przy wyłączaniu
+                bigosFileId: itemId 
+            });
+            grajaczApp.saveData(); 
+            grajaczApp.renderQueue(); 
+            grajaczApp.playTrack(grajaczApp.queue.length - 1);
         }
     },
 
@@ -377,11 +440,14 @@ const grajaczApp = {
             el.ondragover = (e) => grajaczApp.dragQueueOver(e);
             el.ondrop = (e) => grajaczApp.dragQueueDrop(e, originalIdx);
 
+            // Wyświetla informację o tym, że plik pochodzi z dysku wirtualnego (z Montażysty)
+            const typeStr = track.bigosFileId ? 'Plik z BigOS' : (track.isLocal ? 'Z dysku PC' : 'Strumień (URL)');
+
             el.innerHTML = `
                 <div class="w-10 h-10 rounded bg-gray-800 flex items-center justify-center shrink-0 border border-gray-600 text-lg cursor-move">🎬</div>
                 <div class="flex flex-col overflow-hidden flex-grow" onclick="grajaczApp.playTrack(${originalIdx})">
                     <span class="text-xs font-bold truncate ${isPlaying ? 'text-red-400' : 'g-text'}">${typeof desktop !== 'undefined' ? desktop.escapeHTML(track.title) : track.title}</span>
-                    <span class="text-[9px] g-text-muted truncate">${track.isLocal ? 'Z dysku (Lokalny)' : 'Strumień (URL)'}</span>
+                    <span class="text-[9px] g-text-muted truncate">${typeStr}</span>
                 </div>
                 <button onclick="event.stopPropagation(); grajaczApp.removeTrack('${track.id}')" class="text-red-500 opacity-30 hover:opacity-100 px-3 font-bold transition text-lg">✖</button>
             `;
@@ -433,7 +499,7 @@ const grajaczApp = {
                 if (grajaczApp.resumeData[track.url]) { grajaczApp.video.currentTime = grajaczApp.resumeData[track.url]; }
                 grajaczApp.video.play().then(() => {
                     grajaczApp.isPlaying = true; document.getElementById('grajacz-btn-play').innerText = '⏸';
-                }).catch(e => { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Brak kodeka lub zła ścieżka', 'error'); });
+                }).catch(e => { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Brak kodeka lub uszkodzony plik wideo.', 'error'); });
             }
         }
         grajaczApp.renderQueue();
@@ -577,10 +643,7 @@ const grajaczApp = {
         } else {
             overlay.style.display = 'none';
             win.style.removeProperty('z-index');
-            // Przywróć standardowe pozycjonowanie i z-index
-            if (typeof winManager !== 'undefined') {
-                winManager.bringToFront(win);
-            }
+            if (typeof winManager !== 'undefined') winManager.bringToFront(win);
         }
     },
 
@@ -602,20 +665,15 @@ const grajaczApp = {
             if (document.pictureInPictureElement) {
                 await document.exitPictureInPicture();
                 const win = document.getElementById('app-grajacz');
-                if (win && typeof winManager !== 'undefined') {
-                    winManager.open('grajacz');
-                }
+                if (win && typeof winManager !== 'undefined') winManager.open('grajacz');
             } else {
-                // Wymagane jest odtwarzanie, aby wejść w PiP
                 if (grajaczApp.video.paused) {
                     await grajaczApp.video.play();
                     grajaczApp.isPlaying = true;
                     document.getElementById('grajacz-btn-play').innerText = '⏸';
                 }
                 const win = document.getElementById('app-grajacz');
-                if (win && typeof winManager !== 'undefined') {
-                    winManager.minimize('grajacz');
-                }
+                if (win && typeof winManager !== 'undefined') winManager.minimize('grajacz');
                 await grajaczApp.video.requestPictureInPicture();
             }
         } catch(e) {
@@ -660,7 +718,6 @@ const grajaczApp = {
     renderBookmarks: () => {}
 };
 
-// Rejestracja w systemie
 setTimeout(() => {
     if (typeof apps !== 'undefined') {
         apps.loadGrajacz = grajaczApp.init;
