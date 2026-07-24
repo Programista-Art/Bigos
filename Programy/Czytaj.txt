@@ -1,0 +1,8 @@
+Aby zainstalować aplikację w BigOs
+1.Otwórz w BigOs program Menedżer aplikacji i kliknij przycisk "Zainstaluj z pliku.js" i wybierz plik programu z tego folderu
+Program zainstaluje się i zapisze się w bazie danych IndexedDB 
+Formatowanie systemu BigOs usunie wszystkie zainstalowane programy gry, dlatego warto gdzieś zapisać plik aplikacji js.
+
+
+Można wyczyścić całkowicie bazę danych IndexedDB w przeglądarce
+1. Kliknij w przeglądarce F12-> Aplikacja -> Pamięć kliknij przycisk Wyczyść dane witryny wszystkie zainstalowane programy usuną się z systemu BigOs/
