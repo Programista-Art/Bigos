@@ -9,6 +9,10 @@ const kombinatorApp = {
         { name: 'Ferrari', url: 'tapety/ferrari.webp' },
         { name: 'Abstrakcja', url: 'tapety/abstrakcja.webp' },
         { name: 'avocado-avoraiser', url: 'tapety/avocado-avoraiser.webp' },
+        { name: 'avocado-core', url: 'tapety/bursztyn1.webp' },
+        { name: 'avocado-core', url: 'tapety/bursztyn2.webp' },
+        { name: 'avocado-core', url: 'tapety/bursztyn3.webp' },
+        { name: 'avocado-core', url: 'tapety/bursztyn4.webp' },
         { name: 'avocado-core', url: 'tapety/avocado-core.webp' }
     ],
     

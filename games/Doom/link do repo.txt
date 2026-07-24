@@ -1,0 +1,1 @@
+Tutaj można pobrać aktualny plik .wasm https://github.com/jacobenget/doom.wasm

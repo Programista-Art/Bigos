@@ -52,19 +52,7 @@
             <!-- Zresetuj system -->
             <button onclick="auth.resetPassword()" class="mb-12 text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Zresetuj system (Format)</button>
 
-            <!-- MIEJSCE NA BANER REKLAMOWY (AdSense) -->
-            <div class="bg-black/40 backdrop-blur-md border border-white/10 p-2 rounded-xl flex flex-col items-center justify-center shadow-2xl" style="min-width: 320px; min-height: 100px;">
-                <span class="text-[10px] text-gray-400 mb-1 tracking-widest uppercase font-bold">Reklama</span>
-                
-                <!-- Kod jednostki reklamowej AdSense -->
-                <ins class="adsbygoogle"
-                     style="display:inline-block;width:320px;height:100px"
-                     data-ad-client="ca-pub-TUTAJ_WPISZESZ_SWOJ_KOD_KLIENta"
-                     data-ad-slot="TUTAJ_KOD_SLOTU"></ins>
-                <script>
-                     (adsbygoogle = window.adsbygoogle || []).push({});
-                </script>
-                <!-- Koniec kodu AdSense -->
+           
             </div>
         </div>
     </div>
@@ -440,19 +428,7 @@
     </div>
     
     <!-- SKRYBA - Notatnik -->
- <div id="app-skryba" class="window hidden"></div>
-
-
-   <!-- 2. Szkicownik-->
-    <!-- <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
-        <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
-            <span class="text-sm font-bold">🎨 Artysta</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.maximize('app-szkicownik')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('app-szkicownik')" class="hover:bg-red-600 px-2 rounded">✖</button>
-            </div>
-        </div> -->
+ <div id="app-skryba" class="window hidden"></div>>
 
         <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
     <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
@@ -805,148 +781,266 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     
     <!-- MINIGRY -->
    <!-- 11. Pełzacz -->
-    <div id="app-pelzacz" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-green-700 dark:bg-green-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-pelzacz')" ontouchstart="winManager.startDrag(event, 'app-pelzacz')">
-            <span class="text-sm font-bold">🐍 Pełzacz</span>
+     <div id="app-pelzacz" class="window w-[340px] themed-app g-panel border g-border">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-pelzacz')" ontouchstart="winManager.startDrag(event, 'app-pelzacz')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">🐍 Pełzacz</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('pelzacz')" class="hover:bg-green-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('pelzacz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+                <button onclick="winManager.minimize('pelzacz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.close('pelzacz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
         </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="pelzacz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Wynik: 0</div>
+        <div class="p-4 flex flex-col items-center bg-black/10">
+            <div id="pelzacz-score" class="font-bold mb-2 g-text">Wynik: 0</div>
             <canvas id="canvas-pelzacz" width="300" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.pelzacz.init()" class="mt-4 bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-500 w-full shadow-md transition">Nowa Gra (Spacja)</button>
+            <button onclick="games.pelzacz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Nowa Gra (Spacja)</button>
         </div>
+    </div> 
+
+ <!-- 12. Murarz -->
+
+    <div id="app-murarz" class="window w-[440px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-murarz')" ontouchstart="winManager.startDrag(event, 'app-murarz')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">🧱 Murarz</span>
+
+            <div class="flex gap-2">
+
+                <button onclick="winManager.minimize('murarz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('murarz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
+            </div>
+
+        </div>
+
+        <div class="p-4 flex flex-col items-center bg-black/10">
+
+            <div id="murarz-score" class="font-bold mb-2 g-text">Klocki: 0</div>
+
+            <canvas id="canvas-murarz" width="400" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+
+            <button onclick="games.murarz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Myszka do sterowania)</button>
+
+        </div>
+
     </div>
 
-    <!-- 12. Murarz -->
-    <div id="app-murarz" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-yellow-700 dark:bg-yellow-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-murarz')" ontouchstart="winManager.startDrag(event, 'app-murarz')">
-            <span class="text-sm font-bold">🧱 Murarz</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('murarz')" class="hover:bg-yellow-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('murarz')" class="hover:bg-red-600 px-2 rounded">✖</button>
-            </div>
-        </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="murarz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Klocki: 0</div>
-            <canvas id="canvas-murarz" width="400" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.murarz.init()" class="mt-4 bg-yellow-600 text-white px-4 py-2 rounded font-bold hover:bg-yellow-500 w-full shadow-md transition">Start (Myszka do sterowania)</button>
-        </div>
-    </div>
 
     <!-- 13. Ufoludki -->
-    <div id="app-ufoludki" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-purple-700 dark:bg-purple-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-ufoludki')" ontouchstart="winManager.startDrag(event, 'app-ufoludki')">
-            <span class="text-sm font-bold">👾 Ufoludki</span>
+
+    <div id="app-ufoludki" class="window w-[440px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-ufoludki')" ontouchstart="winManager.startDrag(event, 'app-ufoludki')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">👾 Ufoludki</span>
+
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('ufoludki')" class="hover:bg-purple-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('ufoludki')" class="hover:bg-red-600 px-2 rounded">✖</button>
+
+                <button onclick="winManager.minimize('ufoludki')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('ufoludki')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
             </div>
+
         </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="ufoludki-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Punkty: 0</div>
+
+        <div class="p-4 flex flex-col items-center bg-black/10">
+
+            <div id="ufoludki-score" class="font-bold mb-2 g-text">Punkty: 0</div>
+
             <canvas id="canvas-ufoludki" width="400" height="400" class="bg-black rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.ufoludki.init()" class="mt-4 bg-purple-600 text-white px-4 py-2 rounded font-bold hover:bg-purple-500 w-full shadow-md transition">Start (Strzałki L/P + Spacja)</button>
+
+            <button onclick="games.ufoludki.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Strzałki L/P + Spacja)</button>
+
         </div>
+
     </div>
+
 
     <!-- 14. Odbijanka -->
-    <div id="app-odbijanka" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-orange-700 dark:bg-orange-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-odbijanka')" ontouchstart="winManager.startDrag(event, 'app-odbijanka')">
-            <span class="text-sm font-bold">🏓 Odbijanka</span>
+
+    <div id="app-odbijanka" class="window w-[440px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-odbijanka')" ontouchstart="winManager.startDrag(event, 'app-odbijanka')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">🏓 Odbijanka</span>
+
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('odbijanka')" class="hover:bg-orange-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('odbijanka')" class="hover:bg-red-600 px-2 rounded">✖</button>
+
+                <button onclick="winManager.minimize('odbijanka')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('odbijanka')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
             </div>
+
         </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="odbijanka-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Ty: 0 | Komputer: 0</div>
+
+        <div class="p-4 flex flex-col items-center bg-black/10">
+
+            <div id="odbijanka-score" class="font-bold mb-2 g-text">Ty: 0 | Komputer: 0</div>
+
             <canvas id="canvas-odbijanka" width="400" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.odbijanka.init()" class="mt-4 bg-orange-600 text-white px-4 py-2 rounded font-bold hover:bg-orange-500 w-full shadow-md transition">Start (Myszka góra/dół)</button>
+
+            <button onclick="games.odbijanka.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Myszka góra/dół)</button>
+
         </div>
+
     </div>
+
 
     <!-- 15. Trzepotek -->
-    <div id="app-trzepotek" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-sky-500 dark:bg-sky-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-trzepotek')" ontouchstart="winManager.startDrag(event, 'app-trzepotek')">
-            <span class="text-sm font-bold">🐦 Trzepotek</span>
+
+    <div id="app-trzepotek" class="window w-[340px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-trzepotek')" ontouchstart="winManager.startDrag(event, 'app-trzepotek')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">🐦 Trzepotek</span>
+
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('trzepotek')" class="hover:bg-sky-400 px-2 rounded">_</button>
-                <button onclick="winManager.close('trzepotek')" class="hover:bg-red-600 px-2 rounded">✖</button>
+
+                <button onclick="winManager.minimize('trzepotek')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('trzepotek')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
             </div>
+
         </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="trzepotek-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Punkty: 0</div>
-            <canvas id="canvas-trzepotek" width="300" height="400" class="bg-sky-200 dark:bg-sky-900 rounded shadow-inner cursor-pointer touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.trzepotek.init()" class="mt-4 bg-sky-500 text-white px-4 py-2 rounded font-bold hover:bg-sky-400 w-full shadow-md transition">Start (Klik/Spacja)</button>
+
+        <div class="p-4 flex flex-col items-center bg-black/10">
+
+            <div id="trzepotek-score" class="font-bold mb-2 g-text">Punkty: 0</div>
+
+            <canvas id="canvas-trzepotek" width="300" height="400" class="bg-sky-900 rounded shadow-inner cursor-pointer touch-none outline-none" tabindex="0"></canvas>
+
+            <button onclick="games.trzepotek.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Klik/Spacja)</button>
+
         </div>
+
     </div>
+
 
     <!-- 16. Ścigacz -->
-    <div id="app-scigacz" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-red-700 dark:bg-red-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-scigacz')" ontouchstart="winManager.startDrag(event, 'app-scigacz')">
-            <span class="text-sm font-bold">🏎️ Ścigacz</span>
+
+    <div id="app-scigacz" class="window w-[340px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-scigacz')" ontouchstart="winManager.startDrag(event, 'app-scigacz')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">🏎️ Ścigacz</span>
+
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('scigacz')" class="hover:bg-red-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('scigacz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+
+                <button onclick="winManager.minimize('scigacz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('scigacz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
             </div>
+
         </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="scigacz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Dystans: 0</div>
+
+        <div class="p-4 flex flex-col items-center bg-black/10">
+
+            <div id="scigacz-score" class="font-bold mb-2 g-text">Dystans: 0</div>
+
             <canvas id="canvas-scigacz" width="300" height="400" class="bg-gray-500 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.scigacz.init()" class="mt-4 bg-red-600 text-white px-4 py-2 rounded font-bold hover:bg-red-500 w-full shadow-md transition">Start (Strzałki L/P)</button>
+
+            <button onclick="games.scigacz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Strzałki L/P)</button>
+
         </div>
+
     </div>
+
 
     <!-- 17. Bombiarz -->
-    <div id="app-bombiarz" class="window w-[340px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-gray-800 dark:bg-gray-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-bombiarz')" ontouchstart="winManager.startDrag(event, 'app-bombiarz')">
-            <span class="text-sm font-bold">💣 Bombiarz</span>
+
+    <div id="app-bombiarz" class="window w-[340px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-bombiarz')" ontouchstart="winManager.startDrag(event, 'app-bombiarz')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">💣 Bombiarz</span>
+
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('bombiarz')" class="hover:bg-gray-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('bombiarz')" class="hover:bg-red-600 px-2 rounded">✖</button>
+
+                <button onclick="winManager.minimize('bombiarz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('bombiarz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
             </div>
+
         </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="bombiarz-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Punkty: 0</div>
+
+        <div class="p-4 flex flex-col items-center bg-black/10">
+
+            <div id="bombiarz-score" class="font-bold mb-2 g-text">Punkty: 0</div>
+
             <canvas id="canvas-bombiarz" width="300" height="300" class="bg-green-800 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.bombiarz.init()" class="mt-4 bg-gray-800 text-white px-4 py-2 rounded font-bold hover:bg-gray-700 w-full shadow-md transition">Start (Strzałki + Spacja)</button>
+
+            <button onclick="games.bombiarz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Strzałki + Spacja)</button>
+
         </div>
+
     </div>
+
 
     <!-- 18. Kółko i Krzyżyk -->
-    <div id="app-kolko" class="window w-[300px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-teal-700 dark:bg-teal-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-kolko')" ontouchstart="winManager.startDrag(event, 'app-kolko')">
-            <span class="text-sm font-bold">🎮 Kółko i Krzyżyk</span>
+
+    <div id="app-kolko" class="window w-[300px] themed-app g-panel border g-border">
+
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-kolko')" ontouchstart="winManager.startDrag(event, 'app-kolko')">
+
+            <span class="text-sm font-bold g-accent drop-shadow-md">🎮 Kółko i Krzyżyk</span>
+
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('kolko')" class="hover:bg-teal-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('kolko')" class="hover:bg-red-600 px-2 rounded">✖</button>
+
+                <button onclick="winManager.minimize('kolko')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+
+                <button onclick="winManager.close('kolko')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+
             </div>
+
         </div>
-        <div class="p-5 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="tic-status" class="font-bold mb-4 text-gray-700 dark:text-gray-200 text-lg">Tura: X</div>
-            <div class="grid grid-cols-3 gap-2 bg-gray-200 dark:bg-gray-800 p-2 rounded-lg shadow-inner touch-none" id="tic-board"></div>
-            <button onclick="apps.ticInit()" class="mt-5 bg-teal-600 text-white px-4 py-2 rounded font-bold hover:bg-teal-500 w-full shadow-md transition">Rozpocznij od nowa / Start</button>
+
+        <div class="p-5 flex flex-col items-center bg-black/10">
+
+            <div id="tic-status" class="font-bold mb-4 g-text text-lg">Tura: X</div>
+
+            <div class="grid grid-cols-3 gap-2 g-bg p-2 rounded-lg shadow-inner touch-none border g-border" id="tic-board"></div>
+
+            <button onclick="apps.ticInit()" class="mt-5 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Rozpocznij od nowa / Start</button>
+
         </div>
+
+    </div> 
+
+<!-- 19. Czołgi (Battle City) -->
+
+<div id="app-tank" class="window w-[700px] themed-app g-panel border g-border">
+
+    <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-tank')" ontouchstart="winManager.startDrag(event, 'app-tank')">
+
+        <span class="text-sm font-bold g-accent drop-shadow-md">🚜 Czołgi</span>
+
+        <div class="flex gap-2">
+            <button onclick="winManager.minimize('tank')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+            <button onclick="winManager.close('tank')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+        </div>
+
     </div>
 
-    <!-- 19. Czogi (Battle City) -->
-    <div id="app-tank" class="window w-[440px] bg-white dark:bg-gray-800 border dark:border-gray-700">
-        <div class="title-bar bg-zinc-700 dark:bg-zinc-900 text-white p-2 flex justify-between items-center" onmousedown="winManager.startDrag(event, 'app-tank')" ontouchstart="winManager.startDrag(event, 'app-tank')">
-            <span class="text-sm font-bold">🚜 Czogi (Battle City)</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.minimize('tank')" class="hover:bg-zinc-600 px-2 rounded">_</button>
-                <button onclick="winManager.close('tank')" class="hover:bg-red-600 px-2 rounded">✖</button>
-            </div>
-        </div>
-        <div class="p-4 flex flex-col items-center bg-gray-50 dark:bg-gray-800">
-            <div id="tank-score" class="font-bold mb-2 text-gray-700 dark:text-gray-200">Zniszczone Czogi: 0 | Pozostało: 10</div>
-            <canvas id="canvas-tank" width="390" height="390" class="bg-black rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
-            <button onclick="games.tank.init()" class="mt-4 bg-zinc-700 text-white px-4 py-2 rounded font-bold hover:bg-zinc-600 w-full shadow-md transition">Start (Strzałki + Spacja)</button>
-        </div>
+    <div class="p-4 flex flex-col items-center bg-black/10">
+
+        <!-- Zaktualizowana klasa i tekst początkowy dopasowany do theme.js -->
+        <div id="tank-score" class="font-bold mb-4 g-accent text-xl sm:text-3xl drop-shadow-md tracking-wider text-center">Lvl: 1 | Wynik: 0 | Wróg: 20 | Życia: 3</div>
+
+        <!-- Powiększone płótno do 650x650 -->
+        <canvas id="canvas-tank" width="650" height="650" class="bg-black rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+
+        <!-- Zaktualizowany przycisk, który po kliknięciu przełącza na menu w grze -->
+        <button onclick="games.tank.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full max-w-[320px] shadow-md transition border g-border hidden sm:block">🏠 Menu Gry</button>
+
     </div>
+
+</div>
 
 
     <!-- PASEK ZADAŃ -->
