@@ -44,6 +44,7 @@ const defaultApps = [
     { id: 'app_przelicznik', type: 'app', name: 'Przelicznik', icon: '🔄', appId: 'przelicznik' },
     { id: 'app_kompresor', type: 'app', name: 'Upychacz ZIP', icon: '🗜️', appId: 'kompresor' },
     { id: 'app_montazysta', type: 'app', name: 'Montażysta', icon: '🎬', appId: 'montazysta' },
+    { id: 'app_menadzer', type: 'app', name: 'Menedżer Aplikacji', icon: '⚙️', appId: 'menadzer' },
     { id: 'hasiok', type: 'folder', name: 'Hasiok', icon: '🗑️' }
 ];
 

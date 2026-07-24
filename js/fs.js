@@ -21,6 +21,7 @@ const bigosDB = {
         });
     },
     
+    
     async get(key) {
         try {
             const db = await this.open();
