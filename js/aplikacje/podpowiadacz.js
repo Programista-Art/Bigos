@@ -87,6 +87,7 @@ window.BigOSAppAPI = {
 };
 
 const MODELS_DB = {
+    simulated: [ { id: 'simulated-echo', name: 'Symulator Testowy (Offline)' } ],
     gemini_free: [ { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite (Darmowy)' } ],
     gemini_api: [ { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite (Szybki)' }, { id: 'gemini-3.5-flash', name: 'gemini-3.5-flash (Mądry)' } ],
     openai: [ { id: 'gpt-4o-mini', name: 'GPT-4o Mini' }, { id: 'gpt-4o', name: 'GPT-4o' } ],
@@ -102,6 +103,7 @@ const VOICES_DB = {
 
 const podpowiadaczApp = {
     messages: [], isSidebarOpen: false, isThinking: false,
+    currentAbortController: null,
     recognition: null, mediaRecorder: null, audioChunks: [], isRecording: false, isListeningBackground: false,
     activeAudio: null, currentTTSButton: null, pendingActionCallback: null, 
     
@@ -143,19 +145,30 @@ const podpowiadaczApp = {
         if (podpowiadaczApp.settings.wakeWordActive) podpowiadaczApp.startBackgroundListening();
 
         // --- AUTOLOADER ZAINSTALOWANYCH APLIKACJI Z INDEXED DB ---
+        // Installed packages run ONLY inside sandboxed frames — never as host scripts.
         setTimeout(() => {
             if (typeof fileSystem !== 'undefined' && !window._bigosInstalledAppsBooted) {
-                const installedScripts = fileSystem.filter(f => f.type === 'bigos_app_script');
-                installedScripts.forEach(script => {
-                    try { 
-                        const scriptEl = document.createElement('script');
-                        scriptEl.textContent = script.content;
-                        document.body.appendChild(scriptEl);
-                    } catch(e) { console.error("Błąd ładowania aplikacji z systemu:", e); }
-                });
                 window._bigosInstalledAppsBooted = true;
+                // Prefer the package store (authoritative). Legacy script blobs
+                // are migrated into packages once, then launched via the sandbox.
+                (async () => {
+                    try {
+                        if (typeof bigosSandbox !== 'undefined' && bigosSandbox.launchPackage && typeof bigosDB !== 'undefined' && bigosDB.listPackages) {
+                            const pkgs = await bigosDB.listPackages();
+                            for (const pkg of pkgs || []) {
+                                if (!pkg || !pkg.id) continue;
+                                // Register a launcher entry; do NOT auto-mount every app at boot.
+                                if (typeof defaultApps !== 'undefined' && !defaultApps.find(a => a.appId === pkg.id)) {
+                                    defaultApps.push({ id: 'app_' + pkg.id, type: 'app', name: pkg.name, icon: pkg.icon, appId: pkg.id });
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Błąd ładowania aplikacji z systemu:', e);
+                    }
+                })();
             }
-        }, 1500); 
+        }, 1500);
     },
 
     saveData: () => {
@@ -212,7 +225,7 @@ const podpowiadaczApp = {
         `;
         document.body.appendChild(modal);
 
-        document.getElementById('ai-install-confirm').onclick = () => {
+        document.getElementById('ai-install-confirm').onclick = async () => {
             const finalName = document.getElementById('ai-install-name').value || defaultName;
             const finalIcon = document.getElementById('ai-install-icon').value || defaultIcon;
 
@@ -223,39 +236,32 @@ const podpowiadaczApp = {
             modal.remove();
 
             try {
-                // Weryfikacja składni przed odpaleniem skryptu
-                try {
-                    new Function(code);
-                } catch (syntaxErr) {
-                    throw new Error(syntaxErr.message);
+                // Route through the isolated package pipeline — NEVER inject
+                // untrusted code as an executable host <script>.
+                if (typeof bigosSandbox === 'undefined' || !bigosSandbox.installPackage) {
+                    throw new Error('Moduł izolacji aplikacji niedostępny — instalacja odrzucona');
                 }
-                
-                // Wstrzyknięcie i uruchomienie w globalnym Scope
-                const scriptEl = document.createElement('script');
-                scriptEl.textContent = code;
-                document.body.appendChild(scriptEl);
-                
-                // Trwały zapis w bazie
-                if(typeof fileSystem !== 'undefined' && typeof fsManager !== 'undefined') {
-                    const existing = fileSystem.find(f => f.type === 'bigos_app_script' && f.content === code);
-                    if (!existing) {
-                        fileSystem.push({
-                            id: 'script_' + Date.now(),
-                            type: 'bigos_app_script',
-                            name: finalName,
-                            icon: finalIcon,
-                            content: code,
-                            parentId: 'system_hidden'
-                        });
-                        fsManager.save();
-                    }
+                const record = await bigosSandbox.installPackage(code, { source: 'bigai' });
+                if (!record || !record.id) throw new Error('Instalacja pakietu nie powiodła się');
+
+                // Visual registration (desktop icon + start menu) after durable persist.
+                if (typeof defaultApps !== 'undefined' && !defaultApps.find(a => a.appId === record.id)) {
+                    defaultApps.push({ id: 'app_' + record.id, type: 'app', name: record.name, icon: record.icon, appId: record.id });
                 }
-                
+                if (typeof fileSystem !== 'undefined' && !fileSystem.find(f => f.appId === record.id)) {
+                    fileSystem.push({
+                        id: 'app_' + record.id, type: 'app', name: record.name, icon: record.icon,
+                        appId: record.id, parentId: 'root', x: 30, y: 30
+                    });
+                    if (typeof fsManager !== 'undefined') await fsManager.save();
+                    if (typeof desktop !== 'undefined') desktop.render();
+                }
+
                 if(typeof apps !== 'undefined') apps.showToast('Zainstalowano', 'Aplikacja pomyślnie dodana do systemu!', 'success');
             } catch(e) {
                 console.error("Błąd instalacji:", e);
                 // System autodetekcji błędu dla użytkownika
-                if(typeof apps !== 'undefined') apps.showToast('Błąd Składni JS', 'Kod jest uszkodzony! Użyj przycisku "Popraw kod", aby AI naprawiło błąd.', 'error');
+                if(typeof apps !== 'undefined') apps.showToast('Błąd instalacji', 'Kod jest uszkodzony lub niebezpieczny! Użyj przycisku "Popraw kod", aby AI naprawiło błąd.', 'error');
             }
         };
     },
@@ -408,6 +414,7 @@ const podpowiadaczApp = {
                         <div>
                             <label class="block text-[10px] font-bold g-text-muted mb-1">Silnik Główny</label>
                             <select id="ai-provider" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeProvider()">
+                                <option value="simulated" ${podpowiadaczApp.settings.provider==='simulated'?'selected':''}>Symulator Testowy (Offline)</option>
                                 <option value="gemini_free" ${podpowiadaczApp.settings.provider==='gemini_free'?'selected':''}>Gemini (Darmowe wbudowane)</option>
                                 <option value="openrouter" ${podpowiadaczApp.settings.provider==='openrouter'?'selected':''}>OpenRouter (Multi-Model)</option>
                                 <option value="groq" ${podpowiadaczApp.settings.provider==='groq'?'selected':''}>Groq (Super Szybki Llama)</option>
@@ -416,7 +423,7 @@ const podpowiadaczApp = {
                             </select>
                         </div>
                         
-                        <div id="ai-key-container" class="${podpowiadaczApp.settings.provider==='gemini_free' ? 'opacity-30 pointer-events-none' : ''}">
+                        <div id="ai-key-container" class="${podpowiadaczApp.settings.provider==='gemini_free' || podpowiadaczApp.settings.provider==='simulated' ? 'opacity-30 pointer-events-none' : ''}">
                             <label class="block text-[10px] font-bold g-text-muted mb-1">Klucz API do Chatbota</label>
                             <input type="password" id="ai-apikey" placeholder="Wklej klucz (sk-..., AIza...)" value="${podpowiadaczApp.settings.apiKey}" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner" onchange="podpowiadaczApp.settings.apiKey=this.value; podpowiadaczApp.saveData();">
                         </div>
@@ -498,11 +505,12 @@ const podpowiadaczApp = {
                         <div id="ai-suggestions" class="flex gap-2 overflow-x-auto custom-scrollbar hidden pb-1 scroll-smooth"></div>
                         
                         <div class="w-full relative flex items-end gap-2">
+                            <button onclick="podpowiadaczApp.openAttachModal()" class="g-btn text-gray-400 hover:text-blue-400 transition rounded-xl w-11 h-[46px] flex items-center justify-center text-lg shrink-0 border g-border shadow-sm" title="Dołącz plik jako kontekst">📎</button>
                             <div class="flex-grow relative flex items-center">
                                 <textarea id="ai-chat-input" rows="1" placeholder="Napisz polecenie lub kliknij mikrofon..." class="w-full bg-white/5 dark:bg-black/40 border g-border rounded-xl pl-4 pr-12 py-3 text-sm g-text outline-none focus:border-blue-500 transition-colors custom-scrollbar resize-none h-[46px] shadow-inner leading-tight" onkeydown="podpowiadaczApp.handleInput(event)" oninput="podpowiadaczApp.showSuggestions(this.value)"></textarea>
                                 <button onclick="podpowiadaczApp.toggleDictation()" id="ai-mic-btn" class="absolute right-2 bottom-1.5 text-gray-400 hover:text-blue-400 transition p-2 rounded-full flex items-center justify-center text-lg h-8 w-8" title="Ręczne Dyktowanie Głosowe">🎤</button>
                             </div>
-                            <button onclick="podpowiadaczApp.sendMessage()" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl w-14 h-[46px] flex items-center justify-center text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0">↑</button>
+                            <button id="ai-send-btn" onclick="podpowiadaczApp.isThinking ? podpowiadaczApp.cancelRequest() : podpowiadaczApp.sendMessage()" class="${podpowiadaczApp.isThinking ? 'bg-red-600 hover:bg-red-500' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500'} text-white rounded-xl w-14 h-[46px] flex items-center justify-center text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0" title="${podpowiadaczApp.isThinking ? 'Zatrzymaj generowanie' : 'Wyślij wiadomość'}">${podpowiadaczApp.isThinking ? '⏹️' : '↑'}</button>
                         </div>
                     </div>
                 </div>
@@ -551,7 +559,7 @@ const podpowiadaczApp = {
         podpowiadaczApp.settings.provider = prov;
         
         const keyCont = document.getElementById('ai-key-container');
-        if (prov === 'gemini_free') keyCont.classList.add('opacity-30', 'pointer-events-none');
+        if (prov === 'gemini_free' || prov === 'simulated') keyCont.classList.add('opacity-30', 'pointer-events-none');
         else keyCont.classList.remove('opacity-30', 'pointer-events-none');
         
         podpowiadaczApp.settings.model = MODELS_DB[prov] ? MODELS_DB[prov][0].id : '';
@@ -894,8 +902,14 @@ const podpowiadaczApp = {
         const code = pre.textContent || pre.innerText;
 
         let errorMsg = "Ten kod nie działa lub ma błąd składni. ";
+        // Syntax-check without executing: use the sandbox literal parser when
+        // possible; otherwise report a generic fix prompt (no host eval).
         try {
-            new Function(code);
+            if (typeof bigosSandbox !== 'undefined' && bigosSandbox.parseLiteral) {
+                // Try to extract and parse the register() manifest as data.
+                const m = code.match(/BigOSAppAPI\.register\s*\(\s*(\{[\s\S]*?\})\s*\)/);
+                if (m) bigosSandbox.parseLiteral(m[1]);
+            }
             errorMsg += "Popraw interfejs, upewnij się, że poprawnie formatujesz Tailwind CSS i zamykasz wszystkie cudzysłowy i znaczniki HTML.";
         } catch (err) {
             errorMsg += "Wystąpił w nim błąd przy tworzeniu aplikacji: " + err.message + ". Najprawdopodobniej źle zamknąłeś cudzysłowy w atrybutach HTML albo uciąłeś kod. Upewnij się, że we właściwości \`html: ...\` zamykasz poprawnie stringi!";
@@ -1000,12 +1014,101 @@ const podpowiadaczApp = {
 
         if (podpowiadaczApp.isThinking) {
             const el = document.createElement('div');
-            el.className = `self-start g-panel bg-black/20 border border-blue-500/30 g-text rounded-2xl rounded-tl-sm p-4 text-sm max-w-[80%] shadow-md animate-pulse`;
-            el.innerHTML = `<div class="flex items-center gap-3"><span class="text-xl animate-spin inline-block">⚙️</span> <span class="font-mono text-xs text-blue-400">Przetwarzanie w chmurze...</span></div>`;
+            el.className = `self-start g-panel bg-black/20 border border-blue-500/30 g-text rounded-2xl rounded-tl-sm p-3.5 text-sm max-w-[80%] shadow-md flex items-center justify-between gap-4`;
+            el.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="text-xl animate-spin inline-block">⚙️</span>
+                    <span class="font-mono text-xs text-blue-400">Przetwarzanie zapytania...</span>
+                </div>
+                <button onclick="podpowiadaczApp.cancelRequest()" class="g-btn border-red-500/50 text-red-400 bg-red-600/10 hover:bg-red-500 hover:text-white text-[10px] px-3 py-1.5 rounded shadow-sm transition font-bold uppercase tracking-wider">Zatrzymaj</button>
+            `;
             chatBox.appendChild(el);
         }
 
+        const sendBtn = document.getElementById('ai-send-btn');
+        if (sendBtn) {
+            if (podpowiadaczApp.isThinking) {
+                sendBtn.className = 'bg-red-600 hover:bg-red-500 text-white rounded-xl w-14 h-[46px] flex items-center justify-center text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0';
+                sendBtn.innerText = '⏹️';
+                sendBtn.title = 'Zatrzymaj generowanie';
+            } else {
+                sendBtn.className = 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl w-14 h-[46px] flex items-center justify-center text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0';
+                sendBtn.innerText = '↑';
+                sendBtn.title = 'Wyślij wiadomość';
+            }
+        }
+
         chatBox.scrollTop = chatBox.scrollHeight;
+    },
+
+    cancelRequest: () => {
+        if (podpowiadaczApp.currentAbortController) {
+            podpowiadaczApp.currentAbortController.abort();
+            podpowiadaczApp.currentAbortController = null;
+        }
+        podpowiadaczApp.isThinking = false;
+        podpowiadaczApp.messages.push({
+            role: 'assistant',
+            text: '⏹️ Generowanie odpowiedzi zostało zatrzymane przez użytkownika.'
+        });
+        podpowiadaczApp.saveData();
+        podpowiadaczApp.renderChat();
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast('BigAI', 'Zatrzymano generowanie odpowiedzi.', 'info');
+        }
+    },
+
+    openAttachModal: () => {
+        const files = (typeof fileSystem !== 'undefined' ? fileSystem : []).filter(f => f && f.type === 'file');
+        const modalId = 'ai-attach-modal';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'fixed inset-0 bg-black/70 z-[10000] flex items-center justify-center backdrop-blur-sm p-4';
+        modal.innerHTML = `
+            <div class="g-panel p-5 rounded-2xl max-w-md w-full border g-border shadow-2xl flex flex-col max-h-[70vh]">
+                <h3 class="font-bold text-sm g-text mb-3 flex items-center gap-2 border-b g-border pb-2">
+                    <span>📎</span> Wybierz plik jako kontekst dla BigAI
+                </h3>
+                <div class="flex-grow overflow-y-auto custom-scrollbar flex flex-col gap-1.5 mb-4">
+                    ${files.length === 0 ? '<div class="text-xs g-text-muted p-4 text-center">Brak plików w systemie.</div>' : files.map(f => `
+                        <button class="flex items-center gap-2 p-2 rounded hover:bg-white/10 text-left g-text text-xs transition border border-transparent hover:border-blue-500/30" data-fid="${f.id}">
+                            <span class="text-base">${f.icon || '📄'}</span>
+                            <span class="font-medium truncate flex-grow">${typeof desktop !== 'undefined' ? desktop.escapeHTML(f.name) : f.name}</span>
+                            <span class="text-[10px] g-text-muted font-mono">${(f.content ? String(f.content).length : 0)} zn.</span>
+                        </button>
+                    `).join('')}
+                </div>
+                <div class="flex justify-end gap-2 shrink-0 pt-2 border-t g-border">
+                    <button id="ai-attach-cancel" class="px-4 py-2 g-btn rounded text-xs font-semibold hover:bg-white/10 transition">Anuluj</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#ai-attach-cancel').onclick = () => modal.remove();
+        modal.querySelectorAll('[data-fid]').forEach(btn => {
+            btn.onclick = () => {
+                const fid = btn.dataset.fid;
+                const file = files.find(x => x.id === fid);
+                if (file) {
+                    const input = document.getElementById('ai-chat-input');
+                    if (input) {
+                        const snippet = `[Plik: ${file.name}]\n${file.content || ''}\n\n`;
+                        input.value = snippet + input.value;
+                        input.style.height = '46px';
+                        input.style.height = Math.min(150, input.scrollHeight) + 'px';
+                        input.focus();
+                    }
+                    if (typeof apps !== 'undefined' && apps.showToast) {
+                        apps.showToast('BigAI', `Dołączono plik „${file.name}”`, 'info');
+                    }
+                }
+                modal.remove();
+            };
+        });
     },
 
     clearChat: () => {
@@ -1055,7 +1158,7 @@ const podpowiadaczApp = {
     },
 
     // ==================================================================
-    // INTEGRACJA Z SYSTEMEM
+    // INTEGRACJA Z SYSTEMEM (strukturalne, walidowane akcje)
     // ==================================================================
     extractCommands: (aiText) => {
         let cleanText = aiText;
@@ -1070,25 +1173,239 @@ const podpowiadaczApp = {
         return { cleanText, commands, mapQuery: null };
     },
 
-    runCommands: (commands) => {
-        commands.forEach(cmd => {
-            const action = cmd.action; const param = cmd.param;
+    ALLOWED_ACTIONS: {
+        open_app: true, close_app: true, set_theme: true, set_wallpaper: true,
+        open_file: true, write_file: true, create_app: true, format_system: true
+    },
+
+    validateCommand: (cmd) => {
+        if (!cmd || typeof cmd !== 'object') return { ok: false, error: 'empty command' };
+        if (!podpowiadaczApp.ALLOWED_ACTIONS[cmd.action]) {
+            return { ok: false, error: 'nieznana akcja: ' + cmd.action };
+        }
+        if (cmd.action === 'write_file') {
+            let parsed = cmd.param;
+            if (typeof parsed === 'string') {
+                try { parsed = JSON.parse(parsed); } catch (e) {
+                    return { ok: false, error: 'write_file wymaga poprawnego JSON w formacie {"name":"plik.txt","content":"tekst"}' };
+                }
+            }
+            if (!parsed || typeof parsed !== 'object') {
+                return { ok: false, error: 'write_file wymaga obiektu z polami name/id i content' };
+            }
+            const targetName = parsed.name || parsed.id;
+            if (!targetName || typeof targetName !== 'string') {
+                return { ok: false, error: 'write_file: brak nazwy lub id pliku' };
+            }
+            if (typeof parsed.content !== 'string') {
+                return { ok: false, error: 'write_file: pole content musi być ciągiem znaków' };
+            }
+            if (parsed.content.length > 500000) {
+                return { ok: false, error: 'write_file: treść pliku jest za długa' };
+            }
+            cmd.parsedParam = parsed;
+            return { ok: true };
+        }
+
+        const param = String(cmd.param == null ? '' : cmd.param);
+        if (param.length > 200) return { ok: false, error: 'parametr za długi' };
+        if (cmd.action === 'open_app' || cmd.action === 'close_app') {
+            if (!/^[a-zA-Z0-9_\-]+$/.test(param)) return { ok: false, error: 'nieprawidłowe id aplikacji' };
+        }
+        return { ok: true };
+    },
+
+    findFileByParam: (param) => {
+        const q = String(param).toLowerCase();
+        return (typeof fileSystem !== 'undefined' ? fileSystem : []).find(f =>
+            f && (f.id === param || (f.name || '').toLowerCase() === q || (f.name || '').toLowerCase().includes(q))
+        );
+    },
+
+    runCommands: async (commands) => {
+        const results = [];
+        for (const cmd of commands) {
+            const v = podpowiadaczApp.validateCommand(cmd);
+            if (!v.ok) {
+                results.push({ cmd, ok: false, error: v.error });
+                if (typeof apps !== 'undefined') apps.showToast('BigAI', 'Odrzucono akcję: ' + v.error, 'error');
+                continue;
+            }
+            const action = cmd.action;
+            const param = cmd.param;
             try {
                 if (action === 'open_app') {
-                    if (param.toLowerCase() === 'bigcut' && typeof BigCut !== 'undefined') BigCut.init();
-                    if(typeof winManager !== 'undefined') winManager.open(param.toLowerCase());
-                } 
-                else if (action === 'close_app') { if(typeof winManager !== 'undefined') winManager.close(param.toLowerCase()); }
-                else if (action === 'set_theme') { if(typeof themeManager !== 'undefined') themeManager.applyTheme(param); else if(typeof apps !== 'undefined') apps.setTheme(param); } 
+                    const id = param.toLowerCase();
+                    if (typeof defaultApps !== 'undefined' && !defaultApps.find(a => a.appId === id)) {
+                        results.push({ cmd, ok: false, error: 'aplikacja nie istnieje: ' + id });
+                        if (typeof apps !== 'undefined') apps.showToast('BigAI', 'Nie ma aplikacji o id: ' + id, 'error');
+                        continue;
+                    }
+                    if (typeof winManager !== 'undefined') winManager.open(id);
+                    results.push({ cmd, ok: true });
+                }
+                else if (action === 'close_app') {
+                    if (typeof winManager !== 'undefined') winManager.close(param.toLowerCase());
+                    results.push({ cmd, ok: true });
+                }
+                else if (action === 'set_theme') {
+                    if(typeof themeManager !== 'undefined') themeManager.applyTheme(param); else if(typeof apps !== 'undefined') apps.setTheme(param);
+                    results.push({ cmd, ok: true });
+                }
                 else if (action === 'set_wallpaper') {
                     const bg = document.getElementById('desktop-bg'); let url = param;
                     if(param === 'kosmos') url = 'tapety/kosmos.webp'; if(param === 'bigos') url = 'tapety/bigos.webp';
                     if(param === 'ferrari') url = 'tapety/ferrari.webp'; if(param === 'abstrakcja') url = 'tapety/abstrakcja.webp';
+                    const allowed = ['tapety/kosmos.webp','tapety/bigos.webp','tapety/ferrari.webp','tapety/abstrakcja.webp',
+                        'tapety/avocado-avoraiser.webp','tapety/avocado-core.webp','tapety/bursztyn1.webp','tapety/bursztyn2.webp',
+                        'tapety/bursztyn3.webp','tapety/bursztyn4.webp'];
+                    if (!allowed.includes(url)) { results.push({ cmd, ok: false, error: 'niedozwolona tapeta' }); continue; }
                     if (bg) { bg.style.backgroundImage = `url('${url}')`; bg.classList.add('custom-wp'); }
-                    bigosDB.set('bigos_bg', url); 
+                    if (typeof bigosDB !== 'undefined') bigosDB.set('bigos_bg', url);
+                    results.push({ cmd, ok: true });
                 }
-            } catch(e) {}
-        });
+                else if (action === 'open_file') {
+                    const f = podpowiadaczApp.findFileByParam(param);
+                    if (!f) { results.push({ cmd, ok: false, error: 'nie znaleziono pliku' }); continue; }
+                    if (typeof desktop !== 'undefined') desktop.executeItem(f);
+                    results.push({ cmd, ok: true, preview: { id: f.id, name: f.name } });
+                }
+                else if (action === 'format_system') {
+                    const confirmed = await new Promise((resolve) => {
+                        const modal = document.createElement('div');
+                        modal.className = 'fixed inset-0 bg-black/80 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm';
+                        modal.innerHTML = `
+                            <div class="g-panel p-6 rounded-2xl max-w-sm w-full border g-border shadow-2xl flex flex-col">
+                                <h3 class="font-bold text-base text-red-500 mb-2 flex items-center gap-2">
+                                    <span>⚠️</span> BigAI: Formatowanie systemu
+                                </h3>
+                                <p class="text-xs g-text-muted mb-4 leading-relaxed">
+                                    Ta operacja bezpowrotnie wyczyści magazyn danych BigOS: wszystkie pliki, historię wersji, zainstalowane aplikacje oraz zresetuje hasło i ustawienia do stanu początkowego.
+                                </p>
+                                <div class="flex gap-2 justify-end shrink-0 pt-2 border-t g-border">
+                                    <button data-x="no" class="px-4 py-2 g-btn rounded text-xs font-semibold hover:bg-white/10 transition">Anuluj</button>
+                                    <button data-x="yes" class="px-5 py-2 bg-red-600 hover:bg-red-500 text-white rounded font-bold text-xs shadow-lg transition">Potwierdź formatowanie</button>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                        modal.querySelector('[data-x="no"]').onclick = () => { modal.remove(); resolve(false); };
+                        modal.querySelector('[data-x="yes"]').onclick = () => { modal.remove(); resolve(true); };
+                    });
+                    if (!confirmed) { results.push({ cmd, ok: false, error: 'anulowano' }); continue; }
+                    if (typeof bigosMaintenance === 'undefined') {
+                        results.push({ cmd, ok: false, error: 'moduł konserwacji niedostępny' });
+                        continue;
+                    }
+                    const fmtRes = await bigosMaintenance.formatSystem({ confirm: false });
+                    if (fmtRes && fmtRes.ok) results.push({ cmd, ok: true });
+                    else results.push({ cmd, ok: false, error: (fmtRes && fmtRes.message) || 'formatowanie nie powiodło się' });
+                }
+                else if (action === 'write_file') {
+                    const target = cmd.parsedParam || (typeof param === 'object' && param !== null ? param : { name: param });
+                    const targetName = String(target.name || target.id || '');
+                    const newContent = typeof target.content === 'string' ? target.content : '';
+                    const existingFile = podpowiadaczApp.findFileByParam(targetName) ||
+                        (target.id ? (typeof fileSystem !== 'undefined' ? fileSystem.find(x => x.id === target.id) : null) : null);
+                    const oldContent = existingFile ? (typeof existingFile.content === 'string' ? existingFile.content : '') : '(Nowy plik)';
+
+                    const confirmed = await new Promise((resolve) => {
+                        const modal = document.createElement('div');
+                        modal.className = 'fixed inset-0 bg-black/75 z-[10000] flex items-center justify-center p-4 backdrop-blur-sm';
+                        modal.innerHTML = `
+                            <div class="g-panel p-6 rounded-2xl max-w-lg w-full border g-border shadow-2xl flex flex-col max-h-[80vh]">
+                                <h3 class="font-bold text-base g-text mb-2 flex items-center gap-2">
+                                    <span>📝</span> BigAI: Potwierdź zapis pliku „${typeof desktop !== 'undefined' ? desktop.escapeHTML(targetName) : targetName}”
+                                </h3>
+                                <p class="text-xs g-text-muted mb-3">AI proponuje modyfikację zawartości pliku. Przejrzyj różnice przed zatwierdzeniem:</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-grow overflow-hidden mb-4">
+                                    <div class="flex flex-col min-h-0">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">Poprzednia treść:</div>
+                                        <pre class="flex-grow p-2.5 bg-black/60 rounded text-gray-300 font-mono text-xs overflow-auto border g-border max-h-48 leading-relaxed">${typeof desktop !== 'undefined' ? desktop.escapeHTML(oldContent) : oldContent}</pre>
+                                    </div>
+                                    <div class="flex flex-col min-h-0">
+                                        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 mb-1">Nowa treść (BigAI):</div>
+                                        <pre class="flex-grow p-2.5 bg-black/60 rounded text-emerald-300 font-mono text-xs overflow-auto border g-border max-h-48 leading-relaxed">${typeof desktop !== 'undefined' ? desktop.escapeHTML(newContent) : newContent}</pre>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 justify-end shrink-0 pt-2 border-t g-border">
+                                    <button data-x="no" class="px-4 py-2 g-btn rounded text-xs font-semibold hover:bg-white/10 transition">Odrzuć</button>
+                                    <button data-x="yes" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold text-xs shadow-lg transition">Zastosuj zmianę</button>
+                                </div>
+                            </div>
+                        `;
+                        document.body.appendChild(modal);
+                        modal.querySelector('[data-x="no"]').onclick = () => { modal.remove(); resolve(false); };
+                        modal.querySelector('[data-x="yes"]').onclick = () => { modal.remove(); resolve(true); };
+                    });
+
+                    if (!confirmed) {
+                        results.push({ cmd, ok: false, error: 'odrzucono przez użytkownika' });
+                        continue;
+                    }
+
+                    let f = existingFile;
+                    let before = oldContent;
+                    if (!f) {
+                        f = {
+                            id: 'file_' + Date.now(),
+                            type: 'file',
+                            name: targetName.endsWith('.txt') ? targetName : targetName + '.txt',
+                            icon: '📄',
+                            parentId: 'root',
+                            content: newContent,
+                            x: 40,
+                            y: 40
+                        };
+                        if (typeof fileSystem !== 'undefined') fileSystem.push(f);
+                        before = '';
+                    } else {
+                        if (typeof bigosDocHistory !== 'undefined') {
+                            const snap = await bigosDocHistory.snapshot(f.id, before, 'przed-zmiana-bigai');
+                            if (snap && snap.ok === false) {
+                                results.push({ cmd, ok: false, error: 'nie udało się zapisać kopii undo: ' + (snap.error || '') });
+                                continue;
+                            }
+                        }
+                        f.content = newContent;
+                    }
+
+                    if (typeof fsManager !== 'undefined' && fsManager.markDirty) fsManager.markDirty(f.id);
+                    let saveOk = true;
+                    if (typeof fsManager !== 'undefined' && fsManager.save) {
+                        const saveRes = await fsManager.save();
+                        saveOk = !(Array.isArray(saveRes) && saveRes.some(r => r && r.ok === false));
+                    }
+                    if (!saveOk) {
+                        f.content = before;
+                        results.push({ cmd, ok: false, error: 'zapis nie powiódł się' });
+                        continue;
+                    }
+
+                    // Synchronize Skryba editor DOM and stats if this file is currently open
+                    if (typeof window.skrybaApp !== 'undefined' && window.skrybaApp.currentFileId === f.id) {
+                        const editor = document.getElementById('skryba-editor');
+                        const rawEditor = document.getElementById('skryba-raw-editor');
+                        if (editor) editor.innerHTML = newContent;
+                        if (rawEditor) rawEditor.value = newContent;
+                        if (typeof window.skrybaApp.updateStats === 'function') window.skrybaApp.updateStats();
+                        if (typeof window.skrybaApp.renderSidebar === 'function') window.skrybaApp.renderSidebar();
+                        window.skrybaApp.isDirty = false;
+                        const statusEl = document.getElementById('skryba-save-status');
+                        if (statusEl) statusEl.innerHTML = '<span class="text-emerald-400">● Zapisano (BigAI)</span>';
+                    }
+
+                    if (typeof apps !== 'undefined') {
+                        apps.showToast('BigAI', 'Plik został pomyślnie zaktualizowany.', 'success');
+                    }
+                    results.push({ cmd, ok: true, undoAvailable: true, fileId: f.id });
+                }
+            } catch (e) {
+                results.push({ cmd, ok: false, error: e.message });
+                if (typeof apps !== 'undefined') apps.showToast('BigAI', 'Błąd akcji: ' + e.message, 'error');
+            }
+        }
+        return results;
     },
 
     // ==================================================================
@@ -1169,9 +1486,34 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
         const mod = podpowiadaczApp.settings.isCustomModel ? podpowiadaczApp.settings.customModel : podpowiadaczApp.settings.model;
 
         let responseText = "Wystąpił błąd po stronie serwera.";
+        podpowiadaczApp.currentAbortController = new AbortController();
+        const signal = podpowiadaczApp.currentAbortController.signal;
 
         try {
-            if (prov === 'gemini_free' || prov === 'gemini_api') {
+            if (prov === 'simulated') {
+                const lower = userText.toLowerCase();
+                if (lower.includes('aplikacj') || lower.includes('program') || lower.includes('kalkulator')) {
+                    responseText = `Oto wygenerowana aplikacja na Twoje życzenie:\n\n\`\`\`javascript\nwindow.BigOSAppAPI.register({\n    id: 'kalkulator_demo',\n    name: 'Kalkulator Demo',\n    icon: '🧮',\n    width: '320px',\n    height: 'auto',\n    html: \`\n        <div class="flex flex-col gap-2 p-2">\n            <input type="number" id="demo_num" class="g-bg g-text p-2 rounded border g-border" value="10">\n            <button onclick="window.KalkulatorDemo.podwoj()" class="g-btn p-2 rounded">Podwój</button>\n            <div id="demo_res" class="g-text font-bold">Wynik: 20</div>\n        </div>\n    \`,\n    globalName: 'KalkulatorDemo',\n    global: {\n        podwoj: () => {\n            const val = parseFloat(document.getElementById('demo_num').value) || 0;\n            document.getElementById('demo_res').innerText = 'Wynik: ' + (val * 2);\n        }\n    }\n});\n\`\`\``;
+                } else if (lower.includes('otwórz') || lower.includes('uruchom')) {
+                    const appMatch = lower.match(/(?:otwórz|uruchom)\s+([a-zA-Z0-9_\-]+)/);
+                    const appName = appMatch ? appMatch[1] : 'kalkulator';
+                    responseText = `[BIGOS:open_app:${appName}] Otwieram aplikację ${appName}.`;
+                } else if (lower.includes('zamknij')) {
+                    const appMatch = lower.match(/zamknij\s+([a-zA-Z0-9_\-]+)/);
+                    const appName = appMatch ? appMatch[1] : 'kalkulator';
+                    responseText = `[BIGOS:close_app:${appName}] Zamykam aplikację ${appName}.`;
+                } else if (lower.includes('motyw')) {
+                    const theme = lower.includes('jasn') ? 'light' : 'dark';
+                    responseText = `[BIGOS:set_theme:${theme}] Zmieniam motyw na ${theme}.`;
+                } else if (lower.includes('tapet')) {
+                    responseText = `[BIGOS:set_wallpaper:kosmos] Ustawiam tapetę na kosmos.`;
+                } else if (lower.includes('napisz plik') || lower.includes('edytuj plik')) {
+                    responseText = `[BIGOS:write_file:{"name":"notatka.txt","content":"Zawartość wygenerowana przez Symulator BigAI."}] Zapisuję plik notatka.txt.`;
+                } else {
+                    responseText = `[Symulator BigAI] Otrzymałem polecenie: "${userText}". BigOS jest w pełni sprawny i gotowy do działania.`;
+                }
+            }
+            else if (prov === 'gemini_free' || prov === 'gemini_api') {
                 const actualKey = prov === 'gemini_free' ? '' : key;
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${actualKey}`;
                 
@@ -1199,7 +1541,7 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
 
                 for (let i = 0; i < 3; i++) {
                     try {
-                        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal });
                         const data = await response.json();
                         if (response.ok) {
                             let textParts = data.candidates?.[0]?.content?.parts?.filter(p => p.text)?.map(p => p.text) || [];
@@ -1209,6 +1551,7 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                             if(i === 2) throw new Error(data.error?.message || response.statusText);
                         }
                     } catch (e) {
+                        if (e.name === 'AbortError') throw e;
                         if(i === 2) throw e;
                         await new Promise(r => setTimeout(r, 1000));
                     }
@@ -1218,7 +1561,8 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${key}`, "HTTP-Referer": window.location.href, "X-OpenRouter-Title": "BigOS Browser", "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] })
+                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] }),
+                    signal
                 });
                 const data = await response.json();
                 if(!response.ok) throw new Error(`OpenRouter: ${data.error?.message || response.statusText}`);
@@ -1228,7 +1572,8 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                 const response = await fetch("https://api.openai.com/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] })
+                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] }),
+                    signal
                 });
                 const data = await response.json();
                 if(!response.ok) throw new Error(`OpenAI: ${data.error?.message || response.statusText}`);
@@ -1238,7 +1583,8 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] })
+                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] }),
+                    signal
                 });
                 const data = await response.json();
                 if(!response.ok) throw new Error(`Groq: ${data.error?.message || response.statusText}`);
@@ -1246,8 +1592,13 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
             }
 
         } catch (error) {
+            if (error && error.name === 'AbortError') {
+                return; // Anulowano przez użytkownika
+            }
             console.error(error);
             responseText = `⚠️ **Błąd API (${prov}):** ${error.message}\n\nUpewnij się, że wpisany klucz jest prawidłowy.`;
+        } finally {
+            podpowiadaczApp.currentAbortController = null;
         }
 
         responseText = responseText.replace(/```python\n[\s\S]*?\n```/gi, '').trim();
@@ -1278,5 +1629,19 @@ document.addEventListener('input', function (e) {
         else { e.target.style.overflowY = 'hidden'; }
     }
 });
+
+podpowiadaczApp.MODELS_DB = MODELS_DB;
+podpowiadaczApp.VOICES_DB = VOICES_DB;
+
+if (typeof window !== 'undefined') {
+    window.MODELS_DB = MODELS_DB;
+    window.VOICES_DB = VOICES_DB;
+    window.podpowiadaczApp = podpowiadaczApp;
+}
+if (typeof globalThis !== 'undefined') {
+    globalThis.MODELS_DB = MODELS_DB;
+    globalThis.VOICES_DB = VOICES_DB;
+    globalThis.podpowiadaczApp = podpowiadaczApp;
+}
 
 setTimeout(podpowiadaczApp.init, 500);

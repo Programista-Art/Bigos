@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Clean install from lockfile
+        run: npm ci
+
+      - name: Syntax check (app + Programy examples)
+        run: npm run check:syntax
+
+      - name: Unit tests (production modules)
+        run: npm test
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox
+
+      - name: Browser tests (Chromium + Firefox)
+        run: npm run test:browser
+
+      - name: Build CSS (Tailwind)
+        run: npm run build:css

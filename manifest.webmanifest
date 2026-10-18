@@ -1,0 +1,48 @@
+{
+  "name": "BigOS — Przeglądarkowy System Operacyjny",
+  "short_name": "BigOS",
+  "description": "Wirtualny system operacyjny w przeglądarce: pliki, aplikacje, gry i BigAI.",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#111827",
+  "theme_color": "#111827",
+  "lang": "pl",
+  "categories": ["productivity", "utilities", "games"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Skryba",
+      "short_name": "Skryba",
+      "url": "./index.html#app=skryba",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Aktówka",
+      "short_name": "Pliki",
+      "url": "./index.html#app=aktowka",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

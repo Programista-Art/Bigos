@@ -702,7 +702,13 @@ const pogodynkaApp = {
     // WIDGET I DŹWIĘKI
     // ==================================================================
     renderWidget: () => {
+        let cur = pogodynkaApp.lastData?.current;
         let w = document.getElementById('pogodynka-widget');
+        if (!cur) {
+            if (w) w.classList.add('hidden');
+            return;
+        }
+
         if (!w) {
             w = document.createElement('div');
             w.id = 'pogodynka-widget';
@@ -710,12 +716,10 @@ const pogodynkaApp = {
             w.onclick = () => { if(typeof winManager !== 'undefined') winManager.open('pogodynka'); };
             document.body.appendChild(w);
         }
-        
-        let cur = pogodynkaApp.lastData?.current;
-        if(!cur) return;
-        
+        w.classList.remove('hidden');
+
         let iconObj = pogodynkaApp.getIcon(cur.weather_code, cur.is_day);
-        
+
         w.innerHTML = `
             <div class="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
             <div class="text-2xl drop-shadow-md relative z-10">${iconObj.icon}</div>

@@ -1,0 +1,19 @@
+{
+  "name": "bigos",
+  "version": "2.0.1",
+  "private": true,
+  "description": "BigOS — przeglądarkowy system operacyjny (Vanilla JS + IndexedDB + localStorage)",
+  "license": "MIT",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.js -i css/tw-input.css -o css/bigos-tw.css --minify",
+    "check:syntax": "node scripts/check-syntax.js",
+    "test": "node tests/run-tests.js",
+    "test:browser": "node tests/run-browser-tests.js",
+    "serve": "python -m http.server 8080",
+    "validate": "npm run build:css && npm run check:syntax && npm test"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17",
+    "playwright": "1.49.1"
+  }
+}

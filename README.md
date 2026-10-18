@@ -71,9 +71,11 @@ System został zbudowany od zera bez użycia ciężkich frameworków (React/Vue/
 
 * **Frontend:** HTML5, Vanilla JavaScript (ES6+), CSS3
 
-* **Stylowanie:** Tailwind CSS
+* **Stylowanie:** Tailwind CSS (lokalny build `css/bigos-tw.css` — bez CDN)
 
-* **Pamięć:** IndexedDB (baza plików), LocalStorage (szybki cache)
+* **Pamięć:** IndexedDB (baza plików, wersjonowany schemat v2), LocalStorage (szybki cache)
+
+* **PWA:** `manifest.webmanifest` + `sw.js` (offline, kontrolowane aktualizacje)
 
 * **Zewnętrzne Biblioteki:** `JSZip` (archiwa), `FFmpeg.wasm` (eksport wideo), `jsmediatags` (metadane MP3), `exif-js` (metadane zdjęć), `Leaflet` (mapy).
 
@@ -87,6 +89,20 @@ System został zbudowany od zera bez użycia ciężkich frameworków (React/Vue/
 
 3. Otwórz plik `index.html` w dowolnej nowoczesnej przeglądarce (Chrome, Edge, Firefox, Safari).
    *Uwaga: Niektóre zaawansowane funkcje, jak pobieranie zewnętrznych czcionek czy map, mogą wymagać uruchomienia lokalnego serwera (np. za pomocą rozszerzenia Live Server w VS Code). lub jak masz zainstalowany python to w folderze z Bigosem otwórz cmd i wpisz polecenie python -m http.server i wejśź do przeglądarki wpisz localhost:8000*
+
+### Komendy deweloperskie
+
+```bash
+npm install
+npm run build:css      # lokalny Tailwind CSS
+npm run check:syntax   # kontrola składni JS
+npm test               # testy regresyjne rdzenia
+npm run test:browser   # testy przeglądarkowe (Playwright)
+npm run validate       # składnia + testy
+```
+
+Pełna dokumentacja techniczna: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**  
+(magazynowanie, migracje, backup, offline, cykl życia aplikacji, uprawnienia pakietów, ograniczenia przeglądarek).
 
 
 ## 🤝 Społeczność i Kontakt

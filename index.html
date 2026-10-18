@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="BigOS — przeglądarkowy system operacyjny (WebOS) z aplikacjami, grami i BigAI.">
+    <meta name="theme-color" content="#111827">
     <title>Bigos OS</title>
       <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-        }
-    </script>
- <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+      <link rel="stylesheet" href="css/bigos-tw.css">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍲</text></svg>">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
 </head>
 <body class="w-screen h-screen text-gray-800 dark:text-gray-100 bg-black transition-colors duration-300">
 
@@ -28,7 +27,7 @@
     </div>
 
    <!-- EKRAN LOGOWANIA / BLOKADY -->
-    <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9999] flex flex-col items-center justify-center text-white bg-cover bg-center transition-opacity duration-500" style="background-image: url('tapety/bigos.jpg');">
+    <div id="login-screen" class="absolute inset-0 bg-gray-900 z-[9999] flex flex-col items-center justify-center text-white bg-cover bg-center transition-opacity duration-500" style="background-image: url('tapety/bigos.webp');">
         <!-- Ciemna nakładka z rozmyciem tła -->
         <div class="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
         
@@ -50,7 +49,11 @@
             </div>
             
             <!-- Zresetuj system -->
-            <button onclick="auth.resetPassword()" class="mb-12 text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Zresetuj system (Format)</button>
+            <div class="mb-12 flex flex-col gap-2 w-full">
+                <button onclick="auth.resetPassword()" class="text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Formatuj system (usuń dane BigOS)</button>
+                <button onclick="auth.resetPasswordOnly()" class="text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Reset hasła (zachowaj pliki)</button>
+                <button onclick="auth.resetSettings()" class="text-xs text-white/40 hover:text-white transition-colors bg-black/20 hover:bg-black/40 px-4 py-2 rounded-full">Reset ustawień (zachowaj pliki i hasło)</button>
+            </div>
 
            
             </div>
@@ -75,96 +78,286 @@
     <!-- OKNA APLIKACJI (Z-index 50+)                   -->
     <!-- ============================================== -->
    
-    <!-- EKRAN POWITALNY -->
-    <div id="app-powitanie" class="window w-[650px] h-[450px] bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333]">
+    <!-- EKRAN POWITALNY (BigOS v2.0.1) -->
+    <div id="app-powitanie" class="window w-[750px] h-[520px] themed-app g-panel border g-border shadow-2xl overflow-hidden hidden" data-pref-w="750px" data-pref-h="520px" style="width: 750px; height: 520px;">
         <!-- Pasek tytułowy -->
-        <div class="title-bar bg-blue-600 dark:bg-blue-800 text-white p-2 flex justify-between items-center border-b border-blue-700 dark:border-gray-900" onmousedown="winManager.startDrag(event, 'app-powitanie')" ontouchstart="winManager.startDrag(event, 'app-powitanie')">
-            <span class="text-sm font-bold">👋 Witaj w BigOS</span>
-            <div class="flex gap-2">
-                <button onclick="winManager.close('powitanie')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center bg-black/20 shrink-0 cursor-move select-none" onmousedown="winManager.startDrag(event, 'app-powitanie')" ontouchstart="winManager.startDrag(event, 'app-powitanie')">
+            <span class="text-sm font-bold g-accent drop-shadow-md flex items-center gap-2">
+                <span>👋</span> <span>Witaj w BigOS</span>
+                <span id="powitanie-version-badge" class="text-[11px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-bold ml-1">v2.0.1</span>
+            </span>
+            <div class="flex gap-1.5 items-center no-drag" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()">
+                <button onclick="winManager.minimize('powitanie')" class="g-icon-btn px-2 py-0.5 rounded hover:bg-white/10 transition text-xs focus:outline-none focus:ring-1 focus:ring-blue-400" title="Minimalizuj" aria-label="Minimalizuj">_</button>
+                <button id="powitanie-titlebar-close" onclick="winManager.close('powitanie')" class="text-red-500 hover:text-red-400 px-2 py-0.5 rounded hover:bg-red-500/20 font-bold transition text-xs focus:outline-none focus:ring-1 focus:ring-red-400" title="Zamknij" aria-label="Zamknij">✖</button>
             </div>
         </div>
-        
-        <!-- Zawartość główna -->
-        <div class="flex flex-grow overflow-hidden">
-            <!-- Sidebar (Nawigacja z lewej) -->
-            <div class="w-1/3 bg-gray-50 dark:bg-[#111] border-r border-gray-300 dark:border-[#333] flex flex-col py-2">
-                <div class="px-4 py-4 mb-2 flex items-center justify-center border-b border-gray-200 dark:border-[#222]">
-                    <span class="text-4xl font-bold text-gray-800 dark:text-white">Big<span class="text-blue-600">OS</span></span>
-                </div>
+
+        <!-- Główny układ z elastyczną nawigacją adaptującą się do szerokości okna -->
+        <div class="powitanie-main flex flex-row flex-grow overflow-hidden relative">
+            <!-- Pasek zakładek (sidebar w oknie szerokim, poziomy pasek w oknie wąskim) -->
+            <div class="powitanie-nav-container w-[190px] border-r g-border bg-black/10 flex flex-col p-2.5 shrink-0 overflow-y-auto custom-scrollbar gap-1.5">
+                <button id="powitanie-nav-start" onclick="powitanieApp.openTab('start')" class="powitanie-nav powitanie-nav-btn w-full text-left px-3 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition inline-flex items-center gap-2.5 g-text hover:bg-white/10 shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Ekran startowy">
+                    <span class="nav-icon text-lg">🚀</span> <span class="nav-text">Start</span>
+                </button>
+                <button id="powitanie-nav-news" onclick="powitanieApp.openTab('news')" class="powitanie-nav powitanie-nav-btn w-full text-left px-3 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition inline-flex items-center gap-2.5 g-text hover:bg-white/10 shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Informacje o wydaniu 2.0.1">
+                    <span class="nav-icon text-lg">✨</span> <span class="nav-text">Co nowego</span>
+                </button>
+                <button id="powitanie-nav-ai" onclick="powitanieApp.openTab('ai')" class="powitanie-nav powitanie-nav-btn w-full text-left px-3 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition inline-flex items-center gap-2.5 g-text hover:bg-white/10 shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Konfiguracja asystenta BigAI">
+                    <span class="nav-icon text-lg">🤖</span> <span class="nav-text">Moduł BigAI</span>
+                </button>
+                <button id="powitanie-nav-tips" onclick="powitanieApp.openTab('tips')" class="powitanie-nav powitanie-nav-btn w-full text-left px-3 py-2.5 rounded-lg font-bold text-xs sm:text-sm transition inline-flex items-center gap-2.5 g-text hover:bg-white/10 shrink-0 focus:outline-none focus:ring-2 focus:ring-blue-400" title="Wskazówki i diagnostyka">
+                    <span class="nav-icon text-lg">💡</span> <span class="nav-text">Porady</span>
+                </button>
+            </div>
+
+            <!-- Obszar treści (przewijany, nie zakrywa nawigacji ani kontrolek okna) -->
+            <div class="powitanie-content flex-grow relative overflow-y-auto custom-scrollbar p-5 sm:p-6 bg-black/5">
                 
-                <button id="powitanie-nav-start" onclick="powitanieApp.openTab('start')" class="powitanie-nav text-left px-4 py-3 hover:bg-gray-200 dark:hover:bg-[#222] transition text-sm text-gray-700 dark:text-gray-300">👋 Szybki Start</button>
-                <button id="powitanie-nav-nowosci" onclick="powitanieApp.openTab('nowosci')" class="powitanie-nav text-left px-4 py-3 hover:bg-gray-200 dark:hover:bg-[#222] transition text-sm text-gray-700 dark:text-gray-300">✨ Co nowego?</button>
-                <button id="powitanie-nav-autor" onclick="powitanieApp.openTab('autor')" class="powitanie-nav text-left px-4 py-3 hover:bg-gray-200 dark:hover:bg-[#222] transition text-sm text-gray-700 dark:text-gray-300">👨‍💻 Inne projekty</button>
-            </div>
-            
-            <!-- Główny panel po prawej -->
-            <div class="w-2/3 bg-white dark:bg-[#1a1a1a] p-6 overflow-y-auto relative">
-                <!-- Tab 1: Start -->
-                <div id="powitanie-tab-start" class="powitanie-tab flex flex-col items-center justify-center text-center h-full">
-                    <div class="text-6xl mb-4">🚀</div>
-                    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Witaj w systemie BigOS!</h2>
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">Bigos to, przeglądarkowy system operacyjny napisany od zera. Odkryj bogate aplikacje, narzędzia i gry zintegrowane w jednym środowisku!</p>
-                    <div class="flex gap-4">
-                        <button onclick="powitanieApp.openTab('nowosci')" class="bg-gray-200 dark:bg-[#333] hover:bg-gray-300 dark:hover:bg-[#444] text-gray-800 dark:text-white px-4 py-2 rounded shadow font-semibold transition">Sprawdź nowości</button>
-                        <button onclick="winManager.open('tapeciak'); winManager.close('powitanie')" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded shadow font-bold transition">Zmień Tapetę</button>
+                <!-- ZAKŁADKA 1: START -->
+                <div id="powitanie-tab-start" class="powitanie-tab w-full max-w-xl mx-auto flex flex-col items-center text-center gap-4">
+                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-blue-500/20 mb-1 transform rotate-1 select-none">
+                        🖥️
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <h1 class="text-2xl sm:text-3xl font-extrabold g-text mb-1 drop-shadow-md">Witaj w systemie BigOS!</h1>
+                        <p id="powitanie-version-subtitle" class="text-sm font-semibold g-accent">Wydanie 2.0.1</p>
+                    </div>
+                    
+                    <p class="g-text-muted text-xs sm:text-sm leading-relaxed max-w-md">
+                        BigOS to nowoczesne środowisko operacyjne działające w Twojej przeglądarce. Zapewnia aplikacje biurowe i narzędziowe, bezpieczne zarządzanie plikami, multimedia, zaawansowaną personalizację oraz wbudowanego asystenta AI — wszystko bez konieczności instalowania oprogramowania na komputerze.
+                    </p>
+
+                    <!-- Szybkie akcje dla kluczowych aplikacji -->
+                    <div class="w-full">
+                        <div class="text-xs font-bold g-text uppercase tracking-wider mb-2.5 text-left flex items-center gap-1.5">
+                            <span>⚡</span> <span>Szybkie akcje</span>
+                        </div>
+                        <div class="powitanie-quick-grid grid grid-cols-2 gap-2 w-full text-left">
+                            <button onclick="powitanieApp.quickOpen('menadzer')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">📦</span>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-xs g-text truncate">Menedżer Aplikacji</div>
+                                    <div class="text-[11px] g-text-muted truncate">Pakiety i instalacja</div>
+                                </div>
+                            </button>
+                            <button onclick="powitanieApp.quickOpen('aktowka')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">📁</span>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-xs g-text truncate">Aktówka</div>
+                                    <div class="text-[11px] g-text-muted truncate">Menedżer plików</div>
+                                </div>
+                            </button>
+                            <button onclick="powitanieApp.quickOpen('tapeciak')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">🎨</span>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-xs g-text truncate">Kombinator</div>
+                                    <div class="text-[11px] g-text-muted truncate">Motywy i tapety</div>
+                                </div>
+                            </button>
+                            <button onclick="powitanieApp.quickOpen('nadzorca')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">📊</span>
+                                <div class="min-w-0">
+                                    <div class="font-bold text-xs g-text truncate">Nadzorca</div>
+                                    <div class="text-[11px] g-text-muted truncate">Procesy i zasoby</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Główne przyciski nawigacyjne Startu -->
+                    <div class="powitanie-start-actions flex flex-wrap items-center justify-center gap-3 w-full">
+                        <button onclick="powitanieApp.openTab('news')" class="g-btn h-9 px-4 rounded-lg font-bold text-xs shadow-md hover:scale-105 transition inline-flex items-center justify-center gap-2 border-blue-500/50 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            <span>📖</span> <span>Sprawdź listę zmian</span>
+                        </button>
+                        <button id="powitanie-btn-start-work" onclick="winManager.close('powitanie')" class="g-btn h-9 px-4 rounded-lg font-bold text-xs shadow-md hover:scale-105 transition inline-flex items-center justify-center gap-2 border-emerald-500/50 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400">
+                            <span>🚀</span> <span>Rozpocznij pracę</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Tab 2: Nowości -->
-                <div id="powitanie-tab-nowosci" class="powitanie-tab hidden">
-                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4 border-b border-gray-200 dark:border-[#333] pb-2">Aktualizacja 1.19</h2>
-                    <ul class="space-y-4 text-sm text-gray-700 dark:text-gray-300">
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Modularna architektura</strong> - Przepisany kod na moduły!</div></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Kompresor obrazów</strong> - Nowy silnik Canvas zdejmuje limit pamięci 5MB.</div></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Program Nadzorca Systemu</strong> - Pokazujące listę aktualnie otwartych aplikacji oraz "symulowane" zużycie procesora (CPU) pokazuje le zajmuje pamięci RAM, Dysku..</div></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Program Pogodynka</strong> - Wyświetla aktualną pogodę, temperaturę i prognozę na kolejne dni. Pobiera aktualne dane pogodowe z darmowego API po wpisaniu nazwy miasta..</div></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Program Czasomierz (Zegar, Stoper i Minutnik):</strong> - Pozwala ustawić odliczanie czasu, stoper do mierzenia np. czasu gry oraz budzik. Gdy czas minie, system wyświetli systemowe powiadomienie (Toast) i zagra krótki dźwięk beep..</div></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Program Tabelarz:</strong> - W pełni działający, prosty arkusz kalkulacyjny (kolumny A-E, wiersze 1-10). Posiada mechanizm formuł – jeśli wpiszesz w komórkę np. =SUM(A1:A5), system automatycznie podliczy wynik! Pliki zapisują się w formacie .csv w systemie lub można zapisac na PC.
-                        Funkcja =MIN(A1:A100) wyświetla najmnieszą wartość z kolumny.
-                        Funkcja =MAX(A1:A100) wyświetla najwiekszą wartość z kolumny.
-                        Funkcja =ŚREDNIA(A1:A100) wyświetla średnią wartość z kolumny
-                        </div></li>
-                        <li class="flex items-start gap-2"><span class="text-green-500 mt-1">✔️</span><div><strong>Program Zadaniowiec</strong> - Tablica Kanban. Dodawaj zadania, łap je palcem (lub myszką) i przeciągaj między kolumnami "Do zrobienia", "W trakcie" i "Zrobione". Zmiany są automatycznie zapisywane</div></li>
-                    </ul>
-                </div>
+                <!-- ZAKŁADKA 2: CO NOWEGO (CHANGELOG v2.0.1) -->
+                <div id="powitanie-tab-news" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                    <div class="border-b g-border pb-3">
+                        <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
+                            <span>✨</span> <span id="powitanie-news-title">Co nowego w wersji 2.0.1?</span>
+                        </h2>
+                        <p class="text-xs g-text-muted mt-1">Zestawienie funkcji i ulepszeń zaimplementowanych w bieżącym wydaniu BigOS.</p>
+                    </div>
 
-                <!-- Tab 3: O Twórcy -->
-                <div id="powitanie-tab-autor" class="powitanie-tab hidden flex flex-col justify-center h-full">
-                    <h2 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Informacje o Projekcie</h2>
-                    <!-- <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Projekt stworzony z pasji do programowania frontendowego.</p> -->
-                    <div class="bg-gray-100 dark:bg-[#222] p-4 rounded border border-gray-200 dark:border-[#333] mb-4">
-                        <div class="text-sm font-bold text-gray-800 dark:text-white mb-2">Linki:</div>
-                       <a href="https://discord.gg/F5g2CE5Tu" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Dołącz do społeczności na Discordzie: </a>
+                    <div class="space-y-3.5">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-emerald-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>📦</span> <span>Menedżer Aplikacji i zarządzanie pakietami</span>
+                            </h3>
+                            <ul class="list-disc list-inside text-xs g-text-muted space-y-1 ml-1 leading-relaxed">
+                                <li><b class="g-text">Wyszukiwanie i sortowanie:</b> Błyskawiczne filtrowanie z pełną obsługą polskich znaków diakrytycznych oraz sortowanie alfabetyczne, po kategorii i dacie instalacji.</li>
+                                <li><b class="g-text">Autorytatywny rejestr pakietów:</b> Instalacja, uruchamianie, bezpieczne odinstalowywanie oraz eksport aplikacji w formacie BigOS z poziomu bazy danych.</li>
+                                <li><b class="g-text">Dołączone aplikacje:</b> Automatyczna instalacja programów z katalogu <code class="px-1 py-0.5 rounded bg-black/40 text-[11px]">Programy/</code> z zapamiętywaniem decyzji o usunięciu (brak niechcianego powrotu po odświeżeniu i możliwość przywrócenia z katalogu).</li>
+                            </ul>
+                        </div>
 
-                       <a href="https://www.facebook.com/profile.php?id=61563368962907" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 FanPage facebook </a>
-                       <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Sprawdź inne moje projekty:</h2>
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-blue-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>📐</span> <span>Wymiary okien i automatyczna wysokość (auto-height)</span>
+                            </h3>
+                            <ul class="list-disc list-inside text-xs g-text-muted space-y-1 ml-1 leading-relaxed">
+                                <li><b class="g-text">Deklarowane rozmiary:</b> Okna sandboksowe respektują preferowane wymiary z manifestu pakietu (np. stałe 800×600 dla BigPaint Studio, 400px dla Klikacza, 350px dla Kalkulatora BMI).</li>
+                                <li><b class="g-text">Dynamiczny auto-height:</b> Prawdziwe dopasowanie wysokości oparte na zawartości gościa (<code class="px-1 py-0.5 rounded bg-black/40 text-[11px]">ResizeObserver</code>) — okno rozszerza się naturalnie po obliczeniu wyniku bez pustych przestrzeni i bez pętli sprzężenia.</li>
+                                <li><b class="g-text">Czyszczenie geometrii:</b> Automatyczne usuwanie przestarzałych sztywnych wymiarów z pamięci podręcznej i opcja przywrócenia domyślnego rozmiaru w szczegółach programu.</li>
+                            </ul>
+                        </div>
 
-                       <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Avocado IDE</h3> 
-                       <a href="https://avocado-code.com/" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Oficjalna strona</a> 
-                       <a href="https://avocado.dimitalart.pl/" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Druga strona zapasowa</a> 
-                       <a href="https://doc.avocado-code.com/" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Dokumentacja języka Avocado</a> 
-                       <a href="https://github.com/Programista-Art/Avocado" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 GitHub Avocado IDE</a> 
-                       <a href="https://github.com/Programista-Art/Avoraiser" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 GitHub Avoraiser</a> 
-                       <a href="https://tiny.pl/nw_81sjz1" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Pobierz Avocado IDE</a> 
-                      
-                       <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-4">Bursztyn OS</h3> 
-                       <a href="https://bursztynos.dimitalart.pl/" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Oficjalna strona</a> 
-                       <a href="https://github.com/Programista-Art/BursztynOS" target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Kod źródłowy i Repozytorium GitHub</a> 
-                       <a href="https://github.com/Programista-Art/BursztynOS/blob/main/docs/01_wstep_i_filozofia.md " target="_blank" class="block text-sm text-blue-600 dark:text-blue-400 hover:underline mb-1">🔗 Dokumentacja systemu</a> 
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-purple-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>🎨</span> <span>Synchronizacja motywów na żywo</span>
+                            </h3>
+                            <ul class="list-disc list-inside text-xs g-text-muted space-y-1 ml-1 leading-relaxed">
+                                <li><b class="g-text">Jednolity wygląd:</b> Zmiana motywu (palety, stylu okien i trybu jasnego/ciemnego) jest natychmiast propagowana do wszystkich otwartych aplikacji sandboxa bez przeładowywania i bez utraty stanu.</li>
+                            </ul>
+                        </div>
 
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-amber-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>💾</span> <span>Pamięć lokalna, historia wersji i kopie zapasowe</span>
+                            </h3>
+                            <ul class="list-disc list-inside text-xs g-text-muted space-y-1 ml-1 leading-relaxed">
+                                <li><b class="g-text">Ujednolicony magazyn IndexedDB:</b> Bezpieczne składowanie plików, ustawień i pakietów z mechanizmem automatycznego odzyskiwania.</li>
+                                <li><b class="g-text">Historia dokumentów w Skrybie:</b> Zapisywanie migawek dokumentów tekstowych oraz bezpieczne przywracanie wcześniejszych wersji.</li>
+                                <li><b class="g-text">Kopia zapasowa i odzyskiwanie:</b> Eksport i import całego systemu (pliki, pakiety, ustawienia) w jednym pliku JSON z zachowaniem danych binarnych.</li>
+                                <li><b class="g-text">Uruchamianie offline:</b> Zaktualizowany Service Worker buforuje kompletny zestaw zasobów bazowych, umożliwiając start systemu bez dostępu do Internetu.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
+
+                <!-- ZAKŁADKA 3: BIG AI -->
+                <div id="powitanie-tab-ai" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                    <div class="border-b g-border pb-3">
+                        <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
+                            <span>🤖</span> <span>Asystent BigAI i konfiguracja modeli</span>
+                        </h2>
+                        <p class="text-xs g-text-muted mt-1">Przejrzyste zasady działania modułu sztucznej inteligencji w systemie BigOS.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-blue-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>🧪</span> <span>Lokalny symulator testowy</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                Moduł BigAI zawiera wbudowany symulator testowy, który działa całkowicie lokalnie w przeglądarce i nie wymaga połączenia sieciowego ani kluczy API. Generuje on demonstracyjne, predefiniowane odpowiedzi pomocne podczas testowania interfejsu.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-purple-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>🌐</span> <span>Zewnętrzni dostawcy AI</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                BigOS umożliwia podłączenie zewnętrznych dostawców modeli językowych (takich jak OpenAI, Groq czy OpenRouter). Korzystanie z nich wymaga aktywnego połączenia z Internetem oraz podania własnego klucza API w ustawieniach Podpowiadacza.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-amber-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>ℹ️</span> <span>Brak wbudowanych bezpłatnych usług</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                Sama obecność dostawcy na liście rozwijanej nie oznacza aktywnej ani bezpłatnej usługi w chmurze. System nie pośredniczy w płatnościach i nie oferuje darmowych tokenów komercyjnych — użytkownik konfiguruje własne poświadczenia.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <h3 class="font-bold text-emerald-400 text-sm mb-1.5 flex items-center gap-2">
+                                <span>📝</span> <span>Integracja z edytorem Skryba</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                Po skonfigurowaniu klucza asystent wspomaga redagowanie tekstów: pozwala zmieniać styl i ton wypowiedzi, tłumaczyć fragmenty oraz zadawać pytania bezpośrednio z bocznego panelu edytora.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ZAKŁADKA 4: PORADY -->
+                <div id="powitanie-tab-tips" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                    <div class="border-b g-border pb-3">
+                        <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
+                            <span>💡</span> <span>Wskazówki i bezpieczne korzystanie</span>
+                        </h2>
+                        <p class="text-xs g-text-muted mt-1">Praktyczne informacje o pamięci, kopiach zapasowych i obsłudze systemu.</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border">
+                            <h3 class="font-bold text-emerald-400 text-sm mb-1 flex items-center gap-2">
+                                <span>💾</span> <span>Pamięć przeglądarki i kopie zapasowe</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                Twoje pliki, pakiety i preferencje są zapisywane lokalnie w przeglądarce w bazie IndexedDB. Pamiętaj, że wyczyszczenie danych przeglądarki lub praca w trybie incognito usunie te dane. <b class="g-text">Zalecenie:</b> Regularnie pobieraj kopię zapasową w aplikacji <i>Kombinator</i> lub <i>Nadzorca</i>, aby bezpiecznie zachować swoje pliki.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border">
+                            <h3 class="font-bold text-blue-400 text-sm mb-1 flex items-center gap-2">
+                                <span>⚡</span> <span>Działanie offline i online</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                System startuje w trybie offline po jednokrotnym pobraniu i zapisaniu zasobów przez Service Worker. Pamiętaj jednak, że funkcje sieciowe (takie jak zewnętrzne modele BigAI czy prognoza pogody) wymagają aktywnego połączenia z Internetem.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border">
+                            <h3 class="font-bold text-amber-400 text-sm mb-1 flex items-center gap-2">
+                                <span>🔧</span> <span>Diagnostyka i rozwiązywanie problemów</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                W przypadku problemów skorzystaj z diagnostyki w <i>Nadzorcy</i> oraz możliwości przywrócenia danych z kopii zapasowej. <i>Formatowanie systemu</i> to opcja ostateczna — usuwa bezpowrotnie wszystkie Twoje pliki i ustawienia, dlatego nie należy stosować jej jako domyślnego kroku naprawczego.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border">
+                            <h3 class="font-bold text-purple-400 text-sm mb-1 flex items-center gap-2">
+                                <span>⌨️</span> <span>Wygodne skróty i gesty</span>
+                            </h3>
+                            <p class="text-xs g-text-muted leading-relaxed">
+                                Wciśnij <kbd class="px-1.5 py-0.5 rounded bg-black/40 text-[11px] font-mono border g-border">Ctrl + K</kbd>, aby otworzyć uniwersalne wyszukiwanie aplikacji i plików. Użyj prawego przycisku myszy (lub przytrzymaj palec na ekranie) na pulpicie lub w Aktówce, aby otworzyć menu kontekstowe.
+                            </p>
+                        </div>
+
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border">
+                            <h3 class="font-bold g-text text-sm mb-2 flex items-center gap-2">
+                                <span>🔗</span> <span>Społeczność i inne projekty</span>
+                            </h3>
+                            <div class="flex flex-wrap gap-2 text-xs">
+                                <a href="https://discord.gg/F5g2CE5Tu" target="_blank" rel="noopener noreferrer" class="g-btn px-2.5 py-1 rounded border g-border hover:bg-white/10 text-blue-400 transition inline-flex items-center gap-1.5">
+                                    <span>💬</span> <span>Discord BigOS</span>
+                                </a>
+                                <a href="https://www.facebook.com/profile.php?id=61563368962907" target="_blank" rel="noopener noreferrer" class="g-btn px-2.5 py-1 rounded border g-border hover:bg-white/10 text-blue-400 transition inline-flex items-center gap-1.5">
+                                    <span>👥</span> <span>Facebook</span>
+                                </a>
+                                <a href="https://avocado-code.com/" target="_blank" rel="noopener noreferrer" class="g-btn px-2.5 py-1 rounded border g-border hover:bg-white/10 text-emerald-400 transition inline-flex items-center gap-1.5">
+                                    <span>🥑</span> <span>Avocado IDE</span>
+                                </a>
+                                <a href="https://bursztynos.dimitalart.pl/" target="_blank" rel="noopener noreferrer" class="g-btn px-2.5 py-1 rounded border g-border hover:bg-white/10 text-amber-400 transition inline-flex items-center gap-1.5">
+                                    <span>💎</span> <span>Bursztyn OS</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <!-- Stopka z Checkboxem "Nie pokazuj ponownie" -->
-        <div class="bg-gray-100 dark:bg-[#111] border-t border-gray-300 dark:border-[#333] p-3 flex justify-between items-center text-xs">
-            <label class="flex items-center gap-2 cursor-pointer text-gray-700 dark:text-gray-300">
-                <input type="checkbox" id="powitanie-skip-cb" onchange="powitanieApp.toggleSkip(this)" class="w-4 h-4 accent-blue-600 cursor-pointer">
-                Nie wyświetlaj tego okna przy uruchamianiu systemu
+        <!-- Pasek dolny (zawsze widoczny, nie znika podczas przewijania treści) -->
+        <div class="powitanie-footer p-2.5 px-4 border-t g-border bg-black/20 shrink-0 flex items-center justify-between gap-3 text-xs">
+            <label class="flex items-center gap-2 cursor-pointer group select-none">
+                <input type="checkbox" id="powitanie-skip-cb" class="w-4 h-4 accent-blue-500 cursor-pointer rounded" onchange="powitanieApp.toggleSkip()">
+                <span class="text-xs g-text-muted group-hover:g-text transition font-medium">Nie pokazuj tego okna przy starcie</span>
             </label>
-            <button onclick="winManager.close('powitanie')" class="bg-gray-300 dark:bg-[#333] hover:bg-gray-400 dark:hover:bg-[#444] text-gray-800 dark:text-white px-4 py-1.5 rounded transition font-bold shadow-sm">Zamknij</button>
+            <button id="powitanie-footer-close" onclick="winManager.close('powitanie')" class="g-btn h-8 px-4 font-bold text-xs rounded-lg transition inline-flex items-center justify-center gap-1.5 shrink-0 hover:bg-white/10 focus:outline-none focus:ring-1 focus:ring-blue-400">
+                <span>Zamknij</span>
+            </button>
         </div>
     </div>
 
@@ -359,16 +552,16 @@
             <!-- Wykresy Zasobów -->
             <div class="grid grid-cols-3 gap-3 mb-4">
                 <div class="g-bg border g-border p-3 rounded-xl shadow-inner text-center">
-                    <div class="text-[10px] text-blue-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">CPU (Wirt.)</div>
-                    <div class="text-2xl font-mono g-text font-bold" id="nadzorca-cpu">0%</div>
+                    <div class="text-[10px] text-blue-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">CPU (n/d)</div>
+                    <div class="text-2xl font-mono g-text font-bold" id="nadzorca-cpu">n/d</div>
                 </div>
                 <div class="g-bg border g-border p-3 rounded-xl shadow-inner text-center">
-                    <div class="text-[10px] text-emerald-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">RAM (Przegl.)</div>
-                    <div class="text-xl font-mono g-text font-bold mt-1" id="nadzorca-ram">0 MB</div>
+                    <div class="text-[10px] text-emerald-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">RAM (JS Heap)</div>
+                    <div class="text-xl font-mono g-text font-bold mt-1" id="nadzorca-ram">n/d</div>
                 </div>
                 <div class="g-bg border g-border p-3 rounded-xl shadow-inner text-center">
-                    <div class="text-[10px] text-purple-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">Dysk (OS)</div>
-                    <div class="text-xl font-mono g-text font-bold mt-1" id="nadzorca-disk">0 KB</div>
+                    <div class="text-[10px] text-purple-500 font-bold mb-1 uppercase tracking-widest drop-shadow-md">Dysk witryny</div>
+                    <div class="text-xl font-mono g-text font-bold mt-1" id="nadzorca-disk">n/d</div>
                 </div>
             </div>
             
@@ -1045,7 +1238,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
 
     <!-- PASEK ZADAŃ -->
-    <div class="absolute bottom-0 w-full h-12 themed-app g-panel !rounded-none !border-x-0 !border-b-0 flex items-center px-2 justify-between z-[200]">
+    <div id="taskbar" class="absolute bottom-0 w-full h-12 themed-app g-panel !rounded-none !border-x-0 !border-b-0 flex items-center px-2 justify-between z-[200]">
         <div class="flex items-center gap-1 sm:gap-2 h-full">
             <button onclick="apps.toggleStartMenu()" class="h-9 px-3 sm:px-5 g-btn font-bold shadow-sm transition flex items-center gap-1 sm:gap-2 text-sm sm:text-base" style="background: var(--primary); color: #000; border-color: var(--primary);">
                 🗃️ <span class="hidden sm:inline">Szuflada</span>
@@ -1148,6 +1341,15 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     <div id="toast-container" class="absolute top-4 right-4 flex flex-col gap-2 z-[9999] pointer-events-none"></div>
     
     <!-- ładowanie scryptów -->
+    <script src="js/core/diagnostics.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/storage.js"></script>
+    <script src="js/core/app-registry.js"></script>
+    <script src="js/core/system-maintenance.js"></script>
+    <script src="js/core/backup.js"></script>
+    <script src="js/core/sandbox.js"></script>
+    <script src="js/core/bundled-catalog.js"></script>
+    <script src="js/core/doc-history.js"></script>
     <script src="js/globals.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/auth.js"></script>
@@ -1174,7 +1376,6 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     <script src="js/aplikacje/wladca.js"></script>
     <script src="js/aplikacje/grajek.js"></script>
     <script src="js/powitanie.js"></script>
-    <script src="js/aplikacje/apps.js"></script>
     <script src="js/aplikacje/kombinator.js"></script>
     <script src="js/aplikacje/kalendarz.js"></script>
     <script src="js/aplikacje/karteczki.js"></script>
@@ -1187,9 +1388,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     <script src="js/aplikacje/edytor_map.js"></script>
 
     
-   
-    <!-- FFmpeg.wasm (wymagane do eksportu wideo) -->
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.min.js"></script>
+    <!-- Edytor Wideo montazysta (Natywny WebM) -->
 
     <!-- Edytor Wideo montazysta -->
     <script src="js/aplikacje/montazysta.js"></script>

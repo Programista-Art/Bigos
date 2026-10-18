@@ -77,7 +77,15 @@ const desktop = {
                     apps.formatSystem();
                 }
             } else {
-                winManager.open(item.appId);
+                const appId = item.appId || item.id;
+                const el = document.getElementById('app-' + appId);
+                if (el) {
+                    winManager.open(appId);
+                } else if (typeof bigosSandbox !== 'undefined' && bigosSandbox.launchPackage) {
+                    bigosSandbox.launchPackage(appId);
+                } else {
+                    winManager.open(appId);
+                }
             }
         } else if (item.type === 'folder') {
             fsManager.openFolder(item.id);
@@ -164,12 +172,25 @@ const desktop = {
         }
     },
     
-    deletePermanent: (id) => {
+    deletePermanent: async (id) => {
         document.getElementById('context-menu').classList.remove('active');
-        fileSystem = fileSystem.filter(i => i.id !== id);
-        
-        if(typeof fsManager !== 'undefined') fsManager.save();
-        
+        // Authoritative deletion: live FS + typed storage (meta/content/revisions).
+        if (typeof fsManager !== 'undefined' && fsManager.deleteNode) {
+            const r = await fsManager.deleteNode(id);
+            if (r && r.ok === false) {
+                if (typeof apps !== 'undefined') apps.showToast('Błąd', 'Nie udało się usunąć pliku z dysku.', 'error');
+                return;
+            }
+        } else {
+            // Fallback: in-place removal from the shared array.
+            if (typeof bigosState !== 'undefined' && bigosState.removeWhere) {
+                bigosState.removeWhere((f) => f && f.id === id);
+            } else {
+                fileSystem = fileSystem.filter(i => i.id !== id);
+            }
+            if(typeof fsManager !== 'undefined') fsManager.save();
+        }
+
         const aktowkaWin = document.getElementById('app-aktowka');
         if(aktowkaWin && aktowkaWin.classList.contains('active') && typeof fsManager !== 'undefined') {
             fsManager.renderExplorerContent(fsManager.currentFolder);
@@ -196,11 +217,25 @@ const desktop = {
     emptyHasiok: () => {
         document.getElementById('context-menu').classList.remove('active');
         if (typeof ui !== 'undefined') {
-            ui.showPrompt("POTWIERDŹ", "Wpisz 'TAK' aby opróżnić kosz trwale", "Opróżnij", (val) => {
+            ui.showPrompt("POTWIERDŹ", "Wpisz 'TAK' aby opróżnić kosz trwale", "Opróżnij", async (val) => {
                 if(val && val.toLowerCase() === 'tak') {
-                    fileSystem = fileSystem.filter(i => i.parentId !== 'hasiok' || i.id === 'hasiok');
-                    if(typeof fsManager !== 'undefined') fsManager.save();
-                    
+                    // Collect trash items, then delete each authoritatively.
+                    const trashIds = fileSystem
+                        .filter(i => i.parentId === 'hasiok' && i.id !== 'hasiok')
+                        .map(i => i.id);
+                    if (typeof fsManager !== 'undefined' && fsManager.deleteNode) {
+                        for (const tid of trashIds) {
+                            await fsManager.deleteNode(tid);
+                        }
+                    } else {
+                        if (typeof bigosState !== 'undefined' && bigosState.removeWhere) {
+                            bigosState.removeWhere((f) => f && f.parentId === 'hasiok' && f.id !== 'hasiok');
+                        } else {
+                            fileSystem = fileSystem.filter(i => i.parentId !== 'hasiok' || i.id === 'hasiok');
+                        }
+                        if(typeof fsManager !== 'undefined') fsManager.save();
+                    }
+
                     const aktowkaWin = document.getElementById('app-aktowka');
                     if(aktowkaWin && aktowkaWin.classList.contains('active') && typeof fsManager !== 'undefined') {
                         fsManager.renderExplorerContent(fsManager.currentFolder);
@@ -238,7 +273,7 @@ const desktop = {
         if(item) clipboard = { action: action, item: {...item} };
     },
     
-    pasteClipboard: () => {
+    pasteClipboard: async () => {
         document.getElementById('context-menu').classList.remove('active');
         if(clipboard.item) {
             let parentFolder = (typeof fsManager !== 'undefined') ? fsManager.currentFolder : 'root';
@@ -249,14 +284,29 @@ const desktop = {
                 newItem.y = Math.round(desktop.lastContextY / GRID) * GRID + 10;
             }
             if(clipboard.action === 'copy') newItem.name += ' - Kopia';
-            fileSystem.push(newItem);
             
-            if(clipboard.action === 'cut') {
-                fileSystem = fileSystem.filter(i => i.id !== clipboard.item.id);
-                clipboard.action = null; 
+            if (typeof bigosState !== 'undefined' && bigosState.push) {
+                bigosState.push(newItem);
+            } else {
+                fileSystem.push(newItem);
             }
             
-            if(typeof fsManager !== 'undefined') fsManager.save(); 
+            if(clipboard.action === 'cut') {
+                const cutId = clipboard.item.id;
+                clipboard.action = null; 
+                clipboard.item = null;
+                if (typeof fsManager !== 'undefined' && fsManager.deleteNode) {
+                    await fsManager.deleteNode(cutId);
+                } else {
+                    if (typeof bigosState !== 'undefined' && bigosState.removeWhere) {
+                        bigosState.removeWhere(i => i.id === cutId);
+                    } else {
+                        fileSystem = fileSystem.filter(i => i.id !== cutId);
+                    }
+                }
+            }
+            
+            if(typeof fsManager !== 'undefined') await fsManager.save(); 
             desktop.render(); 
             
             const aktowkaWin = document.getElementById('app-aktowka');
@@ -449,3 +499,6 @@ document.addEventListener('mousedown', (e) => {
         if (cm) cm.classList.remove('active');
     }
 });
+// Explicit export — top-level const does NOT become a window property.
+window.desktop = desktop;
+if (typeof globalThis !== 'undefined') globalThis.desktop = desktop;

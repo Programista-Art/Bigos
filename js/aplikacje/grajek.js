@@ -17,6 +17,21 @@ const grajekApp = {
     groupBy: 'none',
     isPlayingPlaylist: false,
     activePlaylistPlayId: null,
+    allowBackground: false,
+
+    toggleBackgroundPlayback: (enable) => {
+        grajekApp.allowBackground = typeof enable === 'boolean' ? enable : !grajekApp.allowBackground;
+        try { localStorage.setItem('bigos_grajek_allow_background', grajekApp.allowBackground ? 'true' : 'false'); } catch (e) {}
+        const btn = document.getElementById('grajek-btn-bg-toggle');
+        if (btn) {
+            btn.classList.toggle('text-emerald-400', grajekApp.allowBackground);
+            btn.classList.toggle('opacity-60', !grajekApp.allowBackground);
+            btn.title = grajekApp.allowBackground ? 'Odtwarzanie w tle aktywne' : 'Odtwarzanie w tle wyłączone';
+        }
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast('Grajek', grajekApp.allowBackground ? 'Odtwarzanie w tle aktywne' : 'Odtwarzanie w tle wyłączone', 'info');
+        }
+    },
 
     // Web Audio API
     audioCtx: null, analyser: null, sourceNode: null, gainNode: null, volumeNode: null,
@@ -98,6 +113,9 @@ const grajekApp = {
         if(savedTheme && grajekApp.themes[savedTheme]) grajekApp.currentTheme = savedTheme;
         const savedEQ = localStorage.getItem('bigos_grajek_eq');
         if(savedEQ) grajekApp.eqSettings = {...grajekApp.eqSettings, ...grajekApp.parseSafe(savedEQ, {})};
+        try {
+            grajekApp.allowBackground = localStorage.getItem('bigos_grajek_allow_background') === 'true';
+        } catch (_) {}
 
         grajekApp.upgradeUI();
         window.addEventListener('keydown', grajekApp.handleShortcuts);
@@ -119,15 +137,16 @@ const grajekApp = {
     // ==================================================================
     // ZAMYKANIE APLIKACJI
     // ==================================================================
-    closeApp: () => {
-        if (grajekApp.isPlaying) {
-            grajekApp.grajekAudio.pause();
-            grajekApp.grajekAudio.currentTime = 0;  
-            grajekApp.grajekAudio.src = '';
-            grajekApp.isPlaying = false;
-            const playBtn = document.getElementById('grajek-btn-play');
-            if (playBtn) playBtn.innerText = '▶';
-        }
+    closeApp: (force = false) => {
+        if (!grajekApp.allowBackground || force) {
+            if (grajekApp.isPlaying) {
+                grajekApp.grajekAudio.pause();
+                grajekApp.grajekAudio.currentTime = 0;  
+                grajekApp.grajekAudio.src = '';
+                grajekApp.isPlaying = false;
+                const playBtn = document.getElementById('grajek-btn-play');
+                if (playBtn) playBtn.innerText = '▶';
+            }
 
             //  USUŃ STARY NASŁUCH timeupdate
             grajekApp.grajekAudio.removeEventListener('timeupdate', grajekApp.updateTimeUI);
@@ -172,13 +191,21 @@ const grajekApp = {
         if (mini) mini.remove();
 
         window.removeEventListener('keydown', grajekApp.handleShortcuts);
-        grajekApp.saveData()
+        grajekApp.saveData();
 
         // ★★★ RESET FLAGI – pozwoli ponownie wykonać init() przy następnym otwarciu ★★★
         grajekApp._initialized = false;
+        } else {
+            // Background playback is active: only stop visualization rAF loop to save CPU
+            if (grajekApp.vizLoop) {
+                cancelAnimationFrame(grajekApp.vizLoop);
+                grajekApp.vizLoop = null;
+            }
+        }
 
-        // Jeśli istnieje winManager – wywołaj jego metodę zamykania
-        if (typeof winManager !== 'undefined' && winManager.close) {
+        // Jeśli istnieje winManager i okno jest nadal otwarte – wywołaj jego metodę zamykania
+        const appWin = document.getElementById('app-grajek');
+        if (appWin && appWin.classList.contains('active') && typeof winManager !== 'undefined' && winManager.close) {
             winManager.close('grajek');
         }
     },
@@ -285,6 +312,7 @@ const grajekApp = {
                     </select>
                     <span id="grajek-mode-badge" class="text-xs font-bold uppercase tracking-widest g-accent drop-shadow-md">SEQUENTIAL</span>
                     <div class="flex gap-4">
+                        <button id="grajek-btn-bg-toggle" onclick="grajekApp.toggleBackgroundPlayback()" title="${grajekApp.allowBackground ? 'Odtwarzanie w tle aktywne' : 'Odtwarzanie w tle wyłączone'}" class="g-icon-btn text-lg ${grajekApp.allowBackground ? 'text-emerald-400' : 'opacity-60'}">📻</button>
                         <button onclick="grajekApp.toggleMiniPlayer()" title="Mini Player" class="g-icon-btn text-lg">🪟</button>
                         <button onclick="grajekApp.setSleepTimer()" title="Sleep Timer" class="g-icon-btn text-lg">⏰</button>
                         <button id="grajek-btn-fav" onclick="grajekApp.toggleFavorite()" title="Ulubione" class="g-icon-btn text-xl">♡</button>

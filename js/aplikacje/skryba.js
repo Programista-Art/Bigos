@@ -1195,10 +1195,29 @@ window.skrybaApp = {
         }
     },
 
-    showRevisions: () => {
+    showRevisions: async () => {
         if(!window.skrybaApp.currentFileId) return;
-        const f = fileSystem.find(i => i.id === window.skrybaApp.currentFileId);
-        if(!f || !f.skrybaMeta || !f.skrybaMeta.revisions || f.skrybaMeta.revisions.length === 0) {
+        const fileId = window.skrybaApp.currentFileId;
+
+        // Prefer the real document-history store (bigosDocHistory / history_store).
+        let revisions = [];
+        if (typeof bigosDocHistory !== 'undefined' && bigosDocHistory.list) {
+            try { revisions = await bigosDocHistory.list(fileId) || []; } catch (_) { revisions = []; }
+        }
+        // Fallback to legacy skrybaMeta snapshots if the store is empty.
+        if (revisions.length === 0) {
+            const f = fileSystem.find(i => i.id === fileId);
+            if (f && f.skrybaMeta && Array.isArray(f.skrybaMeta.revisions)) {
+                revisions = f.skrybaMeta.revisions.map((rev, i) => ({
+                    id: 'legacy_' + i,
+                    ts: rev.ts || Date.now(),
+                    label: 'migawka',
+                    content: rev.content,
+                    date: rev.date
+                }));
+            }
+        }
+        if (revisions.length === 0) {
             if(typeof apps !== 'undefined') apps.showToast('Historia', 'Brak zapisanych starszych wersji tej notatki.', 'info');
             return;
         }
@@ -1210,10 +1229,14 @@ window.skrybaApp = {
         modal = document.createElement('div');
         modal.id = modalId;
         modal.className = 'fixed inset-0 bg-black/60 z-[10000] flex items-center justify-center backdrop-blur-sm p-4';
-        
+
         let listHTML = '';
-        f.skrybaMeta.revisions.reverse().forEach((rev, idx) => {
-            listHTML += `<button class="w-full text-left px-3 py-2 g-bg g-text hover:bg-white/10 rounded transition border g-border mb-2 text-xs shadow-sm" onclick="document.getElementById('${modalId}').remove(); window.skrybaApp.restoreRevision(${idx})">⏳ Migawka z: <b>${rev.date}</b></button>`;
+        revisions.forEach((rev) => {
+            const ts = rev.ts || Date.now();
+            const dateStr = rev.date || new Date(ts).toLocaleString('pl-PL');
+            const label = rev.label ? ` (${String(rev.label).replace(/[<>&"']/g, '')})` : '';
+            const revId = String(rev.id).replace(/[<>&"']/g, '');
+            listHTML += `<button class="w-full text-left px-3 py-2 g-bg g-text hover:bg-white/10 rounded transition border g-border mb-2 text-xs shadow-sm" onclick="document.getElementById('${modalId}').remove(); window.skrybaApp.restoreRevision('${revId}')">⏳ Migawka z: <b>${dateStr}</b>${label}</button>`;
         });
 
         modal.innerHTML = `
@@ -1224,26 +1247,71 @@ window.skrybaApp = {
             </div>
         `;
         document.body.appendChild(modal);
-        f.skrybaMeta.revisions.reverse();
     },
 
-    restoreRevision: (reverseIdx) => {
-        const f = fileSystem.find(i => i.id === window.skrybaApp.currentFileId);
-        const actualIdx = f.skrybaMeta.revisions.length - 1 - reverseIdx;
-        const rev = f.skrybaMeta.revisions[actualIdx];
-        
-        document.getElementById('skryba-editor').innerHTML = rev.content;
-        window.skrybaApp.markDirty();
-        window.skrybaApp.saveNoteSilent();
-        if(typeof apps !== 'undefined') apps.showToast('Sukces', `Przywrócono wersję z ${rev.date}`, 'success');
+    restoreRevision: async (revId) => {
+        const fileId = window.skrybaApp.currentFileId;
+        if (!fileId) return;
+        try {
+            let result = null;
+            if (typeof bigosDocHistory !== 'undefined' && bigosDocHistory.restore && !String(revId).startsWith('legacy_')) {
+                // Real restore: snapshots current content, writes revision content
+                // into the shared filesystem, persists, and returns the content.
+                result = await bigosDocHistory.restore(fileId, revId);
+            } else {
+                // Legacy snapshot path.
+                const f = fileSystem.find(i => i.id === fileId);
+                const idx = parseInt(String(revId).replace('legacy_', ''), 10);
+                const rev = f && f.skrybaMeta && f.skrybaMeta.revisions && f.skrybaMeta.revisions[idx];
+                if (rev) {
+                    if (f.content !== undefined && typeof bigosDocHistory !== 'undefined') {
+                        await bigosDocHistory.snapshot(fileId, f.content, 'przed-przywróceniem');
+                    }
+                    f.content = rev.content;
+                    if (typeof fsManager !== 'undefined') await fsManager.save();
+                    result = { ok: true, content: rev.content };
+                }
+            }
+            if (!result || !result.ok) {
+                if(typeof apps !== 'undefined') apps.showToast('Historia', 'Nie udało się przywrócić wersji.', 'error');
+                return;
+            }
+            const editor = document.getElementById('skryba-editor');
+            if (editor) editor.innerHTML = result.content;
+            const rawEl = document.getElementById('skryba-raw-editor');
+            if (rawEl) rawEl.value = result.content;
+            window.skrybaApp.isDirty = false;
+            window.skrybaApp.setSaveStatus('saved');
+            if (window.skrybaApp.updateStats) window.skrybaApp.updateStats();
+            if (window.skrybaApp.renderSidebar) window.skrybaApp.renderSidebar();
+            if(typeof apps !== 'undefined') apps.showToast('Sukces', 'Przywrócono wybraną wersję.', 'success');
+        } catch (e) {
+            if(typeof apps !== 'undefined') apps.showToast('Historia', 'Błąd przywracania: ' + e.message, 'error');
+        }
     },
 
     // ==================================================================
     // NOWY ZAPIS MODALNY I GENEROWANIE TREŚCI Z WYBOREM ROZSZERZEŃ
     // ==================================================================
-    saveNoteSilent: () => {
+    setSaveStatus: (state) => {
+        const el = document.getElementById('skryba-status');
+        if (!el) return;
+        if (state === 'saving') {
+            el.innerHTML = '<span class="text-yellow-400 drop-shadow-md" title="Zapis w toku">🟡 Zapisywanie…</span>';
+        } else if (state === 'saved') {
+            el.innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
+        } else if (state === 'failed') {
+            el.innerHTML = '<span class="text-red-500 drop-shadow-md" title="Zapis nie powiódł się">🔴 Błąd zapisu</span>';
+        } else if (state === 'dirty') {
+            el.innerHTML = '<span class="text-yellow-400 drop-shadow-md" title="Niezapisane zmiany">🟡 Niezapisane</span>';
+        } else {
+            el.innerHTML = '<span class="text-gray-400" title="Nowy plik">⚪ Brak</span>';
+        }
+    },
+
+    saveNoteSilent: async () => {
         if(!window.skrybaApp.isDirty) return;
-        
+
         if(!window.skrybaApp.currentFileId) {
             return;
         }
@@ -1256,36 +1324,60 @@ window.skrybaApp = {
         const f = fileSystem.find(i => i.id === window.skrybaApp.currentFileId);
         if(f) {
             let contentToSave = isRaw ? rawEditor.value : editor.innerHTML;
-            
-            f.content = contentToSave; 
+
+            window.skrybaApp.setSaveStatus('saving');
+
+            f.content = contentToSave;
             if(!f.skrybaMeta) f.skrybaMeta = {};
             f.skrybaMeta.tags = tags;
-            
+
             if(!f.skrybaMeta.revisions) f.skrybaMeta.revisions = [];
             if(f.skrybaMeta.revisions.length === 0 || (Date.now() - f.skrybaMeta.lastRevTime > 300000)) {
                 f.skrybaMeta.revisions.push({ date: new Date().toLocaleString(), content: editor.innerHTML });
-                if(f.skrybaMeta.revisions.length > 5) f.skrybaMeta.revisions.shift(); 
+                if(f.skrybaMeta.revisions.length > 5) f.skrybaMeta.revisions.shift();
                 f.skrybaMeta.lastRevTime = Date.now();
             }
 
-            if(typeof fsManager !== 'undefined') fsManager.save(); 
-        } 
-        
-        window.skrybaApp.isDirty = false;
-        document.getElementById('skryba-status').innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
+            try {
+                if (typeof bigosDocHistory !== 'undefined') {
+                    await bigosDocHistory.snapshot(f.id, contentToSave, 'auto');
+                }
+            } catch (_) { /* history best-effort */ }
+
+            let saveOk = true;
+            try {
+                if(typeof fsManager !== 'undefined') {
+                    const results = await fsManager.save();
+                    if (Array.isArray(results)) saveOk = !results.some(r => r && r.ok === false);
+                }
+            } catch (e) {
+                saveOk = false;
+                if (typeof bigosDiag !== 'undefined') bigosDiag.error('skryba', 'save failed', { error: e.message });
+            }
+
+            if (saveOk) {
+                window.skrybaApp.isDirty = false;
+                window.skrybaApp.setSaveStatus('saved');
+            } else {
+                window.skrybaApp.setSaveStatus('failed');
+                if(typeof apps !== 'undefined') apps.showToast('Skryba', 'Zapis nie powiódł się. Spróbuj ponownie.', 'error');
+            }
+        }
         window.skrybaApp.renderSidebar();
-        
-        if (typeof desktop !== 'undefined') desktop.render(); 
+
+        if (typeof desktop !== 'undefined') desktop.render();
     },
 
-    saveNote: () => {
+    saveNote: async () => {
         document.querySelectorAll('.skryba-dropdown-menu').forEach(m => m.classList.add('hidden'));
         if (!window.skrybaApp.currentFileId) {
             window.skrybaApp.showSaveBigOSModal(false);
         } else {
-            window.skrybaApp.saveNoteSilent();
+            window.skrybaApp.setSaveStatus('saving');
+            // saveNoteSilent pokazuje 🟢 Zapisano dopiero po zakończeniu zapisu.
+            if (window.skrybaApp.isDirty === false) window.skrybaApp.isDirty = true;
+            await window.skrybaApp.saveNoteSilent();
             if(typeof apps !== 'undefined') apps.showToast('Skryba', 'Notatka zapisana na dysku BigOS.', 'success');
-            document.getElementById('skryba-status').innerHTML = '<span class="text-green-500 drop-shadow-md" title="Wszystkie zmiany zostały zapisane">🟢 Zapisano</span>';
         }
     },
 

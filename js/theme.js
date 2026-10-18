@@ -70,22 +70,31 @@ const themeManager = {
         { id: 'eff-matrix', name: '💻 Matrix (Spadający kod)' }
     ],
 
-    init: () => {
+    _initSettings: () => {
+        if (typeof localStorage === 'undefined') return;
         const saved = localStorage.getItem('bigos_global_theme_v2');
         if (saved) {
             try { 
                 themeManager.settings = {...themeManager.settings, ...JSON.parse(saved)}; 
             } catch(e) {}
         }
+    },
 
-        if (!document.getElementById('bigos-global-themes')) {
+    getThemeClasses: () => {
+        return `${themeManager.settings.activeColor} ${themeManager.settings.activeUI} ${themeManager.settings.activeEffect}`;
+    },
+
+    init: () => {
+        themeManager._initSettings();
+
+        if (typeof document !== 'undefined' && !document.getElementById('bigos-global-themes')) {
             const style = document.createElement('style');
             style.id = 'bigos-global-themes';
             style.innerHTML = themeManager.getCSS();
             document.head.appendChild(style);
         }
 
-        if (!document.getElementById('bigos-fx-layer')) {
+        if (typeof document !== 'undefined' && !document.getElementById('bigos-fx-layer')) {
             const fxLayer = document.createElement('div');
             fxLayer.id = 'bigos-fx-layer';
             fxLayer.className = 'fixed inset-0 pointer-events-none';
@@ -104,17 +113,24 @@ const themeManager = {
     },
 
     saveSettings: () => {
-        localStorage.setItem('bigos_global_theme_v2', JSON.stringify(themeManager.settings));
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('bigos_global_theme_v2', JSON.stringify(themeManager.settings));
+        }
     },
 
     applyAll: () => {
-        document.body.className = document.body.className.replace(/\b(color-|ui-|eff-)\S+/g, '');
-        document.body.classList.add(themeManager.settings.activeColor);
-        document.body.classList.add(themeManager.settings.activeUI);
-        document.body.classList.add(themeManager.settings.activeEffect);
+        if (typeof document !== 'undefined' && document.body) {
+            document.body.className = document.body.className.replace(/\b(color-|ui-|eff-)\S+/g, '');
+            document.body.classList.add(themeManager.settings.activeColor);
+            document.body.classList.add(themeManager.settings.activeUI);
+            document.body.classList.add(themeManager.settings.activeEffect);
+        }
         
         themeManager.saveSettings();
         themeManager.runEffectsEngine();
+        if (typeof bigosSandbox !== 'undefined' && bigosSandbox.syncTheme) {
+            bigosSandbox.syncTheme();
+        }
     },
 
     setColor: (id) => { themeManager.settings.activeColor = id; themeManager.applyAll(); },
@@ -481,4 +497,15 @@ const themeManager = {
     }
 };
 
-setTimeout(themeManager.init, 200);
+// Initialize settings synchronously upon load
+themeManager._initSettings();
+
+// Expose globally for both browser and Node/VM contexts
+(typeof window !== 'undefined' ? window : globalThis).themeManager = themeManager;
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = themeManager;
+}
+
+if (typeof setTimeout !== 'undefined') {
+    setTimeout(themeManager.init, 200);
+}

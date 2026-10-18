@@ -39,7 +39,7 @@ const patrzalkaApp = {
 
         patrzalkaApp.upgradeUI();
         patrzalkaApp.renderGallery();
-        patrzalkaApp.renderAlbumsSidebar();
+        if (typeof patrzalkaApp.renderAlbumsSidebar === 'function') patrzalkaApp.renderAlbumsSidebar();
         
         const container = document.getElementById('pat-img-container');
         if (container) {

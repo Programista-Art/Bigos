@@ -1,93 +1,37 @@
 // ======================================================================
 // PLIK: js/fs.js (System Plików, Pamięć i Eksplorator Aktówka PRO)
+// Storage is provided exclusively by js/core/storage.js (window.bigosDB).
+// Shared filesystem lives in js/core/state.js (window.fileSystem).
 // ======================================================================
 
-const bigosDB = {
-    dbName: 'BigOS_DB',
-    storeName: 'fs_store',
-    _db: null, 
-    
-    open() {
-        return new Promise((resolve, reject) => {
-            if (this._db) { resolve(this._db); return; }
-            const req = indexedDB.open(this.dbName, 1);
-            req.onupgradeneeded = e => { 
-                if (!e.target.result.objectStoreNames.contains(this.storeName)) {
-                    e.target.result.createObjectStore(this.storeName); 
-                }
-            };
-            req.onsuccess = e => { this._db = e.target.result; resolve(this._db); };
-            req.onerror = e => reject(e.target.error);
-        });
-    },
-    
-    
-    async get(key) {
-        try {
-            const db = await this.open();
-            // KRYTYCZNA POPRAWKA: Await wymusza zatrzymanie się i złapanie błędów transakcji
-            return await new Promise((resolve, reject) => {
-                const tx = db.transaction(this.storeName, 'readonly');
-                const req = tx.objectStore(this.storeName).get(key);
-                req.onsuccess = () => resolve(req.result);
-                req.onerror = () => reject(req.error);
-                tx.onerror = () => reject(tx.error);
-            });
-        } catch(e) {
-            console.warn("IndexedDB odrzuciło odczyt. Ładowanie z pamięci zapasowej...", e);
-            const localData = localStorage.getItem(key);
-            return localData ? JSON.parse(localData) : undefined;
-        }
-    },
-    
-    async set(key, value) {
-        try {
-            const db = await this.open();
-            // KRYTYCZNA POPRAWKA: Await + tx.oncomplete gwarantuje zrzut na fizyczny dysk
-            return await new Promise((resolve, reject) => {
-                const tx = db.transaction(this.storeName, 'readwrite');
-                const req = tx.objectStore(this.storeName).put(value, key);
-                tx.oncomplete = () => resolve(); // Czeka na definitywne potwierdzenie dysku
-                tx.onerror = () => reject(tx.error);
-                req.onerror = () => reject(req.error);
-            });
-        } catch(e) {
-            console.warn("IndexedDB zablokowane. Aktywacja systemu zapasowego (Fallback)...", e);
-            try {
-                // Bezpieczny, płynny zapis do starego systemu na wypadek zablokowania bazy
-                localStorage.setItem(key, JSON.stringify(value));
-            } catch(lsError) {
-                console.error("Krytyczny błąd: Brak miejsca również w LocalStorage!", lsError);
-                if (typeof apps !== 'undefined') apps.showToast("Błąd Dysku", "Brak miejsca do zapisu pliku!", "error");
-            }
-        }
-    },
-    
-    async clear() {
-        try {
-            const db = await this.open();
-            return await new Promise((resolve, reject) => {
-                const tx = db.transaction(this.storeName, 'readwrite');
-                const req = tx.objectStore(this.storeName).clear();
-                tx.oncomplete = () => resolve();
-                tx.onerror = () => reject(tx.error);
-                req.onerror = () => reject(req.error);
-            });
-        } catch(e) {
-            // Oczyszczanie zapasowe
-            localStorage.removeItem('bigos_fs');
-            localStorage.removeItem('bigos_fs_favs');
-            localStorage.removeItem('bigos_fs_history');
-        }
-    },
-    
-    close() {
-        if (this._db) { 
-            this._db.close(); 
-            this._db = null; 
-        }
-    }
-};
+// Resolve the single authoritative storage service.
+function bigosStorageApi() {
+    if (typeof window !== 'undefined' && window.bigosDB) return window.bigosDB;
+    if (typeof globalThis !== 'undefined' && globalThis.bigosDB) return globalThis.bigosDB;
+    throw new Error('bigosDB storage service is not loaded');
+}
+
+function bigosFs() {
+    if (typeof window !== 'undefined' && window.fileSystem) return window.fileSystem;
+    if (typeof globalThis !== 'undefined' && globalThis.fileSystem) return globalThis.fileSystem;
+    return [];
+}
+
+// Explicit export — top-level const does NOT become a window property.
+function snapshotItem(item) {
+    if (!item) return '';
+    return JSON.stringify({
+        id: item.id,
+        name: item.name,
+        type: item.type,
+        icon: item.icon,
+        content: item.content,
+        parentId: item.parentId,
+        x: item.x,
+        y: item.y,
+        appId: item.appId
+    });
+}
 
 const fsManager = {
     currentFolder: 'root',
@@ -96,52 +40,130 @@ const fsManager = {
     selectedItemId: null,
     favorites: ['root', 'hasiok'],
     opHistory: [],
-    
+    // 'ready' | 'recovery' | 'new_install' | 'storage_error'
+    initStatus: 'ready',
+    _saveQueue: Promise.resolve(),
+    _dirtyIds: new Set(),
+    _deletedIds: new Set(),
+    _lastSavedMap: new Map(),
+    _saveSeq: 0,
+    _fullSyncDone: false,
+
     init: async () => {
+        const store = bigosStorageApi();
+        const fs = bigosFs();
+        let saved = null, savedFavs = null, savedHist = null;
+        let readError = null;
+
         try {
-            let saved = await bigosDB.get('bigos_fs');
-            let savedFavs = await bigosDB.get('bigos_fs_favs');
-            let savedHist = await bigosDB.get('bigos_fs_history');
+            // Real migration from legacy stores / localStorage into typed records.
+            if (store.ensureMigrated) await store.ensureMigrated();
 
-            if (!saved && localStorage.getItem('bigos_fs')) {
-                console.log("Migracja systemu plików z LocalStorage do IndexedDB...");
-                saved = JSON.parse(localStorage.getItem('bigos_fs'));
-                savedFavs = JSON.parse(localStorage.getItem('bigos_fs_favs') || '[]');
-                savedHist = JSON.parse(localStorage.getItem('bigos_fs_history') || '[]');
-                
-                await bigosDB.set('bigos_fs', saved);
-                await bigosDB.set('bigos_fs_favs', savedFavs);
-                await bigosDB.set('bigos_fs_history', savedHist);
+            // Authoritative representation after migration: typed file records.
+            let typedMetas = null;
+            if (typeof store.listFileMetas === 'function') {
+                try {
+                    typedMetas = await store.listFileMetas();
+                } catch (e) {
+                    readError = e;
+                }
             }
 
-            if (saved && Array.isArray(saved) && saved.length > 0) {
-                fileSystem = saved;
-            } else {
-                throw new Error("Brak zapisanych danych w IndexedDB");
+            if (!readError && Array.isArray(typedMetas) && typedMetas.length > 0) {
+                const items = [];
+                for (const meta of typedMetas) {
+                    const full = { ...meta };
+                    try {
+                        const c = await store.getContent(meta.id);
+                        if (c !== undefined) full.content = c;
+                    } catch (e) {
+                        readError = e;
+                        break;
+                    }
+                    items.push(full);
+                }
+                if (!readError) saved = items;
+            } else if (!readError) {
+                // Fall back to legacy kv array only if no typed records exist.
+                saved = await store.get('bigos_fs');
             }
 
-            if (savedFavs) fsManager.favorites = savedFavs;
-            if (savedHist) fsManager.opHistory = savedHist;
-
+            if (!readError) {
+                savedFavs = await store.get('bigos_fs_favs');
+                savedHist = await store.get('bigos_fs_history');
+            }
         } catch (error) {
-            fileSystem = [];
-            if (typeof defaultApps !== 'undefined') {
-                defaultApps.forEach((app, i) => {
-                    let obj = {...app, parentId: 'root'};
-                    obj.x = (Math.floor(i/6) * GRID) + 20;
-                    obj.y = (i%6) * GRID + 20;
-                    fileSystem.push(obj);
-                });
-            }
-            fsManager.save();
+            readError = error;
+            if (typeof bigosDiag !== 'undefined') bigosDiag.error('fs', 'Filesystem read failed', { error: error && error.message });
         }
 
+        // Distinguish: confirmed new install vs unreadable/corrupt storage.
+        // A failed read is NEVER permission to create a replacement filesystem.
+        if (readError) {
+            fsManager.initStatus = 'recovery';
+            // Do NOT overwrite existing data. Try localStorage as a recovery source.
+            try {
+                const ls = localStorage.getItem('bigos_fs');
+                if (ls) {
+                    bigosState.setFileSystem(JSON.parse(ls));
+                } else {
+                    bigosState.setFileSystem([]);
+                }
+            } catch (_) {
+                bigosState.setFileSystem([]);
+            }
+            fsManager.showRecoveryBanner(readError);
+        } else if (saved && Array.isArray(saved) && saved.length > 0) {
+            bigosState.setFileSystem(saved);
+            for (const item of saved) {
+                if (item && item.id) fsManager._lastSavedMap.set(item.id, snapshotItem(item));
+            }
+            fsManager._fullSyncDone = true;
+            fsManager.initStatus = 'ready';
+            try {
+                if (typeof bigosAppRegistry !== 'undefined') bigosAppRegistry.readiness.markReady('filesystem', true);
+            } catch (e) {
+                if (typeof bigosDiag !== 'undefined') bigosDiag.warn('fs', 'readiness mark skipped', { error: e.message });
+            }
+        } else if (saved && Array.isArray(saved) && saved.length === 0) {
+            // Explicit empty array = user deleted everything — do not rebuild.
+            bigosState.setFileSystem([]);
+            fsManager._lastSavedMap.clear();
+            fsManager._fullSyncDone = true;
+            fsManager.initStatus = 'ready';
+            if (typeof bigosAppRegistry !== 'undefined') bigosAppRegistry.readiness.markReady('filesystem', true);
+        } else if (saved === undefined || saved === null) {
+            // Absent record with a successful read = confirmed new installation.
+            bigosState.setFileSystem([]);
+            fsManager.initStatus = 'new_install';
+            const defaults = (typeof defaultApps !== 'undefined' && Array.isArray(defaultApps)) ? defaultApps
+                : (typeof window !== 'undefined' && Array.isArray(window.defaultApps)) ? window.defaultApps
+                : [];
+            defaults.forEach((app, i) => {
+                let obj = { ...app, parentId: 'root' };
+                obj.x = (Math.floor(i / 6) * GRID) + 20;
+                obj.y = (i % 6) * GRID + 20;
+                fs.push(obj);
+            });
+            await fsManager.save();
+            if (typeof bigosAppRegistry !== 'undefined') bigosAppRegistry.readiness.markReady('filesystem', true);
+        } else {
+            // Unexpected data shape — do not overwrite, enter recovery.
+            fsManager.initStatus = 'recovery';
+            bigosState.setFileSystem(Array.isArray(saved) ? saved : []);
+            fsManager.showRecoveryBanner(new Error('Nieoczekiwany format danych systemu plików'));
+        }
+
+        if (savedFavs && Array.isArray(savedFavs)) fsManager.favorites = savedFavs;
+        if (savedHist && Array.isArray(savedHist)) fsManager.opHistory = savedHist;
+
+        // Tapety — tylko istniejące assety z katalogu tapety/
         const savedBg = localStorage.getItem('bigos_bg');
         if(savedBg && savedBg !== 'undefined' && savedBg !== 'null' && savedBg.trim() !== '') {
             document.getElementById('desktop-bg').style.backgroundImage = `url('${savedBg}')`;
             document.getElementById('desktop-bg').classList.add('custom-wp');
         } else {
-            document.getElementById('desktop-bg').style.backgroundImage = `url('tapety/natura.jpg')`;
+            document.getElementById('desktop-bg').style.backgroundImage = `url('tapety/bigos.webp')`;
             document.getElementById('desktop-bg').classList.add('custom-wp');
         }
 
@@ -149,7 +171,7 @@ const fsManager = {
         if(savedLoginBg && savedLoginBg !== 'undefined' && savedLoginBg !== 'null' && savedLoginBg.trim() !== '') {
             document.getElementById('login-screen').style.backgroundImage = `url('${savedLoginBg}')`;
         } else {
-            document.getElementById('login-screen').style.backgroundImage = `url('tapety/bigos.jpg')`;
+            document.getElementById('login-screen').style.backgroundImage = `url('tapety/bigos.webp')`;
         }
 
         if (typeof desktop !== 'undefined') {
@@ -158,16 +180,236 @@ const fsManager = {
 
         fsManager.upgradeUI();
     },
-    
+
+    showRecoveryBanner: (err) => {
+        if (typeof bigosDiag !== 'undefined') bigosDiag.error('fs', 'Entering recovery state — original data preserved', { error: err && err.message });
+        const banner = document.createElement('div');
+        banner.id = 'fs-recovery-banner';
+        banner.className = 'fixed top-0 left-0 right-0 z-[10001] bg-red-700 text-white text-sm px-4 py-2 flex flex-wrap items-center gap-3 justify-center';
+        banner.setAttribute('role', 'alert');
+        banner.innerHTML = `
+            <strong>⚠️ Problem z odczytem dysku BigOS.</strong>
+            <span>Twoje dane nie zostały nadpisane. Spróbuj ponownie odczytać lub odzyskać kopię.</span>
+            <button id="fs-recovery-retry" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded font-bold">Ponów odczyt</button>
+            <button id="fs-recovery-backup" class="px-3 py-1 bg-white/20 hover:bg-white/30 rounded font-bold">Przywróć z backupu</button>
+            <button id="fs-recovery-dismiss" class="px-2 py-1 opacity-70 hover:opacity-100">Ukryj</button>`;
+        document.body.appendChild(banner);
+        const retry = document.getElementById('fs-recovery-retry');
+        if (retry) retry.onclick = async () => {
+            banner.remove();
+            try {
+                const store = bigosStorageApi();
+                const saved = await store.get('bigos_fs');
+                if (saved && Array.isArray(saved)) {
+                    bigosState.setFileSystem(saved);
+                    fsManager.initStatus = 'ready';
+                    if (typeof desktop !== 'undefined') desktop.render();
+                    if (typeof apps !== 'undefined') apps.showToast('Odzyskiwanie', 'Odczyt zakończony pomyślnie.', 'success');
+                } else if (typeof apps !== 'undefined') {
+                    apps.showToast('Odzyskiwanie', 'Nadal brak danych w bazie — oryginalne rekordy zachowane.', 'error');
+                }
+            } catch (e2) {
+                if (typeof apps !== 'undefined') apps.showToast('Odzyskiwanie', 'Ponowny odczyt nie powiódł się.', 'error');
+                fsManager.showRecoveryBanner(e2);
+            }
+        };
+        const bak = document.getElementById('fs-recovery-backup');
+        if (bak) bak.onclick = () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/json,.json';
+            input.onchange = async (ev) => {
+                const f = ev.target.files[0];
+                if (!f) return;
+                try {
+                    const data = JSON.parse(await f.text());
+                    if (typeof bigosBackup === 'undefined') throw new Error('Moduł backupu niedostępny');
+                    const preview = await bigosBackup.preview(data);
+                    if (!preview.ok) {
+                        if (typeof apps !== 'undefined') apps.showToast('Backup', 'Nieprawidłowa struktura pliku: ' + preview.errors.join('; '), 'error');
+                        return;
+                    }
+                    if (!confirm(`Przywrócić backup?\nPliki: ${preview.summary.fileCount}\nAplikacje: ${preview.summary.packageCount}\nUstawienia: ${preview.summary.settingKeys.length}\n\nBieżące dane zostaną zastąpione (kopia recovery zostanie zachowana).`)) return;
+                    const res = await bigosBackup.restore(data, { mode: 'replace', keepRecovery: true });
+                    if (res.ok) {
+                        if (typeof apps !== 'undefined') apps.showToast('Backup', 'Przywrócono dane z kopii.', 'success');
+                        location.reload();
+                    } else {
+                        if (typeof apps !== 'undefined') apps.showToast('Backup', 'Błąd: ' + (res.errors || []).join('; '), 'error');
+                    }
+                } catch (e2) {
+                    if (typeof apps !== 'undefined') apps.showToast('Backup', 'Nie udało się odczytać pliku backupu.', 'error');
+                }
+            };
+            input.click();
+        };
+        const dismiss = document.getElementById('fs-recovery-dismiss');
+        if (dismiss) dismiss.onclick = () => banner.remove();
+    },
+
     save: async () => {
-        try {
-            await bigosDB.set('bigos_fs', fileSystem);
-            await bigosDB.set('bigos_fs_favs', fsManager.favorites);
-            await bigosDB.set('bigos_fs_history', fsManager.opHistory);
-        } catch (error) {
-            console.error("Błąd zapisu fsManager:", error);
+        // Recovery mode write protection: reject ordinary writes to protect unreadable data.
+        if (fsManager.initStatus === 'recovery') {
+            const err = new Error('Filesystem is in recovery mode — ordinary writes are blocked to protect unreadable data');
+            err.code = 'RECOVERY_MODE';
+            if (typeof bigosDiag !== 'undefined') bigosDiag.warn('fs', 'Write rejected: recovery mode active');
+            return [{ ok: false, error: err, code: 'RECOVERY_MODE' }];
+        }
+
+        // Serialize writes through one queue; resolve only after transactions commit.
+        const run = fsManager._saveQueue.then(async () => {
+            const store = bigosStorageApi();
+            const fs = bigosFs();
+            const results = [];
+
+            // Monotonic revision counter for write sequencing
+            const savingRevision = ++fsManager._saveSeq;
+
+            // Automatic dirty detection against _lastSavedMap:
+            // 1) Find new or modified items in live fileSystem
+            const currentIds = new Set();
+            for (const item of fs) {
+                if (!item || !item.id) continue;
+                currentIds.add(item.id);
+                const snap = snapshotItem(item);
+                if (!fsManager._lastSavedMap.has(item.id) || fsManager._lastSavedMap.get(item.id) !== snap) {
+                    fsManager._dirtyIds.add(item.id);
+                }
+            }
+            // 2) Find items in _lastSavedMap that are no longer in live fileSystem (deleted)
+            for (const [id] of fsManager._lastSavedMap) {
+                if (!currentIds.has(id)) {
+                    fsManager._deletedIds.add(id);
+                }
+            }
+
+            // Snapshot dirty/deleted sets for this revision
+            const dirtySnapshot = new Set(fsManager._dirtyIds || []);
+            const deletedSnapshot = new Set(fsManager._deletedIds || []);
+
+            // 1. Persist deletions (meta + content + revisions) first.
+            for (const id of deletedSnapshot) {
+                try {
+                    const r = await store.deleteFileNode(id);
+                    results.push(r);
+                    if (r && r.ok !== false) {
+                        fsManager._lastSavedMap.delete(id);
+                        fsManager._deletedIds.delete(id);
+                    }
+                } catch (e) {
+                    results.push({ ok: false, error: e });
+                }
+            }
+
+            // 2. Incremental per-node persistence of dirty records.
+            try {
+                const itemsToSave = fs.filter(i => i && dirtySnapshot.has(i.id));
+                if (itemsToSave.length > 0 && typeof store.putFileNodes === 'function') {
+                    const r = await store.putFileNodes(itemsToSave);
+                    results.push(r);
+                    if (r && r.ok) {
+                        for (const it of itemsToSave) {
+                            if (it && it.id) {
+                                fsManager._lastSavedMap.set(it.id, snapshotItem(it));
+                                fsManager._dirtyIds.delete(it.id);
+                            }
+                        }
+                        fsManager._fullSyncDone = true;
+                    }
+                } else {
+                    fsManager._fullSyncDone = true;
+                }
+            } catch (e) {
+                if (typeof bigosDiag !== 'undefined') bigosDiag.warn('fs', 'per-file sync failed', { error: e.message });
+                results.push({ ok: false, error: e });
+            }
+
+            // 3. Keep the legacy array snapshot + favorites/history in kv so older
+            // readers and backups still see a consistent view.
+            results.push(await store.set('bigos_fs', fs));
+            results.push(await store.set('bigos_fs_favs', fsManager.favorites));
+            results.push(await store.set('bigos_fs_history', fsManager.opHistory));
+
+            const failed = results.find(r => r && r.ok === false);
+            if (failed) {
+                if (typeof bigosDiag !== 'undefined') bigosDiag.error('fs', 'Save failed', { error: failed.error && failed.error.message });
+                if (typeof apps !== 'undefined') apps.showToast('Błąd Zapisu', 'Nie udało się zapisać danych na dysku!', 'error');
+            }
+            return results;
+        });
+
+        // A rejected queue entry must not poison future saves.
+        fsManager._saveQueue = run.catch(() => {});
+        return run;
+    },
+
+    /**
+     * Flush all pending writes and wait for the save queue to drain.
+     */
+    flush: async () => {
+        if ((fsManager._dirtyIds && fsManager._dirtyIds.size > 0) || (fsManager._deletedIds && fsManager._deletedIds.size > 0)) {
+            await fsManager.save();
+        }
+        if (fsManager._saveQueue) {
+            await fsManager._saveQueue;
         }
     },
+
+    /** Zaznacz rekord jako zmieniony (do zapisu indywidualnego). */
+    markDirty: (id) => {
+        if (!fsManager._dirtyIds) fsManager._dirtyIds = new Set();
+        if (id) fsManager._dirtyIds.add(id);
+    },
+
+    /**
+     * Authoritative node deletion: removes from live filesystem, typed
+     * storage (meta + content + revisions) and the legacy snapshot.
+     * Folder deletion cascades to descendants.
+     */
+    deleteNode: async (id) => {
+        if (!id || id === 'hasiok' || id === 'root') return { ok: false, error: 'cannot delete protected node' };
+        const fs = bigosFs();
+        const store = bigosStorageApi();
+
+        // Collect the node and all descendants (for folders).
+        const toRemove = new Set([id]);
+        let changed = true;
+        while (changed) {
+            changed = false;
+            for (const item of fs) {
+                if (item && item.parentId && toRemove.has(item.parentId) && !toRemove.has(item.id)) {
+                    toRemove.add(item.id);
+                    changed = true;
+                }
+            }
+        }
+
+        // Remove from the live shared array (in place).
+        bigosState.removeWhere((f) => f && toRemove.has(f.id));
+
+        // Queue typed-storage deletions.
+        for (const rid of toRemove) {
+            fsManager._deletedIds.add(rid);
+            if (fsManager._dirtyIds) fsManager._dirtyIds.delete(rid);
+        }
+
+        // Persist immediately so backups and other consumers cannot see ghosts.
+        const results = [];
+        for (const rid of toRemove) {
+            try {
+                const r = await store.deleteFileNode(rid);
+                results.push(r);
+                if (r && r.ok) fsManager._deletedIds.delete(rid);
+            } catch (e) {
+                results.push({ ok: false, error: e });
+            }
+        }
+        await fsManager.save();
+        return { ok: results.every(r => r && r.ok !== false), removed: Array.from(toRemove) };
+    },
+
+    /** Await pending saves (used before format/reset/reload). */
+    flush: async () => { return fsManager._saveQueue; },
 
     logHistory: (actionMsg) => {
         let time = new Date().toLocaleTimeString('pl-PL', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
@@ -179,6 +421,7 @@ const fsManager = {
     upgradeUI: () => {
         let appWindow = document.getElementById('app-aktowka');
         if (!appWindow) return setTimeout(fsManager.upgradeUI, 500);
+        if (typeof appWindow.querySelector !== 'function') return; // non-DOM test host
 
         appWindow.style.width = '800px';
         appWindow.style.height = '500px';
@@ -630,3 +873,7 @@ const fsManager = {
         else fsManager.openFolder('root');
     }
 };
+
+// Explicit export — top-level const does NOT become a window property.
+window.fsManager = fsManager;
+if (typeof globalThis !== 'undefined') globalThis.fsManager = fsManager;
