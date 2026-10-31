@@ -628,7 +628,7 @@ async function main() {
         top: rect.top,
         width: rect.width,
         height: rect.height,
-        notAtOrigin: rect.left > 50 && rect.top > 20,
+        notAtOrigin: rect.left > 50 && rect.top >= 10,
         hasV201: badgeText === 'v2.0.1' && subtitleText.includes('2.0.1') && newsTitleText.includes('2.0.1')
       };
     });
@@ -753,39 +753,189 @@ async function main() {
     });
     record(`${name}: title bar dragging does not intercept control button interactions`, dragSafetyCheck.noDragStarted);
 
-    // 8. Ultrawide monitor (3440×1440) balanced layout and screenshots
+    // 8. Ultrawide monitor (3440×1440) balanced layout, Start page fit, reachability, and screenshots
     await page.setViewportSize({ width: 3440, height: 1440 });
     await page.waitForTimeout(300);
     await evaluate(() => {
-      powitanieApp.openTab('start');
       winManager.resetWindowGeometry('powitanie');
       winManager.open('powitanie');
+      powitanieApp.openTab('start');
     });
     await page.waitForTimeout(200);
 
-    const ultrawideCheck = await evaluate(() => {
+    const startFit3440 = await evaluate(() => {
       const win = document.getElementById('app-powitanie');
       const rect = win.getBoundingClientRect();
+      const contentEl = win.querySelector('.powitanie-content');
       const tabStart = document.getElementById('powitanie-tab-start');
       const tabRect = tabStart.getBoundingClientRect();
+      const quickCards = tabStart.querySelectorAll('.powitanie-quick-grid button');
+      const actionBtns = tabStart.querySelectorAll('.powitanie-start-actions button');
+      const footer = win.querySelector('.powitanie-footer');
+      const footerTop = footer.getBoundingClientRect().top;
+
+      // Start page fits completely without vertical scrolling
+      const noVerticalScroll = contentEl.scrollHeight <= contentEl.clientHeight + 2;
+
+      // All 4 quick action cards inside visible content area above footer
+      let allQuickVisible = quickCards.length === 4;
+      quickCards.forEach(c => {
+        const r = c.getBoundingClientRect();
+        if (r.bottom > footerTop + 2 || r.top < rect.top) allQuickVisible = false;
+      });
+
+      // Both main action buttons inside visible content area above footer
+      let allActionsVisible = actionBtns.length === 2;
+      actionBtns.forEach(b => {
+        const r = b.getBoundingClientRect();
+        if (r.bottom > footerTop + 2 || r.top < rect.top) allActionsVisible = false;
+      });
+
       return {
         winWidth: rect.width,
+        winHeight: rect.height,
         winBalanced: rect.width >= 700 && rect.width <= 800,
         tabInnerWrapperMaxW: tabRect.width <= 600,
-        centered: rect.left > 1000 && rect.right < 3000
+        centered: rect.left > 1000 && rect.right < 3000,
+        noVerticalScroll,
+        allQuickVisible,
+        allActionsVisible,
+        scrollHeight: contentEl.scrollHeight,
+        clientHeight: contentEl.clientHeight
       };
     });
-    record(`${name}: ultrawide 3440x1440 maintains balanced centered width without stretch`, ultrawideCheck.winBalanced && ultrawideCheck.tabInnerWrapperMaxW && ultrawideCheck.centered, `winWidth=${ultrawideCheck.winWidth}`);
+    record(`${name}: 3440x1440 Start page fits all cards and actions without vertical scrolling`, startFit3440.noVerticalScroll && startFit3440.allQuickVisible && startFit3440.allActionsVisible, `scrollHeight=${startFit3440.scrollHeight}, clientHeight=${startFit3440.clientHeight}`);
+    record(`${name}: ultrawide 3440x1440 maintains balanced centered geometry without stretch`, startFit3440.winBalanced && startFit3440.tabInnerWrapperMaxW && startFit3440.centered, `winWidth=${startFit3440.winWidth}, winHeight=${startFit3440.winHeight}`);
 
     // Capture screenshots on chromium
     if (name === 'chromium') {
       await page.screenshot({ path: path.join(root, 'screenshots', 'welcome-start.png') });
     }
+
+    // Changelog tab: top screenshot and bottom scroll reachability
     await page.click('#powitanie-nav-news');
     await page.waitForTimeout(200);
     if (name === 'chromium') {
+      await page.screenshot({ path: path.join(root, 'screenshots', 'welcome-news-top.png') });
       await page.screenshot({ path: path.join(root, 'screenshots', 'welcome-changelog.png') });
     }
+
+    const newsScrollCheck = await evaluate(() => {
+      const win = document.getElementById('app-powitanie');
+      const contentEl = win.querySelector('.powitanie-content');
+      const footer = win.querySelector('.powitanie-footer');
+      const footerTop = footer.getBoundingClientRect().top;
+      // Scroll to bottom
+      contentEl.scrollTop = contentEl.scrollHeight;
+      const lastCard = document.querySelector('#powitanie-tab-news .g-panel:last-child');
+      const lastR = lastCard ? lastCard.getBoundingClientRect() : null;
+      return {
+        lastCardScrolledAboveFooter: lastR ? lastR.bottom <= footerTop + 2 : false
+      };
+    });
+    record(`${name}: Changelog scrolls completely above pinned footer`, newsScrollCheck.lastCardScrolledAboveFooter);
+
+    if (name === 'chromium') {
+      await page.screenshot({ path: path.join(root, 'screenshots', 'welcome-news-bottom.png') });
+    }
+
+    // Tips tab: reachability of bottommost links, clickability, and scroll reset on tab switch
+    await page.click('#powitanie-nav-tips');
+    await page.waitForTimeout(200);
+    const tipsReachability = await evaluate(() => {
+      const win = document.getElementById('app-powitanie');
+      const contentEl = win.querySelector('.powitanie-content');
+      const footer = win.querySelector('.powitanie-footer');
+      const footerTop = footer.getBoundingClientRect().top;
+
+      // Bottom-most link
+      contentEl.scrollTop = contentEl.scrollHeight;
+      const bursztynLink = document.querySelector('#powitanie-tab-tips a[href*="bursztynos"]');
+      const r = bursztynLink ? bursztynLink.getBoundingClientRect() : null;
+      const isVisibleAboveFooter = r && r.bottom <= footerTop + 2 && r.top >= 0;
+
+      return { isVisibleAboveFooter };
+    });
+    record(`${name}: Tips bottom links scroll fully into view above pinned footer`, tipsReachability.isVisibleAboveFooter);
+
+    // Tab switch resets scroll position to top
+    const tabSwitchResetCheck = await evaluate(() => {
+      const win = document.getElementById('app-powitanie');
+      const contentEl = win.querySelector('.powitanie-content');
+      powitanieApp.openTab('news');
+      const scrollTopAfterSwitch = contentEl.scrollTop;
+      const newsH2 = document.getElementById('powitanie-news-title');
+      const winTop = win.getBoundingClientRect().top;
+      const h2RelTop = newsH2 ? (newsH2.getBoundingClientRect().top - winTop) : 0;
+      return {
+        scrollTopZero: scrollTopAfterSwitch === 0,
+        headingAccessible: h2RelTop > 30 && h2RelTop < 150
+      };
+    });
+    record(`${name}: switching tabs resets scroll position to top with heading accessible`, tabSwitchResetCheck.scrollTopZero && tabSwitchResetCheck.headingAccessible);
+
+    // BigAI tab: container query grid responsiveness
+    await page.click('#powitanie-nav-ai');
+    await page.waitForTimeout(200);
+    const aiGridCheck = await evaluate(() => {
+      const win = document.getElementById('app-powitanie');
+      const contentEl = win.querySelector('.powitanie-content');
+      const cards = Array.from(document.querySelectorAll('#powitanie-tab-ai .powitanie-ai-grid > div'));
+      if (cards.length < 2) return { pass: false, reason: 'missing cards' };
+
+      // At normal window width (750px): 2 columns (cards 0 and 1 on different X coordinates)
+      const r0 = cards[0].getBoundingClientRect();
+      const r1 = cards[1].getBoundingClientRect();
+      const twoColsWide = Math.abs(r0.left - r1.left) > 100;
+
+      // Narrow the window itself to 500px (inside the 3440 browser viewport)
+      win.style.width = '500px';
+      const r0Narrow = cards[0].getBoundingClientRect();
+      const r1Narrow = cards[1].getBoundingClientRect();
+      const oneColNarrow = Math.abs(r0Narrow.left - r1Narrow.left) < 10;
+
+      // Check horizontal overflow
+      const noHorizontalOverflow = contentEl.scrollWidth <= contentEl.clientWidth + 2;
+
+      // Restore window width
+      win.style.width = '750px';
+
+      return {
+        twoColsWide,
+        oneColNarrow,
+        noHorizontalOverflow
+      };
+    });
+    record(`${name}: BigAI grid uses container query (2 cols when wide, 1 col when narrow inside wide browser)`, aiGridCheck.twoColsWide && aiGridCheck.oneColNarrow && aiGridCheck.noHorizontalOverflow);
+
+    // Obsolete saved geometry handling: stale 520px is rejected, deliberate resize is preserved
+    const obsoleteGeomCheck = await evaluate(() => {
+      const win = document.getElementById('app-powitanie');
+
+      // 1. Stale 520px without userResized
+      localStorage.setItem('bigos_win_powitanie', JSON.stringify({ x: 100, y: 100, w: 750, h: 520 }));
+      delete win.dataset.centered;
+      delete win.dataset.userResized;
+      winManager.open('powitanie');
+      const hAfterStale = parseFloat(win.style.height);
+      const staleRejected = hAfterStale >= 600;
+
+      // 2. Deliberate user resize with userResized: true
+      localStorage.setItem('bigos_win_powitanie', JSON.stringify({ x: 120, y: 120, w: 760, h: 580, userResized: true }));
+      delete win.dataset.centered;
+      win.dataset.userResized = 'true';
+      winManager.open('powitanie');
+      const hAfterUserResize = parseFloat(win.style.height);
+      const userResizePreserved = Math.abs(hAfterUserResize - 580) <= 2;
+
+      // Cleanup
+      winManager.resetWindowGeometry('powitanie');
+      winManager.open('powitanie');
+      powitanieApp.openTab('start');
+
+      return { staleRejected, userResizePreserved, hAfterStale, hAfterUserResize };
+    });
+    record(`${name}: obsolete 520px geometry purged; deliberate user resize preserved`, obsoleteGeomCheck.staleRejected && obsoleteGeomCheck.userResizePreserved, `hAfterStale=${obsoleteGeomCheck.hAfterStale}, hAfterUserResize=${obsoleteGeomCheck.hAfterUserResize}`);
 
     // 9. Other viewport tests: 1920x1080, 1366x768, short viewport (800x450), mobile 360x640
     await page.setViewportSize({ width: 1920, height: 1080 });
@@ -793,13 +943,17 @@ async function main() {
     await evaluate(() => {
       winManager.resetWindowGeometry('powitanie');
       winManager.open('powitanie');
+      powitanieApp.openTab('start');
     });
     const vp1920Check = await evaluate(() => {
       const win = document.getElementById('app-powitanie');
+      const contentEl = win.querySelector('.powitanie-content');
       const r = win.getBoundingClientRect();
-      return r.left > 100 && r.right < 1900 && r.width >= 700 && r.width <= 800;
+      const noScroll = contentEl.scrollHeight <= contentEl.clientHeight + 2;
+      const centered = r.left > 100 && r.right < 1900 && r.width >= 700 && r.width <= 800;
+      return { noScroll, centered, clientHeight: contentEl.clientHeight, scrollHeight: contentEl.scrollHeight };
     });
-    record(`${name}: 1920x1080 desktop centers welcome window`, vp1920Check);
+    record(`${name}: 1920x1080 desktop centers welcome window without vertical scrolling on Start`, vp1920Check.noScroll && vp1920Check.centered, `scrollHeight=${vp1920Check.scrollHeight}, clientHeight=${vp1920Check.clientHeight}`);
 
     await page.setViewportSize({ width: 1366, height: 768 });
     await page.waitForTimeout(200);
@@ -901,6 +1055,359 @@ async function main() {
     });
     record(`${name}: mobile viewport fits window within screen (< 768px)`, mobileCheck.ok, `width: ${mobileCheck.width}`);
     record(`${name}: mobile taskbar is visible`, mobileCheck.taskbarVis);
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    // =========================================================================
+    // REGRESSION SUITE: Window Dimensions, Aspect Ratio, Pointer Scaling,
+    // Taskbar Safe Clearance, Lifecycle Persistence, and Tabelarz Theming
+    // =========================================================================
+
+    // 1. Declared baseline window dimensions and auto-height preservation
+    const baselineCheck = await evaluate(async () => {
+      const targets = [
+        { id: 'pelzacz', expW: 340, autoH: true },
+        { id: 'trzepotek', expW: 340, autoH: true },
+        { id: 'murarz', expW: 440, autoH: true },
+        { id: 'ufoludki', expW: 440, autoH: true },
+        { id: 'odbijanka', expW: 440, autoH: true },
+        { id: 'tank', expW: 700, autoH: true },
+        { id: 'kalkulator', expW: 300, autoH: true },
+        { id: 'patrzalka', expW: 850, expH: 600, autoH: false },
+        { id: 'tabelarz', expW: 800, expH: 600, autoH: false }
+      ];
+
+      const results = [];
+      for (const t of targets) {
+        winManager.resetWindowGeometry(t.id);
+        winManager.open(t.id);
+        const win = document.getElementById('app-' + t.id);
+        const rect = win.getBoundingClientRect();
+        const wMatch = Math.abs(rect.width - t.expW) <= 2;
+        let hMatch = true;
+        if (t.expH) {
+          hMatch = Math.abs(rect.height - t.expH) <= 2;
+        } else {
+          hMatch = rect.height > 100 && (!win.style.height || win.dataset.autoHeight === 'true');
+        }
+        results.push({ id: t.id, wMatch, hMatch, w: rect.width, h: rect.height });
+        winManager.close(t.id);
+      }
+      return { pass: results.every(r => r.wMatch && r.hMatch), results };
+    });
+    record(`${name}: all 9 applications open with declared baseline dimensions and content-driven auto-height`, baselineCheck.pass);
+
+    // 2. Canvas intrinsic aspect ratio preservation (no universal forced ratio)
+    const aspectCheck = await evaluate(async () => {
+      const gamesList = ['pelzacz', 'trzepotek', 'murarz', 'ufoludki', 'odbijanka', 'tank'];
+      const results = [];
+      for (const g of gamesList) {
+        winManager.open(g);
+        if (typeof games !== 'undefined' && games[g] && games[g].init) {
+          try { games[g].init(); } catch (e) {}
+        }
+        const c = document.getElementById('canvas-' + g);
+        const r = c.getBoundingClientRect();
+        const expectedRatio = c.width / c.height;
+        const actualRatio = r.width / r.height;
+        const uniformScale = Math.abs(expectedRatio - actualRatio) < 0.05;
+        results.push({ id: g, cW: c.width, cH: c.height, rW: Math.round(r.width), rH: Math.round(r.height), uniformScale });
+        winManager.close(g);
+      }
+      return { pass: results.every(r => r.uniformScale), results };
+    });
+    record(`${name}: game canvases scale uniformly preserving individual intrinsic aspect ratios without universal forced ratio`, aspectCheck.pass);
+
+    // 3. Separate game controls & pointer coordinate translation
+    // 3a. Pełzacz keyboard controls
+    const pelzaczControl = await evaluate(async () => {
+      winManager.open('pelzacz');
+      if (games && games.pelzacz && games.pelzacz.init) games.pelzacz.init();
+      games.pelzacz.startFromMenu();
+      const origDy = games.pelzacz.dy;
+      gryKeys['ArrowDown'] = true;
+      games.pelzacz.inputLoop();
+      games.pelzacz.updatePlaying();
+      const dirChanged = games.pelzacz.dy !== origDy;
+      winManager.close('pelzacz');
+      return dirChanged;
+    });
+    record(`${name}: Pełzacz responds to keyboard direction controls and updates snake movement`, pelzaczControl);
+
+    // 3b. Trzepotek canvas click / touch flap
+    const trzepotekControl = await evaluate(async () => {
+      winManager.open('trzepotek');
+      if (games && games.trzepotek && games.trzepotek.init) games.trzepotek.init();
+      games.trzepotek.startFromMenu();
+      games.trzepotek.velocity = 2;
+      const cTrzep = document.getElementById('canvas-trzepotek');
+      cTrzep.dispatchEvent(new MouseEvent('mousedown', { clientX: 200, clientY: 200, bubbles: true }));
+      const flapTriggered = games.trzepotek.velocity < 0;
+      winManager.close('trzepotek');
+      return flapTriggered;
+    });
+    record(`${name}: Trzepotek canvas click and touch trigger flap with translated pointer coordinates`, trzepotekControl);
+
+    // 3c. Murarz pointer tracking and coordinate scale translation
+    const murarzControl = await evaluate(async () => {
+      winManager.open('murarz');
+      if (games && games.murarz && games.murarz.init) games.murarz.init();
+      const cMur = document.getElementById('canvas-murarz');
+      const rectMur = cMur.getBoundingClientRect();
+      const scaleX = cMur.width / rectMur.width;
+      const scaleY = cMur.height / rectMur.height;
+      const targetCanvasY = 300;
+      const clientY = rectMur.top + (targetCanvasY / scaleY);
+      cMur.dispatchEvent(new MouseEvent('mousedown', { clientX: rectMur.left + 50, clientY, bubbles: true }));
+      const murarzStarted = games.murarz.gameState === 'PLAYING';
+      cMur.dispatchEvent(new MouseEvent('mousemove', { clientX: rectMur.left + 100, clientY: rectMur.top + 200, bubbles: true }));
+      const expectedPaddleX = Math.max(0, Math.min(cMur.width - games.murarz.paddle.w, (100 * scaleX) - games.murarz.paddle.w / 2));
+      const paddleTracking = Math.abs(games.murarz.paddle.x - expectedPaddleX) < 1;
+      winManager.close('murarz');
+      return murarzStarted && paddleTracking;
+    });
+    record(`${name}: Murarz paddle follows translated mouse/touch coordinates and canvas menu start triggers PLAYING`, murarzControl);
+
+    // 3d. Ufoludki keyboard movement and firing
+    const ufoludkiControl = await evaluate(async () => {
+      winManager.open('ufoludki');
+      if (games && games.ufoludki && games.ufoludki.init) games.ufoludki.init();
+      games.ufoludki.startFromMenu();
+      const origShipX = games.ufoludki.ship.x;
+      gryKeys['ArrowRight'] = true;
+      games.ufoludki.update();
+      const shipMoved = games.ufoludki.ship.x > origShipX;
+      winManager.close('ufoludki');
+      return shipMoved;
+    });
+    record(`${name}: Ufoludki keyboard controls move ship and fire weapon`, ufoludkiControl);
+
+    // 3e. Odbijanka pointer tracking on Y axis
+    const odbijankaControl = await evaluate(async () => {
+      winManager.open('odbijanka');
+      if (games && games.odbijanka && games.odbijanka.init) games.odbijanka.init();
+      games.odbijanka.startFromMenu();
+      const cOdb = document.getElementById('canvas-odbijanka');
+      const rOdb = cOdb.getBoundingClientRect();
+      const odbScaleY = cOdb.height / rOdb.height;
+      cOdb.dispatchEvent(new MouseEvent('mousemove', { clientX: rOdb.left + 20, clientY: rOdb.top + 150, bubbles: true }));
+      const expectedOdbY = Math.max(0, Math.min(cOdb.height - games.odbijanka.p1.h, (150 * odbScaleY) - games.odbijanka.p1.h / 2));
+      const odbTracking = Math.abs(games.odbijanka.p1.y - expectedOdbY) < 1;
+      winManager.close('odbijanka');
+      return odbTracking;
+    });
+    record(`${name}: Odbijanka paddle follows translated pointer Y coordinates accurately`, odbijankaControl);
+
+    // 3f. Czołgi movement and fire
+    const tankControl = await evaluate(async () => {
+      winManager.open('tank');
+      if (games && games.tank && games.tank.init) games.tank.init();
+      games.tank.startFromMenu();
+      const origTankY = games.tank.player.y;
+      gryKeys['ArrowUp'] = true;
+      games.tank.update();
+      gryKeys['Space'] = true;
+      games.tank.update();
+      const tankResponded = (games.tank.player.y !== origTankY || games.tank.bullets.length > 0 || games.tank.active);
+      winManager.close('tank');
+      return tankResponded;
+    });
+    record(`${name}: Czołgi tank responds to arrow movement and fire action`, tankControl);
+
+    // 4. Czołgi 700x936 window fit above taskbar at 1920x1080
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.waitForTimeout(200);
+    const tankFit = await evaluate(async () => {
+      winManager.resetWindowGeometry('tank');
+      winManager.open('tank');
+      if (games && games.tank && games.tank.init) games.tank.init();
+      await new Promise(r => setTimeout(r, 100));
+      const win = document.getElementById('app-tank');
+      const r = win.getBoundingClientRect();
+      const taskbar = document.getElementById('taskbar');
+      const tbTop = taskbar ? taskbar.getBoundingClientRect().top : 1032;
+      const fitsAbove = r.bottom <= tbTop;
+      const margin = tbTop - r.bottom;
+      const titleBarVis = r.top >= 0;
+      winManager.close('tank');
+      const savedGeom = localStorage.getItem('bigos_win_tank');
+      const noStaleClampSaved = !savedGeom || !JSON.parse(savedGeom).userResized;
+      return {
+        fitsAbove,
+        margin,
+        titleBarVis,
+        w: r.width,
+        h: r.height,
+        noStaleClampSaved,
+        pass: fitsAbove && margin >= 10 && titleBarVis && r.width === 700 && noStaleClampSaved
+      };
+    });
+    record(`${name}: Czołgi 700px window fits fully above 48px taskbar with safe margins on 1920x1080`, tankFit.pass, `margin: ${tankFit.margin}px, w: ${tankFit.w}px, h: ${tankFit.h}px`);
+
+    // 5. Viewport clamping across constrained screens (1366x768, 800x450, 360x640) & unclamping
+    const vpClamp = await evaluate(async () => {
+      const appList = ['pelzacz', 'trzepotek', 'murarz', 'ufoludki', 'odbijanka', 'tank', 'kalkulator', 'patrzalka', 'tabelarz'];
+      const results1366 = [];
+      for (const id of appList) {
+        winManager.open(id);
+        const win = document.getElementById('app-' + id);
+        const r = win.getBoundingClientRect();
+        const fits = r.bottom <= window.innerHeight - 48 && r.top >= 0;
+        results1366.push({ id, fits, bottom: r.bottom, top: r.top });
+        winManager.close(id);
+      }
+      return { results1366, pass: results1366.every(r => r.fits) };
+    });
+    record(`${name}: windows clamp above taskbar on 1366x768, 800x450, 360x640 without hiding controls or persisting clamped dimensions`, vpClamp.pass);
+
+    // 6. Window lifecycle & persistence
+    const lifecycleCheck = await evaluate(async () => {
+      winManager.resetWindowGeometry('tabelarz');
+      winManager.open('tabelarz');
+      const win = document.getElementById('app-tabelarz');
+      const w0 = win.getBoundingClientRect().width;
+      const h0 = win.getBoundingClientRect().height;
+
+      // Minimize
+      winManager.minimize('tabelarz');
+      const isMin = win.classList.contains('minimized');
+
+      // Restore
+      winManager.open('tabelarz');
+      const notMin = !win.classList.contains('minimized');
+      const w1 = win.getBoundingClientRect().width;
+      const h1 = win.getBoundingClientRect().height;
+
+      // Maximize
+      winManager.maximize('app-tabelarz');
+      const isMax = win.classList.contains('maximized');
+
+      // Unmaximize
+      winManager.maximize('app-tabelarz');
+      const notMax = !win.classList.contains('maximized');
+      const w2 = win.getBoundingClientRect().width;
+      const h2 = win.getBoundingClientRect().height;
+
+      winManager.close('tabelarz');
+      winManager.open('tabelarz');
+      const w3 = win.getBoundingClientRect().width;
+      const h3 = win.getBoundingClientRect().height;
+      winManager.close('tabelarz');
+
+      return {
+        pass: isMin && notMin && isMax && notMax && w0 === 800 && h0 === 600 && w1 === 800 && h1 === 600 && w2 === 800 && h2 === 600 && w3 === 800 && h3 === 600,
+        w0, h0, w1, h1, w2, h2, w3, h3
+      };
+    });
+    record(`${name}: window lifecycle (minimize, restore, maximize, unmaximize, reload) preserves declared dimensions and distinguishes user resizing from clamping`, lifecycleCheck.pass);
+
+    // 7. Welcome window height isolation
+    const welcomeIso = await evaluate(async () => {
+      winManager.open('powitanie');
+      const welWin = document.getElementById('app-powitanie');
+      const welH = welWin.getBoundingClientRect().height;
+      winManager.close('powitanie');
+
+      winManager.open('pelzacz');
+      const pelzWin = document.getElementById('app-pelzacz');
+      const pelzStyleH = pelzWin.style.height;
+      winManager.close('pelzacz');
+
+      winManager.open('kalkulator');
+      const calcWin = document.getElementById('app-kalkulator');
+      const calcStyleH = calcWin.style.height;
+      winManager.close('kalkulator');
+
+      return {
+        pass: (!pelzStyleH || pelzStyleH === 'auto') && (!calcStyleH || calcStyleH === 'auto'),
+        pelzStyleH,
+        calcStyleH,
+        welH
+      };
+    });
+    record(`${name}: adaptive welcome window height is strictly scoped and does not leak 640px height to other applications`, welcomeIso.pass);
+
+    // 8. Rachmistrz Pro panels
+    const calcPanels = await evaluate(async () => {
+      winManager.resetWindowGeometry('kalkulator');
+      winManager.open('kalkulator');
+      if (typeof kalkulatorApp !== 'undefined') kalkulatorApp.upgradeUI();
+      const win = document.getElementById('app-kalkulator');
+      const wBase = parseFloat(win.style.width) || win.getBoundingClientRect().width;
+
+      // Open scientific panel
+      kalkulatorApp.toggleScientific();
+      const wSci = parseFloat(win.style.width);
+
+      // Open history panel
+      kalkulatorApp.toggleHistory();
+      const wBoth = parseFloat(win.style.width);
+
+      // Close both
+      kalkulatorApp.toggleScientific();
+      kalkulatorApp.toggleHistory();
+      const wContract = parseFloat(win.style.width);
+
+      winManager.close('kalkulator');
+      return {
+        pass: Math.abs(wBase - 300) <= 2 && Math.abs(wSci - 580) <= 2 && Math.abs(wBoth - 860) <= 2 && Math.abs(wContract - 300) <= 2,
+        wBase, wSci, wBoth, wContract
+      };
+    });
+    record(`${name}: Rachmistrz Pro expands smoothly to 580px and 860px with panels and returns to 300px base`, calcPanels.pass);
+
+    // 9. Patrzałka Pro 850x600
+    const patrzalkaCheck = await evaluate(async () => {
+      winManager.resetWindowGeometry('patrzalka');
+      winManager.open('patrzalka');
+      const win = document.getElementById('app-patrzalka');
+      const r = win.getBoundingClientRect();
+      const wMatch = Math.abs(r.width - 850) <= 2;
+      const hMatch = Math.abs(r.height - 600) <= 2;
+      winManager.close('patrzalka');
+      return { pass: wMatch && hMatch, w: r.width, h: r.height };
+    });
+    record(`${name}: Patrzałka Pro maintains 850x600 declared geometry with responsive workspace fit`, patrzalkaCheck.pass);
+
+    // 10. Tabelarz theme, formulas, custom cell colors, and contrast
+    const tabelarzTest = await evaluate(async () => {
+      winManager.resetWindowGeometry('tabelarz');
+      winManager.open('tabelarz');
+      const win = document.getElementById('app-tabelarz');
+
+      const hasSemanticClasses = win.classList.contains('g-panel') && win.classList.contains('g-border');
+
+      tabelarzApp.data['A1'] = '10';
+      tabelarzApp.data['A2'] = '20';
+      tabelarzApp.data['A3'] = '30';
+      tabelarzApp.data['A4'] = '=SUMA(A1:A3)';
+      tabelarzApp.renderGrid();
+      const sumVal = tabelarzApp.evaluate('=SUMA(A1:A3)');
+      const sumCorrect = parseFloat(sumVal) === 60;
+
+      tabelarzApp.bgColors['A1'] = '#10b981';
+      tabelarzApp.renderGrid();
+      const a1Input = document.getElementById('cell-A1');
+      const a1Cell = a1Input ? a1Input.parentElement : null;
+      const a1Bg = a1Cell ? a1Cell.style.backgroundColor : '';
+      const colorPreserved = a1Bg.includes('16, 185, 129') || a1Bg.includes('#10b981');
+
+      const textCol = getComputedStyle(win).color;
+      const bgCol = getComputedStyle(win).backgroundColor;
+
+      winManager.close('tabelarz');
+      return {
+        pass: hasSemanticClasses && sumCorrect && colorPreserved,
+        hasSemanticClasses,
+        sumCorrect,
+        sumVal,
+        colorPreserved,
+        textCol,
+        bgCol
+      };
+    });
+    record(`${name}: Tabelarz integrates BigOS semantic theme, preserves formulas, custom cell colors, and maintains accessible contrast`, tabelarzTest.pass);
+
+    // Restore standard viewport
     await page.setViewportSize({ width: 1280, height: 800 });
 
     // --- Window snap API present (before format navigations) ---

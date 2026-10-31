@@ -5,7 +5,7 @@
 // Network-required features are documented in docs/OFFLINE.md.
 // ======================================================================
 
-const CACHE_VERSION = 'bigos-v2.0.1-p1';
+const CACHE_VERSION = 'bigos-v2.0.1-p2';
 const CORE_CACHE = `${CACHE_VERSION}-core`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 

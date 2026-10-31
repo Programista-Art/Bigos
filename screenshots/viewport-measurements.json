@@ -1,0 +1,590 @@
+{
+  "1920x1080": {
+    "pelzacz": {
+      "width": 340,
+      "height": 628,
+      "left": 790,
+      "top": 260,
+      "bottom": 888,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 144,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 306,
+        "h": 306,
+        "aspectRatio": 1
+      }
+    },
+    "trzepotek": {
+      "width": 340,
+      "height": 592,
+      "left": 790,
+      "top": 210,
+      "bottom": 802,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 230,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 306,
+        "h": 306,
+        "aspectRatio": 1
+      }
+    },
+    "murarz": {
+      "width": 440,
+      "height": 680,
+      "left": 740,
+      "top": 260,
+      "bottom": 940,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 92,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 406,
+        "h": 406,
+        "aspectRatio": 1
+      }
+    },
+    "ufoludki": {
+      "width": 440,
+      "height": 692,
+      "left": 740,
+      "top": 210,
+      "bottom": 902,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 130,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 406,
+        "h": 406,
+        "aspectRatio": 1
+      }
+    },
+    "odbijanka": {
+      "width": 440,
+      "height": 692,
+      "left": 740,
+      "top": 260,
+      "bottom": 952,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 80,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 406,
+        "h": 406,
+        "aspectRatio": 1
+      }
+    },
+    "tank": {
+      "width": 700,
+      "height": 936,
+      "left": 610,
+      "top": 79,
+      "bottom": 1015,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 17,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 650,
+        "h": 650,
+        "aspectRatio": 1
+      }
+    },
+    "kalkulator": {
+      "width": 300,
+      "height": 596,
+      "left": 810,
+      "top": 316,
+      "bottom": 912,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 120,
+      "isScrollable": false,
+      "canvasRect": null
+    },
+    "patrzalka": {
+      "width": 850,
+      "height": 600,
+      "left": 535,
+      "top": 216,
+      "bottom": 816,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 216,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 0,
+        "h": 0,
+        "aspectRatio": null
+      }
+    },
+    "tabelarz": {
+      "width": 800,
+      "height": 600,
+      "left": 560,
+      "top": 216,
+      "bottom": 816,
+      "titleBarVisible": true,
+      "taskbarTop": 1032,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 216,
+      "isScrollable": false,
+      "canvasRect": null
+    }
+  },
+  "1366x768": {
+    "pelzacz": {
+      "width": 340,
+      "height": 628,
+      "left": 513,
+      "top": 92,
+      "bottom": 720,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 306,
+        "h": 306,
+        "aspectRatio": 1
+      }
+    },
+    "trzepotek": {
+      "width": 340,
+      "height": 592,
+      "left": 513,
+      "top": 54,
+      "bottom": 646,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 74,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 306,
+        "h": 306,
+        "aspectRatio": 1
+      }
+    },
+    "murarz": {
+      "width": 440,
+      "height": 680,
+      "left": 463,
+      "top": 40,
+      "bottom": 720,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 406,
+        "h": 406,
+        "aspectRatio": 1
+      }
+    },
+    "ufoludki": {
+      "width": 440,
+      "height": 692,
+      "left": 463,
+      "top": 28,
+      "bottom": 720,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 406,
+        "h": 406,
+        "aspectRatio": 1
+      }
+    },
+    "odbijanka": {
+      "width": 440,
+      "height": 692,
+      "left": 463,
+      "top": 28,
+      "bottom": 720,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 406,
+        "h": 406,
+        "aspectRatio": 1
+      }
+    },
+    "tank": {
+      "width": 700,
+      "height": 712,
+      "left": 333,
+      "top": 8,
+      "bottom": 720,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 560,
+        "h": 560,
+        "aspectRatio": 1
+      }
+    },
+    "kalkulator": {
+      "width": 300,
+      "height": 596,
+      "left": 533,
+      "top": 124,
+      "bottom": 720,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": null
+    },
+    "patrzalka": {
+      "width": 850,
+      "height": 600,
+      "left": 258,
+      "top": 60,
+      "bottom": 660,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 60,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 0,
+        "h": 0,
+        "aspectRatio": null
+      }
+    },
+    "tabelarz": {
+      "width": 800,
+      "height": 600,
+      "left": 283,
+      "top": 60,
+      "bottom": 660,
+      "titleBarVisible": true,
+      "taskbarTop": 720,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 60,
+      "isScrollable": false,
+      "canvasRect": null
+    }
+  },
+  "800x450": {
+    "pelzacz": {
+      "width": 340,
+      "height": 394,
+      "left": 230,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 242,
+        "h": 242,
+        "aspectRatio": 1
+      }
+    },
+    "trzepotek": {
+      "width": 340,
+      "height": 394,
+      "left": 230,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 242,
+        "h": 242,
+        "aspectRatio": 1
+      }
+    },
+    "murarz": {
+      "width": 440,
+      "height": 394,
+      "left": 180,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 242,
+        "h": 242,
+        "aspectRatio": 1
+      }
+    },
+    "ufoludki": {
+      "width": 440,
+      "height": 394,
+      "left": 180,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 242,
+        "h": 242,
+        "aspectRatio": 1
+      }
+    },
+    "odbijanka": {
+      "width": 440,
+      "height": 394,
+      "left": 180,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 242,
+        "h": 242,
+        "aspectRatio": 1
+      }
+    },
+    "tank": {
+      "width": 700,
+      "height": 394,
+      "left": 50,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 242,
+        "h": 242,
+        "aspectRatio": 1
+      }
+    },
+    "kalkulator": {
+      "width": 300,
+      "height": 402,
+      "left": 250,
+      "top": 0,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": null
+    },
+    "patrzalka": {
+      "width": 792,
+      "height": 394,
+      "left": 8,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 0,
+        "h": 0,
+        "aspectRatio": null
+      }
+    },
+    "tabelarz": {
+      "width": 800,
+      "height": 394,
+      "left": 0,
+      "top": 8,
+      "bottom": 402,
+      "titleBarVisible": true,
+      "taskbarTop": 402,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": null
+    }
+  },
+  "360x640": {
+    "pelzacz": {
+      "width": 360,
+      "height": 592,
+      "left": 0,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 326,
+        "h": 5,
+        "aspectRatio": 65.2
+      }
+    },
+    "trzepotek": {
+      "width": 360,
+      "height": 592,
+      "left": 0,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 326,
+        "h": 75,
+        "aspectRatio": 4.347
+      }
+    },
+    "murarz": {
+      "width": 360,
+      "height": 592,
+      "left": 0,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 326,
+        "h": 79,
+        "aspectRatio": 4.127
+      }
+    },
+    "ufoludki": {
+      "width": 360,
+      "height": 592,
+      "left": 0,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 326,
+        "h": 80,
+        "aspectRatio": 4.075
+      }
+    },
+    "odbijanka": {
+      "width": 360,
+      "height": 592,
+      "left": 0,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 326,
+        "h": 175,
+        "aspectRatio": 1.863
+      }
+    },
+    "tank": {
+      "width": 360,
+      "height": 592,
+      "left": 0,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": true,
+      "canvasRect": {
+        "w": 326,
+        "h": 0,
+        "aspectRatio": null
+      }
+    },
+    "kalkulator": {
+      "width": 300,
+      "height": 592,
+      "left": 30,
+      "top": 0,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": null
+    },
+    "patrzalka": {
+      "width": 352,
+      "height": 584,
+      "left": 8,
+      "top": 8,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": {
+        "w": 0,
+        "h": 0,
+        "aspectRatio": null
+      }
+    },
+    "tabelarz": {
+      "width": 352,
+      "height": 584,
+      "left": 8,
+      "top": 8,
+      "bottom": 592,
+      "titleBarVisible": true,
+      "taskbarTop": 592,
+      "fitsAboveTaskbar": true,
+      "marginAboveTaskbar": 0,
+      "isScrollable": false,
+      "canvasRect": null
+    }
+  }
+}

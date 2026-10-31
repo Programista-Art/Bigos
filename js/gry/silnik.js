@@ -102,7 +102,9 @@ gameStyles.innerHTML = `
     .window[id^="app-pelzacz"], .window[id^="app-murarz"], .window[id^="app-ufoludki"], 
     .window[id^="app-odbijanka"], .window[id^="app-trzepotek"], .window[id^="app-scigacz"], 
     .window[id^="app-bombiarz"], .window[id="app-kolko"], .window[id^="app-tank"] {
-        height: max-content !important; 
+        max-height: calc(100vh - 56px);
+        display: flex;
+        flex-direction: column; 
     }
     
     .window[id^="app-pelzacz"] > div:nth-child(2), .window[id^="app-murarz"] > div:nth-child(2), 
@@ -110,13 +112,21 @@ gameStyles.innerHTML = `
     .window[id^="app-trzepotek"] > div:nth-child(2), .window[id^="app-scigacz"] > div:nth-child(2), 
     .window[id^="app-bombiarz"] > div:nth-child(2), .window[id="app-kolko"] > div:nth-child(2),
     .window[id^="app-tank"] > div:nth-child(2) {
-        display: flex; flex-direction: column; flex-grow: 1; height: 100%; overflow: hidden;
+        display: flex; flex-direction: column; flex-grow: 1; min-height: 0; overflow-y: auto;
     }
     
     div[id$="-score"], div[id="tic-status"] { flex-shrink: 0; margin-bottom: 5px; }
 
+    canvas[id^="canvas-"] {
+        max-width: 100%;
+        height: auto;
+        max-height: calc(100vh - 48px - 160px); width: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
     .window.maximized[id^="app-"] { height: calc(100vh - 48px) !important; }
-    .window.maximized canvas[id^="canvas-"] { width: 100% !important; height: 100% !important; object-fit: contain !important; flex-grow: 1; min-height: 0; }
+    .window.maximized canvas[id^="canvas-"] { width: 100% !important; height: 100% !important; object-fit: contain !important; flex-grow: 1; min-height: 0; max-height: none !important; max-width: none !important; }
     
     .game-fs-btn { background-color: #2563eb; color: white; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 13px; margin-bottom: 8px; border: 1px solid #1d4ed8; flex-shrink: 0; width: 100% !important; max-width: 320px !important; display: block; align-self: center; }
     .game-fs-btn:active { background-color: #1e40af; }
@@ -155,7 +165,7 @@ gameStyles.innerHTML = `
 
         .pc-start-btn { display: none !important; }
         .game-fs-btn { display: none !important; }
-        canvas[id^="canvas-"] { width: 100% !important; height: 100% !important; max-height: none !important; object-fit: contain !important; flex-grow: 1; min-height: 0; margin: auto 0; }
+        canvas[id^="canvas-"] { width: 100% !important; height: 100% !important; max-height: none !important; object-fit: contain !important; flex-grow: 1; min-height: 0; margin: auto 0; aspect-ratio: auto; }
         
         .window.active:not(.minimized) .mobile-dpad { display: grid !important; }
         .window.active:not(.minimized) .mobile-dpad-pong { display: flex !important; }
@@ -172,6 +182,7 @@ setTimeout(() => {
         c.ondblclick = () => { if(win && typeof winManager !== 'undefined') winManager.maximize(win.id); };
 
         const parent = c.parentElement;
+        if (!parent || parent.querySelector('[class*="-controls-container"]')) return;
         const startBtn = parent.querySelector('button[onclick^="games."]');
         if(startBtn) startBtn.classList.add('pc-start-btn', 'shrink-0');
         

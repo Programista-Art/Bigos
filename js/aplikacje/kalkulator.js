@@ -24,7 +24,7 @@ const kalkulatorApp = {
         const appWindow = document.getElementById('app-kalkulator');
         if (!appWindow) { setTimeout(kalkulatorApp.upgradeUI, 500); return; }
 
-        appWindow.style.width = '340px';
+        appWindow.style.width = '300px';
         appWindow.style.height = 'auto';
         appWindow.style.transition = 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         appWindow.style.background = 'transparent';
@@ -90,7 +90,7 @@ const kalkulatorApp = {
             </div>
 
             <!-- PANEL GŁÓWNY (Zawsze widoczny) -->
-            <div class="flex flex-col w-[340px] shrink-0">
+            <div class="flex flex-col w-[300px] shrink-0">
                 <!-- Tematyczny Pasek Tytułowy (Zastępuje domyślny) -->
                 <div class="px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30" onmousedown="winManager.startDrag(event, 'app-kalkulator')" ontouchstart="winManager.startDrag(event, 'app-kalkulator')">
                     <span class="text-sm font-bold g-accent drop-shadow-md">🧮 Rachmistrz PRO</span>
@@ -226,12 +226,12 @@ const kalkulatorApp = {
             sciPanel.classList.remove('w-0', 'border-transparent');
             sciPanel.classList.add('w-[280px]');
             btn.classList.add('g-accent'); btn.classList.remove('g-text-muted');
-            appWindow.style.width = kalkulatorApp.isHistoryOpen ? '900px' : '620px';
+            appWindow.style.width = kalkulatorApp.isHistoryOpen ? '860px' : '580px';
         } else {
             sciPanel.classList.add('w-0', 'border-transparent');
             sciPanel.classList.remove('w-[280px]');
             btn.classList.remove('g-accent'); btn.classList.add('g-text-muted');
-            appWindow.style.width = kalkulatorApp.isHistoryOpen ? '620px' : '340px';
+            appWindow.style.width = kalkulatorApp.isHistoryOpen ? '580px' : '300px';
         }
     },
 
@@ -245,13 +245,13 @@ const kalkulatorApp = {
             histPanel.classList.remove('w-0', 'border-transparent');
             histPanel.classList.add('w-[280px]');
             btn.classList.add('g-accent'); btn.classList.remove('g-text-muted');
-            appWindow.style.width = kalkulatorApp.isScientific ? '900px' : '620px';
+            appWindow.style.width = kalkulatorApp.isScientific ? '860px' : '580px';
             kalkulatorApp.renderHistory();
         } else {
             histPanel.classList.add('w-0', 'border-transparent');
             histPanel.classList.remove('w-[280px]');
             btn.classList.remove('g-accent'); btn.classList.add('g-text-muted');
-            appWindow.style.width = kalkulatorApp.isScientific ? '620px' : '340px';
+            appWindow.style.width = kalkulatorApp.isScientific ? '580px' : '300px';
         }
     },
 

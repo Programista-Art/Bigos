@@ -79,7 +79,7 @@
     <!-- ============================================== -->
    
     <!-- EKRAN POWITALNY (BigOS v2.0.1) -->
-    <div id="app-powitanie" class="window w-[750px] h-[520px] themed-app g-panel border g-border shadow-2xl overflow-hidden hidden" data-pref-w="750px" data-pref-h="520px" style="width: 750px; height: 520px;">
+    <div id="app-powitanie" class="window w-[750px] h-[640px] themed-app g-panel border g-border shadow-2xl overflow-hidden hidden" data-pref-w="750px" data-pref-h="640px" style="width: 750px; height: 640px;">
         <!-- Pasek tytułowy -->
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center bg-black/20 shrink-0 cursor-move select-none" onmousedown="winManager.startDrag(event, 'app-powitanie')" ontouchstart="winManager.startDrag(event, 'app-powitanie')">
             <span class="text-sm font-bold g-accent drop-shadow-md flex items-center gap-2">
@@ -111,51 +111,51 @@
             </div>
 
             <!-- Obszar treści (przewijany, nie zakrywa nawigacji ani kontrolek okna) -->
-            <div class="powitanie-content flex-grow relative overflow-y-auto custom-scrollbar p-5 sm:p-6 bg-black/5">
+            <div class="powitanie-content flex-grow relative overflow-y-auto custom-scrollbar p-4 sm:p-5 pb-8 sm:pb-10 bg-black/5">
                 
                 <!-- ZAKŁADKA 1: START -->
-                <div id="powitanie-tab-start" class="powitanie-tab w-full max-w-xl mx-auto flex flex-col items-center text-center gap-4">
-                    <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-blue-500/20 mb-1 transform rotate-1 select-none">
+                <div id="powitanie-tab-start" class="powitanie-tab w-full max-w-xl mx-auto flex flex-col items-center text-center gap-2.5 sm:gap-3 pb-6">
+                    <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-3xl shadow-lg shadow-blue-500/20 transform rotate-1 select-none">
                         🖥️
                     </div>
                     <div class="flex flex-col items-center">
-                        <h1 class="text-2xl sm:text-3xl font-extrabold g-text mb-1 drop-shadow-md">Witaj w systemie BigOS!</h1>
-                        <p id="powitanie-version-subtitle" class="text-sm font-semibold g-accent">Wydanie 2.0.1</p>
+                        <h1 class="text-xl sm:text-2xl font-extrabold g-text drop-shadow-md">Witaj w systemie BigOS!</h1>
+                        <p id="powitanie-version-subtitle" class="text-xs sm:text-sm font-semibold g-accent mt-0.5">Wydanie 2.0.1</p>
                     </div>
                     
-                    <p class="g-text-muted text-xs sm:text-sm leading-relaxed max-w-md">
+                    <p class="g-text-muted text-xs sm:text-sm leading-relaxed max-w-lg">
                         BigOS to nowoczesne środowisko operacyjne działające w Twojej przeglądarce. Zapewnia aplikacje biurowe i narzędziowe, bezpieczne zarządzanie plikami, multimedia, zaawansowaną personalizację oraz wbudowanego asystenta AI — wszystko bez konieczności instalowania oprogramowania na komputerze.
                     </p>
 
                     <!-- Szybkie akcje dla kluczowych aplikacji -->
                     <div class="w-full">
-                        <div class="text-xs font-bold g-text uppercase tracking-wider mb-2.5 text-left flex items-center gap-1.5">
+                        <div class="text-[11px] sm:text-xs font-bold g-text uppercase tracking-wider mb-2 text-left flex items-center gap-1.5">
                             <span>⚡</span> <span>Szybkie akcje</span>
                         </div>
                         <div class="powitanie-quick-grid grid grid-cols-2 gap-2 w-full text-left">
-                            <button onclick="powitanieApp.quickOpen('menadzer')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">📦</span>
+                            <button onclick="powitanieApp.quickOpen('menadzer')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">📦</span>
                                 <div class="min-w-0">
                                     <div class="font-bold text-xs g-text truncate">Menedżer Aplikacji</div>
                                     <div class="text-[11px] g-text-muted truncate">Pakiety i instalacja</div>
                                 </div>
                             </button>
-                            <button onclick="powitanieApp.quickOpen('aktowka')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">📁</span>
+                            <button onclick="powitanieApp.quickOpen('aktowka')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">📁</span>
                                 <div class="min-w-0">
                                     <div class="font-bold text-xs g-text truncate">Aktówka</div>
                                     <div class="text-[11px] g-text-muted truncate">Menedżer plików</div>
                                 </div>
                             </button>
-                            <button onclick="powitanieApp.quickOpen('tapeciak')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">🎨</span>
+                            <button onclick="powitanieApp.quickOpen('tapeciak')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">🎨</span>
                                 <div class="min-w-0">
                                     <div class="font-bold text-xs g-text truncate">Kombinator</div>
                                     <div class="text-[11px] g-text-muted truncate">Motywy i tapety</div>
                                 </div>
                             </button>
-                            <button onclick="powitanieApp.quickOpen('nadzorca')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                <span class="text-2xl shrink-0 group-hover:scale-110 transition">📊</span>
+                            <button onclick="powitanieApp.quickOpen('nadzorca')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">📊</span>
                                 <div class="min-w-0">
                                     <div class="font-bold text-xs g-text truncate">Nadzorca</div>
                                     <div class="text-[11px] g-text-muted truncate">Procesy i zasoby</div>
@@ -165,7 +165,7 @@
                     </div>
 
                     <!-- Główne przyciski nawigacyjne Startu -->
-                    <div class="powitanie-start-actions flex flex-wrap items-center justify-center gap-3 w-full">
+                    <div class="powitanie-start-actions flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full pt-0.5">
                         <button onclick="powitanieApp.openTab('news')" class="g-btn h-9 px-4 rounded-lg font-bold text-xs shadow-md hover:scale-105 transition inline-flex items-center justify-center gap-2 border-blue-500/50 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
                             <span>📖</span> <span>Sprawdź listę zmian</span>
                         </button>
@@ -176,7 +176,7 @@
                 </div>
 
                 <!-- ZAKŁADKA 2: CO NOWEGO (CHANGELOG v2.0.1) -->
-                <div id="powitanie-tab-news" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                <div id="powitanie-tab-news" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left pb-8">
                     <div class="border-b g-border pb-3">
                         <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
                             <span>✨</span> <span id="powitanie-news-title">Co nowego w wersji 2.0.1?</span>
@@ -231,7 +231,7 @@
                 </div>
 
                 <!-- ZAKŁADKA 3: BIG AI -->
-                <div id="powitanie-tab-ai" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                <div id="powitanie-tab-ai" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left pb-8">
                     <div class="border-b g-border pb-3">
                         <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
                             <span>🤖</span> <span>Asystent BigAI i konfiguracja modeli</span>
@@ -239,8 +239,8 @@
                         <p class="text-xs g-text-muted mt-1">Przejrzyste zasady działania modułu sztucznej inteligencji w systemie BigOS.</p>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                    <div class="powitanie-ai-grid">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                             <h3 class="font-bold text-blue-400 text-sm mb-1.5 flex items-center gap-2">
                                 <span>🧪</span> <span>Lokalny symulator testowy</span>
                             </h3>
@@ -249,7 +249,7 @@
                             </p>
                         </div>
 
-                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                             <h3 class="font-bold text-purple-400 text-sm mb-1.5 flex items-center gap-2">
                                 <span>🌐</span> <span>Zewnętrzni dostawcy AI</span>
                             </h3>
@@ -258,7 +258,7 @@
                             </p>
                         </div>
 
-                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                             <h3 class="font-bold text-amber-400 text-sm mb-1.5 flex items-center gap-2">
                                 <span>ℹ️</span> <span>Brak wbudowanych bezpłatnych usług</span>
                             </h3>
@@ -267,7 +267,7 @@
                             </p>
                         </div>
 
-                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                        <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                             <h3 class="font-bold text-emerald-400 text-sm mb-1.5 flex items-center gap-2">
                                 <span>📝</span> <span>Integracja z edytorem Skryba</span>
                             </h3>
@@ -279,7 +279,7 @@
                 </div>
 
                 <!-- ZAKŁADKA 4: PORADY -->
-                <div id="powitanie-tab-tips" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                <div id="powitanie-tab-tips" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left pb-8">
                     <div class="border-b g-border pb-3">
                         <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
                             <span>💡</span> <span>Wskazówki i bezpieczne korzystanie</span>
@@ -398,71 +398,71 @@
 
 
 <!-- Tabelarz -->
-    <div id="app-tabelarz" class="window w-[800px] h-[600px] bg-white dark:bg-[#1a1a1a] border border-gray-300 dark:border-[#333] resize overflow-hidden">
-        <div class="title-bar bg-emerald-600 dark:bg-emerald-800 text-white p-2 flex justify-between items-center shrink-0" onmousedown="winManager.startDrag(event, 'app-tabelarz')" ontouchstart="winManager.startDrag(event, 'app-tabelarz')">
-            <span class="text-sm font-bold">📈 Tabelarz</span>
+    <div id="app-tabelarz" class="window w-[800px] h-[600px] themed-app g-panel border g-border resize overflow-hidden" data-pref-w="800px" data-pref-h="600px">
+        <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-tabelarz')" ontouchstart="winManager.startDrag(event, 'app-tabelarz')">
+            <span class="text-sm font-bold g-accent drop-shadow-md">📈 Tabelarz</span>
             <div class="flex gap-2">
-                <button onclick="winManager.minimize('tabelarz')" class="hover:bg-white/20 px-2 rounded">_</button>
-                <button onclick="winManager.maximize('app-tabelarz')" class="hover:bg-white/20 px-2 rounded">□</button>
-                <button onclick="winManager.close('tabelarz')" class="hover:bg-red-600 px-2 rounded transition">✖</button>
+                <button onclick="winManager.minimize('tabelarz')" class="g-icon-btn px-1 hover:text-white transition">_</button>
+                <button onclick="winManager.maximize('app-tabelarz')" class="g-icon-btn px-1 hover:text-white transition">□</button>
+                <button onclick="winManager.close('tabelarz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
             </div>
         </div>
         
         <!-- Pasek Menu (Plik, Edycja) -->
-        <div class="flex gap-2 px-2 py-1 bg-gray-100 dark:bg-gray-800 text-xs border-b border-gray-300 dark:border-[#444] z-[60] shrink-0 relative">
-            <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 px-2 py-1 rounded transition dropdown-parent">Plik
-                <div class="dropdown-menu bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-gray-800 dark:text-gray-100 shadow-xl pb-1 pt-1 min-w-[200px]">
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.promptNewFile()">Nowy Arkusz</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.closeFile()">Zamknij plik</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.showBigOSPicker()">Otwórz z systemu BigOS</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="document.getElementById('tabelarz-open-pc').click()">Otwórz z PC (.csv)</div>
+        <div class="flex gap-2 px-3 py-1.5 bg-black/10 text-xs border-b g-border z-[60] shrink-0 relative">
+            <div class="relative group cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition dropdown-parent g-text">Plik
+                <div class="dropdown-menu g-panel border g-border rounded shadow-2xl pb-1 pt-1 min-w-[200px] text-xs">
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.promptNewFile()">Nowy Arkusz</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.closeFile()">Zamknij plik</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.showBigOSPicker()">Otwórz z systemu BigOS</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="document.getElementById('tabelarz-open-pc').click()">Otwórz z PC (.csv)</div>
                     <input type="file" id="tabelarz-open-pc" class="hidden" accept=".csv" onchange="tabelarzApp.openFile(event)">
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.showSaveModal()">Zapisz w BigOS (.csv)</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.saveToPC()">Zapisz na urządzenie PC (.csv)</div>
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.printSheet()">Drukuj / Eksportuj PDF</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer font-bold" onclick="tabelarzApp.showProperties()">Właściwości Arkusza</div>
+                    <div class="border-t g-border my-1"></div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.showSaveModal()">Zapisz w BigOS (.csv)</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.saveToPC()">Zapisz na urządzenie PC (.csv)</div>
+                    <div class="border-t g-border my-1"></div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.printSheet()">Drukuj / Eksportuj PDF</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer font-bold g-accent transition" onclick="tabelarzApp.showProperties()">Właściwości Arkusza</div>
                 </div>
             </div>
             
-            <div class="relative group cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 px-2 py-1 rounded transition dropdown-parent">Edycja
-                <div class="dropdown-menu bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded text-gray-800 dark:text-gray-100 shadow-xl pb-1 pt-1 min-w-[200px]">
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="document.execCommand('cut')">Wytnij</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="document.execCommand('copy')">Kopiuj</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="apps.showToast('Info','Użyj skrótu CTRL+V do wklejenia', 'info')">Wklej</div>
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.promptFindReplace()">Znajdź i zamień</div>
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.mergeLeft()">⬅ Scal z lewą komórką</div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.mergeRight()">➡ Scal z prawą komórką</div>
-                    <div class="border-t border-gray-200 dark:border-gray-600 my-1"></div>
-                    <div class="px-4 py-2 hover:bg-emerald-500 hover:text-white cursor-pointer" onclick="tabelarzApp.toggleProtection()">Zablokuj/Odblokuj komórkę</div>
+            <div class="relative group cursor-pointer hover:bg-white/10 px-2 py-1 rounded transition dropdown-parent g-text">Edycja
+                <div class="dropdown-menu g-panel border g-border rounded shadow-2xl pb-1 pt-1 min-w-[200px] text-xs">
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="document.execCommand('cut')">Wytnij</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="document.execCommand('copy')">Kopiuj</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="apps.showToast('Info','Użyj skrótu CTRL+V do wklejenia', 'info')">Wklej</div>
+                    <div class="border-t g-border my-1"></div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.promptFindReplace()">Znajdź i zamień</div>
+                    <div class="border-t g-border my-1"></div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.mergeLeft()">⬅ Scal z lewą komórką</div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.mergeRight()">➡ Scal z prawą komórką</div>
+                    <div class="border-t g-border my-1"></div>
+                    <div class="px-4 py-2 hover:bg-white/10 cursor-pointer g-text transition" onclick="tabelarzApp.toggleProtection()">Zablokuj/Odblokuj komórkę</div>
                 </div>
             </div>
         </div>
 
         <!-- Pasek Narzędzi (Toolbar) -->
-        <div class="flex gap-2 px-2 py-1 bg-gray-50 dark:bg-[#222] border-b border-gray-300 dark:border-[#444] z-50 shrink-0 items-center overflow-x-auto">
-            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 mr-2 min-w-[40px] text-center" id="tabelarz-selected-label">A1</span>
+        <div class="flex gap-2 px-3 py-1.5 bg-black/20 border-b g-border z-50 shrink-0 items-center overflow-x-auto text-xs">
+            <span class="text-xs font-bold g-accent mr-2 min-w-[40px] text-center" id="tabelarz-selected-label">A1</span>
             
-            <div class="flex border-r border-gray-300 dark:border-[#555] pr-2 mr-2 gap-1 items-center">
-                <input type="color" id="tabelarz-color-picker" class="w-6 h-6 p-0 border-0 cursor-pointer rounded" title="Zmień kolor tła" onchange="tabelarzApp.applyColor(this.value)">
+            <div class="flex border-r g-border pr-2 mr-2 gap-1 items-center">
+                <input type="color" id="tabelarz-color-picker" class="w-6 h-6 p-0 border g-border cursor-pointer rounded bg-transparent" title="Zmień kolor tła" onchange="tabelarzApp.applyColor(this.value)">
             </div>
 
-            <div class="flex border-r border-gray-300 dark:border-[#555] pr-2 mr-2 gap-1 items-center">
-                <button onclick="tabelarzApp.moveRowUp()" class="px-2 py-1 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#555] hover:bg-gray-200 dark:hover:bg-[#444] text-xs rounded transition" title="Przesuń wybrany wiersz w górę">↑</button>
-                <button onclick="tabelarzApp.moveRowDown()" class="px-2 py-1 bg-white dark:bg-[#333] border border-gray-300 dark:border-[#555] hover:bg-gray-200 dark:hover:bg-[#444] text-xs rounded transition" title="Przesuń wybrany wiersz w dół">↓</button>
-                <button onclick="tabelarzApp.addRow()" class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700/50 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 text-emerald-800 dark:text-emerald-200 text-xs rounded font-bold transition">+ Wiersz</button>
-                <button onclick="tabelarzApp.addCol()" class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700/50 hover:bg-emerald-200 dark:hover:bg-emerald-800/50 text-emerald-800 dark:text-emerald-200 text-xs rounded font-bold transition">+ Kolumna</button>
+            <div class="flex border-r g-border pr-2 mr-2 gap-1 items-center">
+                <button onclick="tabelarzApp.moveRowUp()" class="g-btn px-2 py-1 text-xs rounded transition" title="Przesuń wybrany wiersz w górę">↑</button>
+                <button onclick="tabelarzApp.moveRowDown()" class="g-btn px-2 py-1 text-xs rounded transition" title="Przesuń wybrany wiersz w dół">↓</button>
+                <button onclick="tabelarzApp.addRow()" class="g-btn px-2.5 py-1 text-xs rounded font-bold transition">+ Wiersz</button>
+                <button onclick="tabelarzApp.addCol()" class="g-btn px-2.5 py-1 text-xs rounded font-bold transition">+ Kolumna</button>
             </div>
             
-            <button onclick="tabelarzApp.sumColumn()" class="hover:bg-gray-300 dark:hover:bg-[#444] px-2 py-1 rounded transition text-xs font-bold text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-[#555] bg-white dark:bg-[#333] shrink-0">∑ Sumuj Kolumnę</button>
+            <button onclick="tabelarzApp.sumColumn()" class="g-btn px-3 py-1 rounded transition text-xs font-bold shrink-0">∑ Sumuj Kolumnę</button>
         </div>
 
         <!-- Obszar Arkusza -->
-        <div id="tabelarz-print-area" class="flex-grow overflow-auto bg-gray-200 dark:bg-[#111] relative">
-            <div id="tabelarz-grid" class="absolute bg-white dark:bg-[#1a1a1a]">
+        <div id="tabelarz-print-area" class="flex-grow overflow-auto g-bg relative">
+            <div id="tabelarz-grid" class="absolute g-panel">
                 <!-- Tabela generowana dynamicznie -->
             </div>
         </div>
@@ -471,66 +471,66 @@
         
         <!-- Zapisz Plik (Własne Okno) -->
         <div id="tabelarz-save-modal" class="hidden absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm">
-                <h3 class="font-bold mb-4 text-lg border-b border-gray-200 dark:border-[#444] pb-2 text-emerald-600 dark:text-emerald-400">Zapisz w BigOS</h3>
+            <div class="g-panel border g-border p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm g-text">
+                <h3 class="font-bold mb-4 text-lg border-b g-border pb-2 g-accent">Zapisz w BigOS</h3>
                 <div class="space-y-3 mb-4">
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Nazwa Pliku</label>
-                        <input type="text" id="tabelarz-save-name" class="w-full p-2 bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded outline-none focus:border-emerald-500 text-gray-800 dark:text-white" value="Arkusz.csv">
+                        <label class="block text-xs g-text-muted mb-1">Nazwa Pliku</label>
+                        <input type="text" id="tabelarz-save-name" class="w-full p-2 g-bg border g-border rounded outline-none g-text focus:border-blue-400" value="Arkusz.csv">
                     </div>
                     <div>
-                        <label class="block text-xs text-gray-500 mb-1">Wybierz Folder</label>
-                        <select id="tabelarz-save-folder" class="w-full p-2 bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded outline-none focus:border-emerald-500 text-gray-800 dark:text-white">
+                        <label class="block text-xs g-text-muted mb-1">Wybierz Folder</label>
+                        <select id="tabelarz-save-folder" class="w-full p-2 g-bg border g-border rounded outline-none g-text focus:border-blue-400">
                             <!-- JS wstrzykuje opcje -->
                         </select>
                     </div>
                 </div>
-                <div class="flex justify-end gap-2 border-t border-gray-200 dark:border-[#444] pt-4">
-                    <button onclick="document.getElementById('tabelarz-save-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded text-gray-800 dark:text-white font-bold transition">Anuluj</button>
-                    <button onclick="tabelarzApp.confirmSaveToBigOS()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-bold shadow transition">Zapisz Plik</button>
+                <div class="flex justify-end gap-2 border-t g-border pt-4">
+                    <button onclick="document.getElementById('tabelarz-save-modal').classList.add('hidden')" class="g-btn px-4 py-2 rounded font-bold transition">Anuluj</button>
+                    <button onclick="tabelarzApp.confirmSaveToBigOS()" class="g-btn px-4 py-2 rounded font-bold shadow transition border-blue-500/50 bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white">Zapisz Plik</button>
                 </div>
             </div>
         </div>
 
         <!-- Potwierdzenie Nowego Pliku -->
         <div id="tabelarz-new-modal" class="hidden absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm text-center">
+            <div class="g-panel border g-border p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm text-center g-text">
                 <div class="text-4xl mb-2">⚠️</div>
-                <h3 class="font-bold mb-2 text-lg text-red-600 dark:text-red-400">Uwaga!</h3>
-                <p class="text-gray-600 dark:text-gray-300 mb-6">Czy na pewno chcesz utworzyć nowy arkusz? Niezapisane zmiany zostaną utracone!</p>
+                <h3 class="font-bold mb-2 text-lg text-amber-400">Uwaga!</h3>
+                <p class="g-text-muted mb-6">Czy na pewno chcesz utworzyć nowy arkusz? Niezapisane zmiany zostaną utracone!</p>
                 <div class="flex justify-center gap-2">
-                    <button onclick="document.getElementById('tabelarz-new-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded text-gray-800 dark:text-white font-bold transition">Anuluj</button>
-                    <button onclick="tabelarzApp.confirmNewFile()" class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-white font-bold shadow transition">Tak, utwórz nowy</button>
+                    <button onclick="document.getElementById('tabelarz-new-modal').classList.add('hidden')" class="g-btn px-4 py-2 rounded font-bold transition">Anuluj</button>
+                    <button onclick="tabelarzApp.confirmNewFile()" class="g-btn px-4 py-2 rounded font-bold shadow transition border-red-500/50 bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white">Tak, utwórz nowy</button>
                 </div>
             </div>
         </div>
 
         <!-- Właściwości Modal -->
         <div id="tabelarz-props-modal" class="hidden absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm">
-                <h3 class="font-bold mb-4 text-lg border-b border-gray-200 dark:border-[#444] pb-2 text-emerald-600 dark:text-emerald-400">Właściwości Arkusza</h3>
+            <div class="g-panel border g-border p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm g-text">
+                <h3 class="font-bold mb-4 text-lg border-b g-border pb-2 g-accent">Właściwości Arkusza</h3>
                 <div class="space-y-3 mb-4">
-                    <div><label class="block text-xs text-gray-500 mb-1">Nazwa Wewnętrzna</label><input type="text" id="tabelarz-prop-name" class="w-full p-2 bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded outline-none focus:border-emerald-500 text-gray-800 dark:text-white"></div>
-                    <div><label class="block text-xs text-gray-500 mb-1">Autor</label><input type="text" id="tabelarz-prop-author" class="w-full p-2 bg-gray-50 dark:bg-[#111] border border-gray-300 dark:border-[#555] rounded outline-none focus:border-emerald-500 text-gray-800 dark:text-white"></div>
-                    <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400 pt-2"><span class="font-bold">Utworzono:</span> <span id="tabelarz-prop-date"></span></div>
-                    <div class="flex justify-between text-xs text-gray-600 dark:text-gray-400"><span class="font-bold">Zajętość tabeli:</span> <span id="tabelarz-prop-size"></span></div>
+                    <div><label class="block text-xs g-text-muted mb-1">Nazwa Wewnętrzna</label><input type="text" id="tabelarz-prop-name" class="w-full p-2 g-bg border g-border rounded outline-none g-text focus:border-blue-400"></div>
+                    <div><label class="block text-xs g-text-muted mb-1">Autor</label><input type="text" id="tabelarz-prop-author" class="w-full p-2 g-bg border g-border rounded outline-none g-text focus:border-blue-400"></div>
+                    <div class="flex justify-between text-xs g-text-muted pt-2"><span class="font-bold">Utworzono:</span> <span id="tabelarz-prop-date"></span></div>
+                    <div class="flex justify-between text-xs g-text-muted"><span class="font-bold">Zajętość tabeli:</span> <span id="tabelarz-prop-size"></span></div>
                 </div>
-                <div class="flex justify-end gap-2 border-t border-gray-200 dark:border-[#444] pt-4">
-                    <button onclick="document.getElementById('tabelarz-props-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded text-gray-800 dark:text-white font-bold transition">Anuluj</button>
-                    <button onclick="tabelarzApp.saveProperties()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white font-bold shadow transition">Zapisz</button>
+                <div class="flex justify-end gap-2 border-t g-border pt-4">
+                    <button onclick="document.getElementById('tabelarz-props-modal').classList.add('hidden')" class="g-btn px-4 py-2 rounded font-bold transition">Anuluj</button>
+                    <button onclick="tabelarzApp.saveProperties()" class="g-btn px-4 py-2 rounded font-bold shadow transition border-blue-500/50 bg-blue-500/20 text-blue-400 hover:bg-blue-500 hover:text-white">Zapisz</button>
                 </div>
             </div>
         </div>
 
         <!-- Okno wyboru plików z BigOS -->
         <div id="tabelarz-picker-modal" class="hidden absolute inset-0 bg-black/80 z-[100] flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-[#222] border border-gray-300 dark:border-[#444] p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm">
-                <h3 class="font-bold mb-4 text-lg border-b border-gray-200 dark:border-[#444] pb-2 text-emerald-600 dark:text-emerald-400">Wybierz plik z BigOS (.csv)</h3>
+            <div class="g-panel border g-border p-5 rounded-lg shadow-2xl w-full max-w-sm text-sm g-text">
+                <h3 class="font-bold mb-4 text-lg border-b g-border pb-2 g-accent">Wybierz plik z BigOS (.csv)</h3>
                 <div id="tabelarz-file-list" class="max-h-60 overflow-y-auto space-y-2 mb-4">
                     <!-- Lista wstrzykiwana przez JS -->
                 </div>
-                <div class="flex justify-end border-t border-gray-200 dark:border-[#444] pt-4">
-                    <button onclick="document.getElementById('tabelarz-picker-modal').classList.add('hidden')" class="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 rounded text-gray-800 dark:text-white font-bold transition">Anuluj</button>
+                <div class="flex justify-end border-t g-border pt-4">
+                    <button onclick="document.getElementById('tabelarz-picker-modal').classList.add('hidden')" class="g-btn px-4 py-2 rounded font-bold transition">Anuluj</button>
                 </div>
             </div>
         </div>
@@ -855,7 +855,7 @@
 </div>
 
     <!-- 6. Rachmistrz (Kalkulator) -->
-    <div id="app-kalkulator" class="window w-[300px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+    <div id="app-kalkulator" class="window w-[300px] themed-app g-panel border g-border" data-pref-w="300px" data-auto-height="true">
         <div class="title-bar bg-blue-600 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-700 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-kalkulator')" ontouchstart="winManager.startDrag(event, 'app-kalkulator')">
             <span class="text-sm font-bold">🧮 Rachmistrz</span>
             <div class="flex gap-2">
@@ -932,7 +932,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
 <!-- 8. Patrzałka (Przeglądarka Zdjęć i Edytor) -->
     <!-- 8. Patrzałka (Przeglądarka Zdjęć i Edytor) -->
-    <div id="app-patrzalka" class="window w-[850px] h-[600px] themed-app g-panel">
+    <div id="app-patrzalka" class="window w-[850px] h-[600px] themed-app g-panel" data-pref-w="850px" data-pref-h="600px">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-patrzalka')" ontouchstart="winManager.startDrag(event, 'app-patrzalka')">
             <span class="text-sm font-bold g-accent drop-shadow-md">👁️ Patrzałka PRO</span>
             <div class="flex gap-2">
@@ -974,7 +974,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     
     <!-- MINIGRY -->
    <!-- 11. Pełzacz -->
-     <div id="app-pelzacz" class="window w-[340px] themed-app g-panel border g-border">
+     <div id="app-pelzacz" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-pelzacz')" ontouchstart="winManager.startDrag(event, 'app-pelzacz')">
             <span class="text-sm font-bold g-accent drop-shadow-md">🐍 Pełzacz</span>
             <div class="flex gap-2">
@@ -991,7 +991,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
  <!-- 12. Murarz -->
 
-    <div id="app-murarz" class="window w-[440px] themed-app g-panel border g-border">
+    <div id="app-murarz" class="window w-[440px] themed-app g-panel border g-border" data-pref-w="440px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-murarz')" ontouchstart="winManager.startDrag(event, 'app-murarz')">
 
@@ -1022,7 +1022,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 13. Ufoludki -->
 
-    <div id="app-ufoludki" class="window w-[440px] themed-app g-panel border g-border">
+    <div id="app-ufoludki" class="window w-[440px] themed-app g-panel border g-border" data-pref-w="440px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-ufoludki')" ontouchstart="winManager.startDrag(event, 'app-ufoludki')">
 
@@ -1053,7 +1053,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 14. Odbijanka -->
 
-    <div id="app-odbijanka" class="window w-[440px] themed-app g-panel border g-border">
+    <div id="app-odbijanka" class="window w-[440px] themed-app g-panel border g-border" data-pref-w="440px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-odbijanka')" ontouchstart="winManager.startDrag(event, 'app-odbijanka')">
 
@@ -1084,7 +1084,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 15. Trzepotek -->
 
-    <div id="app-trzepotek" class="window w-[340px] themed-app g-panel border g-border">
+    <div id="app-trzepotek" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-trzepotek')" ontouchstart="winManager.startDrag(event, 'app-trzepotek')">
 
@@ -1114,8 +1114,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
 
     <!-- 16. Ścigacz -->
-
-    <div id="app-scigacz" class="window w-[340px] themed-app g-panel border g-border">
+    <div id="app-scigacz" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-scigacz')" ontouchstart="winManager.startDrag(event, 'app-scigacz')">
 
@@ -1146,7 +1145,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 17. Bombiarz -->
 
-    <div id="app-bombiarz" class="window w-[340px] themed-app g-panel border g-border">
+    <div id="app-bombiarz" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-bombiarz')" ontouchstart="winManager.startDrag(event, 'app-bombiarz')">
 
@@ -1177,7 +1176,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 18. Kółko i Krzyżyk -->
 
-    <div id="app-kolko" class="window w-[300px] themed-app g-panel border g-border">
+    <div id="app-kolko" class="window w-[300px] themed-app g-panel border g-border" data-pref-w="300px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-kolko')" ontouchstart="winManager.startDrag(event, 'app-kolko')">
 
@@ -1207,7 +1206,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
 <!-- 19. Czołgi (Battle City) -->
 
-<div id="app-tank" class="window w-[700px] themed-app g-panel border g-border">
+<div id="app-tank" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
     <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-tank')" ontouchstart="winManager.startDrag(event, 'app-tank')">
 

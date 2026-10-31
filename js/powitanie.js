@@ -20,12 +20,17 @@
             if (!appWindow) {
                 appWindow = document.createElement('div');
                 appWindow.id = 'app-powitanie';
-                appWindow.className = 'window w-[750px] h-[520px] themed-app g-panel border g-border shadow-2xl overflow-hidden hidden';
+                appWindow.className = 'window w-[750px] h-[640px] themed-app g-panel border g-border shadow-2xl overflow-hidden hidden';
                 appWindow.dataset.prefW = '750px';
-                appWindow.dataset.prefH = '520px';
+                appWindow.dataset.prefH = '640px';
                 appWindow.style.width = '750px';
-                appWindow.style.height = '520px';
+                appWindow.style.height = '640px';
                 document.body.appendChild(appWindow);
+            } else if (!appWindow.dataset.userResized && (appWindow.dataset.prefH === '520px' || appWindow.style.height === '520px')) {
+                appWindow.dataset.prefH = '640px';
+                appWindow.style.height = '640px';
+                appWindow.classList.remove('h-[520px]');
+                appWindow.classList.add('h-[640px]');
             }
 
             // Upewnij się, że okno posiada standardowe klasy systemowe
@@ -81,51 +86,51 @@
                     </div>
 
                     <!-- Obszar treści (przewijany, nie zakrywa nawigacji ani kontrolek okna) -->
-                    <div class="powitanie-content flex-grow relative overflow-y-auto custom-scrollbar p-5 sm:p-6 bg-black/5">
+                    <div class="powitanie-content flex-grow relative overflow-y-auto custom-scrollbar p-4 sm:p-5 pb-8 sm:pb-10 bg-black/5">
                         
                         <!-- ZAKŁADKA 1: START -->
-                        <div id="powitanie-tab-start" class="powitanie-tab w-full max-w-xl mx-auto flex flex-col items-center text-center gap-4">
-                            <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-4xl shadow-xl shadow-blue-500/20 mb-1 transform rotate-1 select-none">
+                        <div id="powitanie-tab-start" class="powitanie-tab w-full max-w-xl mx-auto flex flex-col items-center text-center gap-2.5 sm:gap-3 pb-6">
+                            <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-3xl shadow-lg shadow-blue-500/20 transform rotate-1 select-none">
                                 🖥️
                             </div>
                             <div class="flex flex-col items-center">
-                                <h1 class="text-2xl sm:text-3xl font-extrabold g-text mb-1 drop-shadow-md">Witaj w systemie BigOS!</h1>
-                                <p id="powitanie-version-subtitle" class="text-sm font-semibold g-accent">Wydanie ${BIGOS_VERSION}</p>
+                                <h1 class="text-xl sm:text-2xl font-extrabold g-text drop-shadow-md">Witaj w systemie BigOS!</h1>
+                                <p id="powitanie-version-subtitle" class="text-xs sm:text-sm font-semibold g-accent mt-0.5">Wydanie ${BIGOS_VERSION}</p>
                             </div>
                             
-                            <p class="g-text-muted text-xs sm:text-sm leading-relaxed max-w-md">
+                            <p class="g-text-muted text-xs sm:text-sm leading-relaxed max-w-lg">
                                 BigOS to nowoczesne środowisko operacyjne działające w Twojej przeglądarce. Zapewnia aplikacje biurowe i narzędziowe, bezpieczne zarządzanie plikami, multimedia, zaawansowaną personalizację oraz wbudowanego asystenta AI — wszystko bez konieczności instalowania oprogramowania na komputerze.
                             </p>
 
                             <!-- Szybkie akcje dla kluczowych aplikacji -->
                             <div class="w-full">
-                                <div class="text-xs font-bold g-text uppercase tracking-wider mb-2.5 text-left flex items-center gap-1.5">
+                                <div class="text-[11px] sm:text-xs font-bold g-text uppercase tracking-wider mb-2 text-left flex items-center gap-1.5">
                                     <span>⚡</span> <span>Szybkie akcje</span>
                                 </div>
                                 <div class="powitanie-quick-grid grid grid-cols-2 gap-2 w-full text-left">
-                                    <button onclick="powitanieApp.quickOpen('menadzer')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                        <span class="text-2xl shrink-0 group-hover:scale-110 transition">📦</span>
+                                    <button onclick="powitanieApp.quickOpen('menadzer')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">📦</span>
                                         <div class="min-w-0">
                                             <div class="font-bold text-xs g-text truncate">Menedżer Aplikacji</div>
                                             <div class="text-[11px] g-text-muted truncate">Pakiety i instalacja</div>
                                         </div>
                                     </button>
-                                    <button onclick="powitanieApp.quickOpen('aktowka')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                        <span class="text-2xl shrink-0 group-hover:scale-110 transition">📁</span>
+                                    <button onclick="powitanieApp.quickOpen('aktowka')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">📁</span>
                                         <div class="min-w-0">
                                             <div class="font-bold text-xs g-text truncate">Aktówka</div>
                                             <div class="text-[11px] g-text-muted truncate">Menedżer plików</div>
                                         </div>
                                     </button>
-                                    <button onclick="powitanieApp.quickOpen('tapeciak')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                        <span class="text-2xl shrink-0 group-hover:scale-110 transition">🎨</span>
+                                    <button onclick="powitanieApp.quickOpen('tapeciak')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">🎨</span>
                                         <div class="min-w-0">
                                             <div class="font-bold text-xs g-text truncate">Kombinator</div>
                                             <div class="text-[11px] g-text-muted truncate">Motywy i tapety</div>
                                         </div>
                                     </button>
-                                    <button onclick="powitanieApp.quickOpen('nadzorca')" class="g-panel bg-black/20 p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
-                                        <span class="text-2xl shrink-0 group-hover:scale-110 transition">📊</span>
+                                    <button onclick="powitanieApp.quickOpen('nadzorca')" class="g-panel bg-black/20 p-2 sm:p-2.5 rounded-lg border g-border hover:bg-white/10 transition flex items-center gap-2 sm:gap-2.5 group focus:outline-none focus:ring-1 focus:ring-blue-400">
+                                        <span class="text-xl sm:text-2xl shrink-0 group-hover:scale-110 transition">📊</span>
                                         <div class="min-w-0">
                                             <div class="font-bold text-xs g-text truncate">Nadzorca</div>
                                             <div class="text-[11px] g-text-muted truncate">Procesy i zasoby</div>
@@ -135,7 +140,7 @@
                             </div>
 
                             <!-- Główne przyciski nawigacyjne Startu -->
-                            <div class="powitanie-start-actions flex flex-wrap items-center justify-center gap-3 w-full">
+                            <div class="powitanie-start-actions flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full pt-0.5">
                                 <button onclick="powitanieApp.openTab('news')" class="g-btn h-9 px-4 rounded-lg font-bold text-xs shadow-md hover:scale-105 transition inline-flex items-center justify-center gap-2 border-blue-500/50 bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
                                     <span>📖</span> <span>Sprawdź listę zmian</span>
                                 </button>
@@ -146,7 +151,7 @@
                         </div>
 
                         <!-- ZAKŁADKA 2: CO NOWEGO (CHANGELOG) -->
-                        <div id="powitanie-tab-news" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                        <div id="powitanie-tab-news" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left pb-8">
                             <div class="border-b g-border pb-3">
                                 <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
                                     <span>✨</span> <span id="powitanie-news-title">Co nowego w wersji ${BIGOS_VERSION}?</span>
@@ -201,7 +206,7 @@
                         </div>
 
                         <!-- ZAKŁADKA 3: BIG AI -->
-                        <div id="powitanie-tab-ai" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                        <div id="powitanie-tab-ai" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left pb-8">
                             <div class="border-b g-border pb-3">
                                 <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
                                     <span>🤖</span> <span>Asystent BigAI i konfiguracja modeli</span>
@@ -209,8 +214,8 @@
                                 <p class="text-xs g-text-muted mt-1">Przejrzyste zasady działania modułu sztucznej inteligencji w systemie BigOS.</p>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                            <div class="powitanie-ai-grid">
+                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                                     <h3 class="font-bold text-blue-400 text-sm mb-1.5 flex items-center gap-2">
                                         <span>🧪</span> <span>Lokalny symulator testowy</span>
                                     </h3>
@@ -219,7 +224,7 @@
                                     </p>
                                 </div>
 
-                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                                     <h3 class="font-bold text-purple-400 text-sm mb-1.5 flex items-center gap-2">
                                         <span>🌐</span> <span>Zewnętrzni dostawcy AI</span>
                                     </h3>
@@ -228,7 +233,7 @@
                                     </p>
                                 </div>
 
-                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                                     <h3 class="font-bold text-amber-400 text-sm mb-1.5 flex items-center gap-2">
                                         <span>ℹ️</span> <span>Brak wbudowanych bezpłatnych usług</span>
                                     </h3>
@@ -237,7 +242,7 @@
                                     </p>
                                 </div>
 
-                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm">
+                                <div class="g-panel bg-black/20 p-3.5 rounded-xl border g-border shadow-sm min-w-0">
                                     <h3 class="font-bold text-emerald-400 text-sm mb-1.5 flex items-center gap-2">
                                         <span>📝</span> <span>Integracja z edytorem Skryba</span>
                                     </h3>
@@ -249,7 +254,7 @@
                         </div>
 
                         <!-- ZAKŁADKA 4: PORADY -->
-                        <div id="powitanie-tab-tips" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left">
+                        <div id="powitanie-tab-tips" class="powitanie-tab hidden w-full max-w-xl mx-auto flex flex-col gap-4 text-left pb-8">
                             <div class="border-b g-border pb-3">
                                 <h2 class="text-xl sm:text-2xl font-bold g-text flex items-center gap-2.5">
                                     <span>💡</span> <span>Wskazówki i bezpieczne korzystanie</span>

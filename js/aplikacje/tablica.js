@@ -29,31 +29,31 @@ const tabelarzApp = {
         const container = document.getElementById('tabelarz-grid');
         if(!container) return;
         
-        let html = '<table class="w-max border-collapse text-sm text-gray-800 dark:text-gray-200" style="table-layout: fixed;">';
+        let html = '<table class="w-max border-collapse text-sm g-text" style="table-layout: fixed;">';
         
-        html += '<tr><th class="border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-[#222] w-12 sticky top-0 z-20"></th>';
+        html += '<tr><th class="border g-border bg-black/20 w-12 sticky top-0 z-20"></th>';
         tabelarzApp.cols.forEach(c => {
             let isSelected = tabelarzApp.selected === `col_${c}`;
-            let bg = tabelarzApp.bgColors[`col_${c}`] || (isSelected ? '#a7f3d0' : '');
+            let bg = tabelarzApp.bgColors[`col_${c}`] || (isSelected ? 'rgba(59,130,246,0.3)' : '');
             let w = tabelarzApp.colWidths[c] || 80; 
             
-            html += `<th id="th-col-${c}" class="border border-gray-300 dark:border-gray-600 p-0 font-bold text-center sticky top-0 z-10 hover:bg-gray-300 dark:hover:bg-[#444] select-none relative" style="background-color: ${bg}; width: ${w}px;" onclick="tabelarzApp.selectItem('col_${c}')">
+            html += `<th id="th-col-${c}" class="border g-border p-0 font-bold text-center sticky top-0 z-10 bg-black/20 hover:bg-white/10 select-none relative g-text" style="${bg ? `background-color: ${bg}; ` : ''}width: ${w}px;" onclick="tabelarzApp.selectItem('col_${c}')">
                         <div class="overflow-hidden w-full h-full py-1 pointer-events-none">${c}</div>
-                        <div class="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-emerald-500 z-30" onmousedown="tabelarzApp.startResize(event, 'col', '${c}')"></div>
+                        <div class="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-blue-500 z-30" onmousedown="tabelarzApp.startResize(event, 'col', '${c}')"></div>
                      </th>`;
         });
         html += '</tr>';
         
         for(let r = 1; r <= tabelarzApp.rows; r++) {
             let isRowSelected = tabelarzApp.selected === `row_${r}`;
-            let rowBg = tabelarzApp.bgColors[`row_${r}`] || (isRowSelected ? '#a7f3d0' : '');
+            let rowBg = tabelarzApp.bgColors[`row_${r}`] || (isRowSelected ? 'rgba(59,130,246,0.3)' : '');
             let h = tabelarzApp.rowHeights[r] || 28; 
             
             html += `<tr>`;
-            html += `<td id="th-row-${r}" class="border border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-[#222] font-bold text-center hover:bg-gray-300 dark:hover:bg-[#444] select-none relative" 
-                         style="background-color: ${rowBg}; height: ${h}px;" onclick="tabelarzApp.selectItem('row_${r}')">
+            html += `<td id="th-row-${r}" class="border g-border bg-black/20 font-bold text-center hover:bg-white/10 select-none relative g-text" 
+                         style="${rowBg ? `background-color: ${rowBg}; ` : ''}height: ${h}px;" onclick="tabelarzApp.selectItem('row_${r}')">
                         <div class="overflow-hidden w-full h-full flex items-center justify-center pointer-events-none">${r}</div>
-                        <div class="absolute left-0 right-0 bottom-0 h-2 cursor-row-resize hover:bg-emerald-500 z-30" onmousedown="tabelarzApp.startResize(event, 'row', '${r}')"></div>
+                        <div class="absolute left-0 right-0 bottom-0 h-2 cursor-row-resize hover:bg-blue-500 z-30" onmousedown="tabelarzApp.startResize(event, 'row', '${r}')"></div>
                      </td>`;
             
             for(let cIdx = 0; cIdx < tabelarzApp.cols.length; cIdx++) {
@@ -68,17 +68,17 @@ const tabelarzApp = {
                 
                 let isSelected = tabelarzApp.selected === cellId;
                 let cellBg = tabelarzApp.bgColors[cellId] || tabelarzApp.bgColors[`row_${r}`] || tabelarzApp.bgColors[`col_${c}`] || '';
-                let focusClass = isSelected ? 'ring-2 ring-inset ring-emerald-500 z-10 relative' : '';
+                let focusClass = isSelected ? 'ring-2 ring-inset ring-blue-500 z-10 relative' : '';
 
                 let isProtected = tabelarzApp.protectedCells.includes(cellId);
                 let readonlyAttr = isProtected ? 'readonly="true"' : '';
-                let protectedClass = isProtected ? 'bg-gray-100 dark:bg-[#151515] cursor-not-allowed' : 'bg-transparent';
+                let protectedClass = isProtected ? 'bg-black/30 cursor-not-allowed opacity-60' : 'bg-transparent';
 
-                html += `<td class="row-td-${r} border border-gray-300 dark:border-gray-600 p-0 bg-white dark:bg-[#1a1a1a] ${focusClass}" ${colspan} style="background-color: ${cellBg}; height: ${h}px;">
+                html += `<td class="row-td-${r} border g-border p-0 g-bg ${focusClass}" ${colspan} style="${cellBg ? `background-color: ${cellBg}; ` : ''}height: ${h}px;">
                     <input type="text" id="cell-${cellId}" ${readonlyAttr} value="${typeof desktop !== 'undefined' ? desktop.escapeHTML(String(displayVal)) : String(displayVal)}" 
                            onfocus="tabelarzApp.handleFocus('${cellId}', this)"
                            onblur="tabelarzApp.updateCell('${cellId}', this.value)"
-                           class="w-full h-full outline-none px-2 ${protectedClass} text-gray-800 dark:text-white font-sans">
+                           class="w-full h-full outline-none px-2 ${protectedClass} g-text font-sans bg-transparent">
                 </td>`;
             }
             html += '</tr>';
@@ -152,8 +152,8 @@ const tabelarzApp = {
             setTimeout(() => { el.selectionStart = el.selectionEnd = el.value.length; }, 0);
         }
         
-        document.querySelectorAll('#tabelarz-grid td').forEach(td => td.classList.remove('ring-2', 'ring-inset', 'ring-emerald-500', 'z-10', 'relative'));
-        if(el.parentElement) el.parentElement.classList.add('ring-2', 'ring-inset', 'ring-emerald-500', 'z-10', 'relative');
+        document.querySelectorAll('#tabelarz-grid td').forEach(td => td.classList.remove('ring-2', 'ring-inset', 'ring-blue-500', 'z-10', 'relative'));
+        if(el.parentElement) el.parentElement.classList.add('ring-2', 'ring-inset', 'ring-blue-500', 'z-10', 'relative');
     },
 
     updateCell: (id, val) => {

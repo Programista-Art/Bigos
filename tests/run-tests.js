@@ -2084,7 +2084,7 @@ async function testThemeAndLayoutAudits() {
   await test('service worker cache version is updated and packaging validate script is connected', () => {
     const swPath = path.join(root, 'sw.js');
     const swCode = fs.readFileSync(swPath, 'utf8');
-    ok(/CACHE_VERSION = 'bigos-v2\.0\.1(-p1)?'/.test(swCode), 'sw CACHE_VERSION bumped to v2.0.1-p1');
+    ok(/CACHE_VERSION = 'bigos-v2\.0\.1(-p[12])?'/.test(swCode), 'sw CACHE_VERSION bumped to v2.0.1-p2');
     ok(swCode.includes("'./css/bigos-tw.css'"), 'sw precaches compiled bigos-tw.css');
 
     const pkgPath = path.join(root, 'package.json');
@@ -2235,7 +2235,7 @@ async function testWelcomeApp() {
 
     // 3. Service worker cache version
     const swCode = fs.readFileSync(path.join(root, 'sw.js'), 'utf8');
-    ok(/CACHE_VERSION = 'bigos-v2\.0\.1(-p1)?'/.test(swCode), 'SW cache version is bigos-v2.0.1-p1');
+    ok(/CACHE_VERSION = 'bigos-v2\.0\.1(-p[12])?'/.test(swCode), 'SW cache version is bigos-v2.0.1-p2');
 
     // 4. Runtime js/powitanie.js version
     const powitanieCode = fs.readFileSync(path.join(root, 'js/powitanie.js'), 'utf8');
@@ -2309,6 +2309,36 @@ async function testWelcomeApp() {
     ok(twInput.includes('container-name: powitanie-win') || twInput.includes('container-name:powitanie-win'), 'tw-input defines powitanie-win container');
     ok(twCss.includes('powitanie-win'), 'compiled css contains powitanie-win container rules');
     ok(twCss.includes('580px') && twCss.includes('380px'), 'compiled css contains 580px and 380px breakpoints');
+    ok(twInput.includes('.powitanie-ai-grid'), 'tw-input defines powitanie-ai-grid');
+    ok(twCss.includes('powitanie-ai-grid'), 'compiled css contains powitanie-ai-grid');
+  });
+
+  await test('powitanie adaptive height and obsolete geometry handling in window.js', () => {
+    const ls = makeLocalStorage();
+    const mockDoc = {
+      getElementById: (id) => null
+    };
+    const ctx = loadModules(['js/window.js'], {
+      localStorage: ls,
+      extras: { document: mockDoc, window: { innerWidth: 1920, innerHeight: 1080 } }
+    });
+
+    // 1. Obsolete check: 520px height without userResized is obsolete
+    ok(ctx.winManager._isObsoleteGeometry('powitanie', { w: 750, h: 520 }) === true, 'legacy 520px is obsolete without userResized');
+    ok(ctx.winManager._isObsoleteGeometry('powitanie', { w: 750, h: 520, userResized: true }) === false, '520px is kept if userResized is true');
+    ok(ctx.winManager._isObsoleteGeometry('powitanie', { w: 750, h: 640 }) === false, '640px height is not obsolete');
+    ok(ctx.winManager._isObsoleteGeometry('aktowka', { w: 750, h: 520 }) === false, 'unrelated app geometry is not obsolete');
+
+    // 2. Loading obsolete geometry clears it from localStorage
+    ls.setItem('bigos_win_powitanie', JSON.stringify({ x: 100, y: 100, w: 750, h: 520 }));
+    const loaded = ctx.winManager._loadGeometry('powitanie');
+    eq(loaded, null, 'loading obsolete 520px returns null');
+    eq(ls.getItem('bigos_win_powitanie'), null, 'loading obsolete 520px removes key from localStorage');
+
+    // 3. Deliberately resized geometry is preserved
+    ls.setItem('bigos_win_powitanie', JSON.stringify({ x: 200, y: 150, w: 800, h: 700, userResized: true }));
+    const loadedCustom = ctx.winManager._loadGeometry('powitanie');
+    ok(loadedCustom && loadedCustom.h === 700, 'custom user-resized height is preserved');
   });
 
   await test('powitanieApp runtime lifecycle, navigation, quickOpen, and startup preference', () => {

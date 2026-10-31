@@ -180,22 +180,7 @@ games.tank = {
             if (saved) this.lastScores = JSON.parse(saved);
         } catch(e) {}
 
-        // Powiększenie okna pod nową rozdzielczość
-        const win = document.getElementById('app-tank');
-        if (win && !win.dataset.resized) {
-            win.style.width = '700px'; 
-            win.classList.remove('w-[340px]');
-            
-            setTimeout(() => {
-                if (!win.classList.contains('maximized')) {
-                    const w = win.offsetWidth || 700;
-                    const h = win.offsetHeight || 750;
-                    win.style.left = Math.max(0, (window.innerWidth - w) / 2) + 'px';
-                    win.style.top = Math.max(0, (window.innerHeight - h - 48) / 2) + 'px';
-                }
-            }, 10);
-            win.dataset.resized = "true";
-        }
+
 
         this.gameState = 'MENU';
         this.active = true;

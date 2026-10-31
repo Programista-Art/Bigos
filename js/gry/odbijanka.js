@@ -150,7 +150,7 @@ games.odbijanka = {
         };
     },
 
-    init: async function() {
+    init: function() {
         if(typeof stopAllSounds !== 'undefined') stopAllSounds();
         if(this.loop) cancelAnimationFrame(this.loop); 
         
@@ -160,10 +160,12 @@ games.odbijanka = {
         this.c.width = 650; 
         this.c.height = 650;
 
+        this.ensureMobileControls();
+
         // Wczytanie historii wyników z IndexedDB (z zabezpieczeniem LocalStorage)
         try {
             if (typeof bigosDB !== 'undefined') {
-                const saved = await bigosDB.get('bigos_odbijanka_scores');
+                bigosDB.get('bigos_odbijanka_scores').then(saved => { if (saved) this.lastScores = typeof saved === 'string' ? JSON.parse(saved) : saved; }).catch(() => {});
                 if (saved) this.lastScores = typeof saved === 'string' ? JSON.parse(saved) : saved;
             } else {
                 const saved = localStorage.getItem('bigos_odbijanka_scores');
@@ -173,31 +175,9 @@ games.odbijanka = {
             console.error("Błąd wczytywania wyników:", e);
         }
 
-        const win = document.getElementById('app-odbijanka');
-        if (win && !win.dataset.resized) {
-            win.style.width = '700px'; 
-            win.classList.remove('w-[440px]');
-            
-            const titleBar = win.querySelector('.title-bar');
-            if (titleBar) titleBar.classList.remove('bg-black/30');
-            
-            const contentArea = win.querySelector('.bg-black\\/10');
-            if (contentArea) contentArea.classList.remove('bg-black/10');
-            
-            setTimeout(() => {
-                if (!win.classList.contains('maximized')) {
-                    const w = win.offsetWidth || 700;
-                    const h = win.offsetHeight || 750;
-                    win.style.left = Math.max(0, (window.innerWidth - w) / 2) + 'px';
-                    win.style.top = Math.max(0, (window.innerHeight - h - 48) / 2) + 'px';
-                }
-            }, 10);
-            
-            win.dataset.resized = "true";
-        }
 
-        this.ensureMobileControls();
 
+        
         // Obsługa kliknięć i dotyku dla Menu i gry
         this.c.onmousedown = (e) => { 
             if (this.gameState !== 'PLAYING') { e.preventDefault(); this.handleMenuClick(e); }

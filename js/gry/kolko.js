@@ -11,24 +11,7 @@ games.kolko = {
         games.kolko.ticP='❌'; 
         games.kolko.ticA=true; 
 
-        // --- NAPRAWA I POWIĘKSZENIE OKNA ---
-        const win = document.getElementById('app-kolko');
-        if (win && !win.dataset.resized) {
-            win.style.width = '700px'; 
-            win.classList.remove('w-[300px]');
-            
-            // Wymuszamy ponowne wyśrodkowanie powiększonego okna
-            setTimeout(() => {
-                if (!win.classList.contains('maximized')) {
-                    const w = win.offsetWidth || 700;
-                    const h = win.offsetHeight || 750;
-                    win.style.left = Math.max(0, (window.innerWidth - w) / 2) + 'px';
-                    win.style.top = Math.max(0, (window.innerHeight - h - 48) / 2) + 'px';
-                }
-            }, 10);
-            
-            win.dataset.resized = "true";
-        }
+
 
         // --- AKTUALIZACJA INTERFEJSU UI ---
         const statusEl = document.getElementById('tic-status');

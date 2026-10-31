@@ -178,29 +178,7 @@ games.scigacz = {
             if (saved) this.lastScores = JSON.parse(saved);
         } catch(e) {}
 
-        // --- NAPRAWA I POWIĘKSZENIE OKNA ---
-        const win = document.getElementById('app-scigacz');
-        if (win && !win.dataset.resized) {
-            win.style.width = '700px'; 
-            win.classList.remove('w-[340px]');
-            
-            const titleBar = win.querySelector('.title-bar');
-            if (titleBar) titleBar.classList.remove('bg-black/30');
-            
-            const contentArea = win.querySelector('.bg-black\\/10');
-            if (contentArea) contentArea.classList.remove('bg-black/10');
-            
-            setTimeout(() => {
-                if (!win.classList.contains('maximized')) {
-                    const w = win.offsetWidth || 700;
-                    const h = win.offsetHeight || 750;
-                    win.style.left = Math.max(0, (window.innerWidth - w) / 2) + 'px';
-                    win.style.top = Math.max(0, (window.innerHeight - h - 48) / 2) + 'px';
-                }
-            }, 10);
-            
-            win.dataset.resized = "true";
-        }
+
         
         this.ensureMobileControls();
 

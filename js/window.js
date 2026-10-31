@@ -40,31 +40,71 @@ const winManager = {
         const marginY = 16;
         const maxW = Math.max(280, winW - marginX);
         const maxH = Math.max(240, winH - taskbarH - marginY);
-        const isAutoHeight = (win.dataset.autoHeight === 'true');
+
+        const declared = winManager._getDeclaredGeometry(win);
+        if (declared.w && !win.dataset.prefW) win.dataset.prefW = declared.w + 'px';
+        if (declared.h && !win.dataset.prefH && !declared.isAutoH) win.dataset.prefH = declared.h + 'px';
+        if (declared.isAutoH && !win.dataset.autoHeight) win.dataset.autoHeight = 'true';
+
+        const isAutoHeight = (win.dataset.autoHeight === 'true') || declared.isAutoH;
+        const isUserResized = win.dataset.userResized === 'true' || !!win.dataset.userResized || (savedGeom && (savedGeom.userResized === true || savedGeom.userResized === 'true'));
 
         if (!win.dataset.centered) {
-            let w = parseFloat(win.style.width) || parseFloat(win.dataset.prefW) || win.offsetWidth || 500;
-            if (savedGeom && savedGeom.w && !winManager._isObsoleteGeometry(appId, savedGeom)) {
+            let w = declared.w || parseFloat(win.style.width) || parseFloat(win.dataset.prefW) || win.offsetWidth || 500;
+            if (isUserResized && savedGeom && savedGeom.w && !winManager._isObsoleteGeometry(appId, savedGeom)) {
                 w = savedGeom.w;
             }
             if (w > maxW) w = maxW;
             win.style.width = w + 'px';
 
-            let h = parseFloat(win.style.height) || parseFloat(win.dataset.prefH) || win.offsetHeight || 400;
-            if (!isAutoHeight && savedGeom && savedGeom.h && !winManager._isObsoleteGeometry(appId, savedGeom)) {
-                h = savedGeom.h;
-            }
-            if (h > maxH) h = maxH;
-            if (!isAutoHeight || win.style.height) {
+            let h = null;
+            if (appId === 'powitanie' && !isUserResized) {
+                // Adaptive welcome window height based on available workspace
+                const targetH = Math.min(640, maxH);
+                h = targetH;
+                win.dataset.prefH = '640px';
                 win.style.height = h + 'px';
+            } else if (!isAutoHeight) {
+                h = declared.h || parseFloat(win.style.height) || parseFloat(win.dataset.prefH) || 400;
+                if (isUserResized && savedGeom && savedGeom.h && !winManager._isObsoleteGeometry(appId, savedGeom)) {
+                    h = savedGeom.h;
+                }
+                if (h > maxH) h = maxH;
+                win.style.height = h + 'px';
+            } else {
+                // For auto-height windows: do not force inline height unless explicitly user-resized
+                if (isUserResized && savedGeom && savedGeom.h && !winManager._isObsoleteGeometry(appId, savedGeom)) {
+                    h = savedGeom.h;
+                    if (h > maxH) h = maxH;
+                    win.style.height = h + 'px';
+                } else {
+                    win.style.height = '';
+                }
+            }
+
+            let centerH = h;
+            if (centerH == null) {
+                const wasHidden = win.classList.contains('hidden') || win.style.display === 'none';
+                if (wasHidden) {
+                    win.style.visibility = 'hidden';
+                    win.classList.remove('hidden');
+                    win.classList.add('active');
+                }
+                const measuredH = win.offsetHeight || (win.getBoundingClientRect ? win.getBoundingClientRect().height : 0);
+                if (wasHidden) {
+                    win.classList.remove('active');
+                    win.classList.add('hidden');
+                    win.style.visibility = '';
+                }
+                centerH = (measuredH > 0) ? Math.min(measuredH, maxH) : 400;
             }
 
             if (savedGeom && savedGeom.x != null && savedGeom.y != null && !winManager._isObsoleteGeometry(appId, savedGeom)) {
                 win.style.left = Math.max(0, Math.min(savedGeom.x, Math.max(0, winW - w))) + 'px';
-                win.style.top = Math.max(0, Math.min(savedGeom.y, Math.max(0, winH - taskbarH - h))) + 'px';
+                win.style.top = Math.max(0, Math.min(savedGeom.y, Math.max(0, winH - taskbarH - centerH))) + 'px';
             } else {
                 win.style.left = Math.max(0, Math.floor((winW - w) / 2)) + 'px';
-                win.style.top = Math.max(0, Math.floor((winH - h - taskbarH) / 2)) + 'px';
+                win.style.top = Math.max(0, Math.floor((winH - centerH - taskbarH) / 2)) + 'px';
             }
             win.dataset.centered = "true";
         }
@@ -100,6 +140,9 @@ const winManager = {
         if(appId === 'grajek' && typeof apps !== 'undefined') apps.loadGrajkoteka();
         if(typeof games !== 'undefined' && games[appId] && games[appId].init) games[appId].init();
         if(appId === 'powitanie' && typeof powitanieApp !== 'undefined' && powitanieApp.onOpen) powitanieApp.onOpen();
+
+        // Ensure window is clamped to viewport after initialization & content rendering.
+        winManager._clampToViewport(win);
     },
 
     close: (appId) => {
@@ -231,19 +274,29 @@ const winManager = {
         winManager.bringToFront(win);
     },
 
+    _getDeclaredGeometry: (win) => {
+        if (!win) return { w: null, h: null, isAutoH: false };
+        const classW = (win.className && (win.className.match(/\bw-\[(\d+)px\]/) || [])[1]);
+        const classH = (win.className && (win.className.match(/\bh-\[(\d+)px\]/) || [])[1]);
+        const prefW = (win.dataset && win.dataset.prefW) ? parseFloat(win.dataset.prefW) : (classW ? parseFloat(classW) : (win.style && win.style.width ? parseFloat(win.style.width) : null));
+        const isAutoH = (win.dataset && win.dataset.autoHeight === 'true') || (!win.dataset?.prefH && (!win.style || !win.style.height) && !classH);
+        const prefH = isAutoH ? null : ((win.dataset && win.dataset.prefH) ? parseFloat(win.dataset.prefH) : (classH ? parseFloat(classH) : (win.style && win.style.height ? parseFloat(win.style.height) : null)));
+        return { w: prefW, h: prefH, isAutoH };
+    },
+
     _clampToViewport: (win) => {
         if (!win) return;
         const taskbarH = 48;
         const maxW = (typeof window !== 'undefined' && typeof window.innerWidth === 'number') ? window.innerWidth : 1280;
         const maxH = (typeof window !== 'undefined' && typeof window.innerHeight === 'number') ? (window.innerHeight - taskbarH) : (800 - taskbarH);
         
-        // Remember preferred dimensions if available
-        if (!win.dataset.prefW && win.style.width) {
-            win.dataset.prefW = win.style.width;
-        }
+        const declared = winManager._getDeclaredGeometry(win);
+        const isAutoH = (win.dataset.autoHeight === 'true') || declared.isAutoH;
+        const isUserResized = win.dataset.userResized === 'true' || !!win.dataset.userResized;
 
-        const prefW = parseFloat(win.dataset.prefW) || parseFloat(win.style.width) || 0;
-        if (prefW > 0 && !win.dataset.userResized) {
+        // Preferred width: do not overwrite declared prefW with clamped width
+        const prefW = parseFloat(win.dataset.prefW) || declared.w || 0;
+        if (!isUserResized && prefW > 0) {
             if (prefW <= maxW) {
                 win.style.width = prefW + 'px';
             } else {
@@ -254,16 +307,32 @@ const winManager = {
             if (curW > maxW) win.style.width = Math.max(280, maxW - 8) + 'px';
         }
 
-        const curH = parseFloat(win.style.height);
-        if (curH > maxH) {
-            win.style.height = Math.max(240, maxH - 8) + 'px';
+        // Height:
+        if (!isAutoH) {
+            const prefH = parseFloat(win.dataset.prefH) || declared.h || 0;
+            if (!isUserResized && prefH > 0) {
+                if (prefH <= maxH) {
+                    win.style.height = prefH + 'px';
+                } else {
+                    win.style.height = Math.max(240, maxH - 8) + 'px';
+                }
+            } else {
+                const curH = parseFloat(win.style.height);
+                if (curH > maxH) win.style.height = Math.max(240, maxH - 8) + 'px';
+            }
+        } else {
+            // Content-driven height: only clamp if style.height was explicitly set by user
+            if (isUserResized && win.style.height) {
+                const curH = parseFloat(win.style.height);
+                if (curH > maxH) win.style.height = Math.max(240, maxH - 8) + 'px';
+            }
         }
 
         const rect = win.getBoundingClientRect();
         let x = parseFloat(win.style.left) || rect.left;
         let y = parseFloat(win.style.top) || rect.top;
-        const actualW = parseFloat(win.style.width) || rect.width || 0;
-        const actualH = parseFloat(win.style.height) || rect.height || 0;
+        const actualW = (rect && rect.width > 0) ? rect.width : (parseFloat(win.style.width) || 0);
+        const actualH = (rect && rect.height > 0) ? rect.height : (parseFloat(win.style.height) || 0);
         // Keep window fully reachable within workspace above taskbar.
         if (x < 0) x = 0;
         if (y < 0) y = 0;
@@ -281,6 +350,24 @@ const winManager = {
         if (appId === 'cookie_clicker' && (geom.w === 420 || geom.h === 560)) return true;
         if (appId === 'kalkulator_bmi' && (geom.w === 380 || geom.h === 440)) return true;
         if (appId === 'bigos_painter' && (geom.w === 820 || geom.h === 620)) return true;
+        // Obsolete fixed height of 520px for powitanie (unless user explicitly resized it):
+        if (appId === 'powitanie') {
+            const h = typeof geom.h === 'number' ? geom.h : parseFloat(geom.h);
+            if (h === 520) {
+                const win = (typeof document !== 'undefined') ? document.getElementById('app-powitanie') : null;
+                const isUserResized = geom.userResized || (win && (win.dataset.userResized === 'true' || win.dataset.userResized === true));
+                if (!isUserResized) return true;
+            }
+        }
+        // General check: if geom is not userResized and has forced height on an auto-height app, or forced arbitrary 500x400
+        const win = (typeof document !== 'undefined') ? document.getElementById('app-' + appId) : null;
+        if (win && !geom.userResized) {
+            const declared = winManager._getDeclaredGeometry(win);
+            if (declared.isAutoH && geom.h != null) return true;
+            if (declared.w && geom.w === 500 && declared.w !== 500) return true;
+            if (declared.h && geom.h === 400 && declared.h !== 400) return true;
+            if (geom.w === 700 && declared.w && declared.w !== 700) return true;
+        }
         return false;
     },
 
@@ -311,21 +398,26 @@ const winManager = {
 
     _saveGeometry: (appId, win) => {
         try {
+            if (!win || win.classList.contains('maximized')) return;
             // Store numeric CSS pixels only — never include unit suffixes.
             const num = (v) => {
                 const n = parseFloat(v);
                 return Number.isFinite(n) ? n : null;
             };
-            const isAuto = (win.dataset.autoHeight === 'true');
+            const declared = winManager._getDeclaredGeometry(win);
+            const isAuto = (win.dataset.autoHeight === 'true') || declared.isAutoH;
+            const isUserResized = win.dataset.userResized === 'true' || !!win.dataset.userResized;
+            
             // If window width was temporarily clamped to mobile viewport, preserve prefW
-            const prefW = win.dataset.prefW ? parseFloat(win.dataset.prefW) : null;
-            const w = (!win.dataset.userResized && prefW) ? prefW : num(win.style.width);
+            const prefW = win.dataset.prefW ? parseFloat(win.dataset.prefW) : declared.w;
+            const w = (!isUserResized && prefW) ? prefW : num(win.style.width);
             const geom = {
                 x: num(win.style.left),
                 y: num(win.style.top),
                 w: w,
-                // Do not persist auto-measured height as forced fixed height
-                h: isAuto ? null : num(win.style.height)
+                // Do not persist auto-measured height or clamped height as forced fixed height
+                h: (isAuto && !isUserResized) ? null : (isUserResized ? num(win.style.height) : (parseFloat(win.dataset.prefH) || declared.h || num(win.style.height))),
+                userResized: isUserResized
             };
             localStorage.setItem('bigos_win_' + appId, JSON.stringify(geom));
         } catch (_) { /* quota */ }
@@ -342,7 +434,7 @@ const winManager = {
                 const n = parseFloat(String(v).replace(/px$/i, ''));
                 return Number.isFinite(n) ? n : null;
             };
-            const geom = { x: num(g.x), y: num(g.y), w: num(g.w), h: num(g.h) };
+            const geom = { x: num(g.x), y: num(g.y), w: num(g.w), h: num(g.h), userResized: !!g.userResized };
             if (winManager._isObsoleteGeometry(appId, geom)) {
                 localStorage.removeItem('bigos_win_' + appId);
                 return null;
@@ -504,6 +596,29 @@ if (typeof window !== 'undefined' && window.addEventListener) {
     window.addEventListener('resize', () => {
         if (typeof document !== 'undefined' && document.querySelectorAll) {
             document.querySelectorAll('.window.active').forEach((win) => winManager._clampToViewport(win));
+        }
+    });
+}
+
+// Track deliberate user resizing of windows via native resize handle or interactions
+if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('mousedown', (e) => {
+        const win = e.target && e.target.closest && e.target.closest('.window');
+        if (!win) return;
+        const rect = win.getBoundingClientRect();
+        const inResizeCorner = (e.clientX >= rect.right - 24 && e.clientY >= rect.bottom - 24);
+        if (inResizeCorner) {
+            const initialW = win.offsetWidth;
+            const initialH = win.offsetHeight;
+            const onMouseUp = () => {
+                document.removeEventListener('mouseup', onMouseUp);
+                if (Math.abs(win.offsetWidth - initialW) > 4 || Math.abs(win.offsetHeight - initialH) > 4) {
+                    win.dataset.userResized = "true";
+                    const appId = win.id.replace('app-', '');
+                    winManager._saveGeometry(appId, win);
+                }
+            };
+            document.addEventListener('mouseup', onMouseUp);
         }
     });
 }
