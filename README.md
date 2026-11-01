@@ -1,4 +1,4 @@
-# BigOS — system operacyjny w przeglądarce
+# BigOS - system operacyjny w przeglądarce
 
 **Wersja 2.0.1**
 
@@ -6,22 +6,47 @@
 
 Aplikacja działa wewnątrz przeglądarki. Nie zastępuje systemu operacyjnego komputera i nie wymaga instalowania programu desktopowego. Pliki oraz ustawienia są domyślnie zapisywane lokalnie w magazynie danej witryny, bez automatycznej synchronizacji w chmurze.
 
-<img src="images/app/powitanie.png" alt="Przykładowy ekran powitalny BigOS" width="100%" />
+<img src="images/app/BigOs-2.1big-ai.png" alt="Przykładowy ekran powitalny BigOS" width="100%" />
 
 > Zrzuty w galerii przedstawiają różne etapy rozwoju projektu i mogą różnić się od bieżącego interfejsu.
 
-## Co zmieniło się w wersji 2.0.1
+<img src="images/app/BigOs-2.1.png" alt="Przykładowy ekran powitalny BigOS" width="100%" />
 
-- Ujednolicono zapis danych w IndexedDB, migrację starszych danych i obsługę błędów magazynu.
-- Usprawniono kopie zapasowe, przywracanie danych i historię wersji dokumentów w Skrybie.
-- Rozbudowano Menedżer Aplikacji o wyszukiwanie, sortowanie, szczegóły i obsługę pakietów.
-- Dodano automatyczną instalację dołączonych aplikacji z katalogu `Programy/`, z zapamiętywaniem ich odinstalowania.
-- Poprawiono izolację aplikacji zewnętrznych, kontrolę uprawnień oraz synchronizację motywów.
-- Dodano obsługę rozmiarów zadeklarowanych przez pakiety i wysokości dopasowanej do zawartości.
-- Odświeżono program „Witaj w BigOS”, informacje o projekcie i szybkie akcje.
-- Poprawiono lokalne style, aktualizacje zasobów i obsługę pamięci podręcznej Service Workera.
+## Co zmieniło się i co ulepszono w wersji 2.0.1
 
-Projekt pozostaje w rozwoju. Układ niektórych okien, w tym powitania, jest nadal dopracowywany pod kątem małych ekranów, powiększenia tekstu i ograniczonej wysokości obszaru roboczego.
+### 🤖 BigAI 2026 - Centrum Dowodzenia Systemem
+- **Nowe modele językowe (LLM 2026)**:
+  - **Google Gemini API**: dodano najnowsze modele **Gemini 4 Argon**, **Gemini 3.8 Flash**, **Gemini 3.6 Flash**, **Gemini 3.5 Flash Lite** oraz serię Gemini 3.1 / 2.5. Usunięto nieaktualny wpis „Gemini (Darmowe wbudowane)”.
+  - **OpenAI API + Service Tier**: dodano modele **GPT-6 Astra**, **GPT-6.1 Sol**, **GPT-6.1 Terra** (z wyborem trybu **Service Tier: Standard / Fast / UltraFast**) oraz **GPT-6 Luna**, **GPT-6 Sol**, **GPT-5.6 Sol**, **GPT-5.6 Terra**, **GPT-5.6 Luna**, **GPT-5.6 Nano** i **GPT-5.5** (z obsługą **Service Tier: Standard / Fast**).
+  - **Anthropic Claude**: zaktualizowano listę modeli o **Claude Fable 5.1**, **Claude Opus 5.5**, **Claude Sonnet 5.5** oraz **Claude Haiku 5.5**.
+  - **Pozostali dostawcy i praca lokalna**: wsparcie dla **xAI (Grok 4)**, **DeepSeek (V3.2 / R2)**, **Groq LPU (Llama 4 Maverick / Scout)**, **OpenRouter (Multi-Model 2026)** oraz lokalnego zarządcy systemu działającego offline.
+- **Studio Mediów AI (Generatory zdjęć i wideo)**:
+  - **Generatory zdjęć**: **Gemini Nano Banana 2.1**, **Gemini Nano Banana Pro**, **Gemini Nano Banana 2 lite** oraz **FLUX 3**.
+  - **Generatory wideo**: **Gemini Omni 1.1 Flash**, **Gemini Veo 3.1-lite**, **Gemini Veo 3.1 -fast**, **Gemini Veo3.1- Quality** oraz **FLUX 3 (Generator wideo)**.
+- **Silniki dyktowania (STT 2026) i głosy asystentów (TTS 2026)**:
+  - **Rozpoznawanie mowy (STT)**: Web Speech API 2026, Google Gemini Audio STT, OpenAI GPT-4o Transcribe, Groq Whisper Large v3 Turbo, ElevenLabs Scribe v2 oraz Deepgram Nova-3.
+  - **Synteza mowy (TTS)**: Wbudowany Web Speech 2026, Google Gemini Live Audio (`Kore`, `Aoede`, `Puck`, `Fenrir`, `Charon`, `Leda`, `Orus`, `Zephyr`), OpenAI GPT-4o Mini TTS (`Coral`, `Sage`, `Ash`, `Ballad`, `Verse`), ElevenLabs v3 Multilingual oraz Cartesia Sonic-2.
+- **Pełne zarządzanie systemem BigOS z poziomu BigAI**:
+  - Otwieranie i zamykanie dowolnych aplikacji oraz gier poleceniem tekstowym lub głosowym.
+  - Automatyczne otwieranie przeglądarki **Sieciosław** i wyszukiwanie w niej informacji.
+  - Otwieranie edytora **Skryba** i zapisywanie podyktowanych notatek głosowych (w tym dedykowany tryb **📝 Dyktuj do Skryby**).
+  - Otwieranie wygenerowanych lub wskazanych grafik bezpośrednio w aplikacji **Patrzałka** oraz materiałów wideo w **Grajaczu Filmów**.
+  - Tworzenie plików i folderów na pulpicie, zmiana motywów oraz tapet, a także generowanie i instalowanie nowych aplikacji w piaskownicy.
+- **Rozszerzony układ okna BigAI (`1180×760 px`)**: poszerzono okno główne oraz panel boczny ustawień (`340 px`), wyeliminowano zawijanie przycisków na górnym pasku i poprawiono formatowanie list Markdown.
+
+### 🪟 Okna aplikacji, gry i pulpit
+- **Naprawa wymiarów okien i automatycznej wysokości (`auto-height`)**:
+  - Przywrócono pełną, nieuciętą wysokość i szerokość kalkulatorów **Rachmistrz Pro** (`340 px → 620 px → 900 px` przy otwieraniu paneli Naukowego i Historii) oraz **Rachmistrz Kodu** (`380 px → 660 px`).
+  - Rozszerzono domyślne wymiary okien aplikacji multimedialnych, biurowych i narzędziowych (**Grajek**, **Grajacz Filmów**, **Montażysta**, **Artysta**, **Patrzałka Pro**, **Sieciosław**, **Aktówka**, **Kombinator**, **Władca Poleceń**, **Nadzorca**, **Kasiarz**, **Zadaniowiec**), aby żadne kontrolki nie były ucięte.
+- **Ulepszenia w grach systemowych**:
+  - Naprawiono grę **Czołgi**, aby nie otwierała się samoczynnie przy starcie systemu i pozostawała ukryta do momentu uruchomienia przez użytkownika.
+  - Zwiększono wymiary okien wszystkich gier (**Pełzacz**, **Trzepotek**, **Odbijanka**, **Ufoludki**, **Murarz**, **Czołgi**, **Ścigacz**, **Bombiarz**, **Kółko i Krzyżyk**) oraz wprowadzono proporcjonalne skalowanie `<canvas>` z precyzyjnym przeliczaniem współrzędnych kursora i dotyku.
+- **Proporcjonalne rozmieszczanie ikon na pulpicie**:
+  - Wszystkie ikony na pulpicie oraz nowo tworzone pliki i foldery są automatycznie wyrównywane do siatki `90×90 px` z wykrywaniem zajętych pól, co zapobiega nakładaniu się ikon na siebie.
+- **Odświeżony ekran powitalny „Witaj w BigOS”**:
+  - Adaptacyjna wysokość okna dopasowująca się do dostępnego obszaru roboczego (od ekranów laptopowych po monitory ultrawide `3440×1440`), centrowanie przed wyświetleniem pierwszej klatki oraz pełna obsługa zamykania okna i zapamiętywania preferencji startowych.
+- **Menedżer Aplikacji, Tabelarz i magazyn danych**:
+  - Uproszczony, responsywny pasek narzędziowy Menedżera Aplikacji oparty na zapytaniach kontenerowych (`@container`), wyszukiwanie z polskimi znakami, automatyczna instalacja pakietów z katalogu `Programy/` z pamięcią odinstalowania, pełna synchronizacja motywów systemowych w arkuszu **Tabelarz** oraz ujednolicony zapis danych w IndexedDB.
 
 ## Główne możliwości
 
@@ -109,17 +134,21 @@ W projekcie znajdują się między innymi **Pełzacz**, **Czołgi**, **Murarz**,
 
 Wydajność i dostępne sposoby sterowania zależą od urządzenia, przeglądarki i konkretnej gry.
 
-## BigAI
+## BigAI 2026 — Centrum Dowodzenia Systemem
 
-BigAI jest zintegrowany z aplikacjami i wybranymi operacjami systemu. Może pomagać w pracy z tekstem, generować propozycje aplikacji i wykonywać obsługiwane polecenia.
+BigAI pełni rolę centralnego asystenta i zarządcy systemu BigOS. Potrafi sterować oknami i aplikacjami, wyszukiwać informacje w przeglądarce **Sieciosław**, zapisywać podyktowane notatki w programie **Skryba**, tworzyć pliki i foldery na pulpicie, otwierać obrazy w **Patrzałce**, generować grafikę i wideo oraz tworzyć nowe aplikacje dla BigOS.
 
-- **Symulator testowy offline** działa lokalnie i zwraca przygotowane odpowiedzi demonstracyjne. Nie jest lokalnym modelem językowym.
-- **Zewnętrzni dostawcy**, między innymi Google Gemini, OpenAI, Groq i OpenRouter, wymagają połączenia z internetem oraz odpowiedniej konfiguracji i poświadczeń.
-- Funkcje głosowe, generowanie obrazów i dostępność modeli zależą od wybranego dostawcy, przeglądarki i przyznanych uprawnień.
-- Sam wpis dostawcy w ustawieniach nie oznacza zapewnionej bezpłatnej usługi ani dostępu do modelu.
-- Dodano walidację poleceń, podgląd zmian przy modyfikowaniu plików i możliwość zatrzymania żądania.
+- **Obsługiwani dostawcy i modele czatu**:
+  - **Google Gemini API**: `Gemini 4 Argon`, `Gemini 3.8 Flash`, `Gemini 3.6 Flash`, `Gemini 3.5 Flash Lite`, `Gemini 3.1 Pro / Flash / Flash Lite`.
+  - **OpenAI API**: `GPT-6 Astra`, `GPT-6.1 Sol`, `GPT-6.1 Terra` (z trybami **Service Tier**: `Standard`, `Fast`, `UltraFast`) oraz `GPT-6 Luna`, `GPT-6 Sol`, `GPT-5.6 Sol`, `GPT-5.6 Terra`, `GPT-5.6 Luna`, `GPT-5.6 Nano`, `GPT-5.5` (z trybami `Standard`, `Fast`).
+  - **Anthropic Claude**: `Claude Fable 5.1`, `Claude Opus 5.5`, `Claude Sonnet 5.5`, `Claude Haiku 5.5`.
+  - **xAI, DeepSeek, Groq LPU, OpenRouter**: `Grok 4`, `DeepSeek V3.2 / R2`, `Llama 4 Maverick / Scout` oraz modele udostępniane przez OpenRouter.
+  - **Lokalny Zarządca Systemu (Offline)**: działa lokalnie bez klucza API, obsługując komendy sterowania systemem BigOS, tworzenie plików/folderów, notatki w Skrybie, wyszukiwanie w Sieciosławiu oraz lokalne generowanie mediów demonstracyjnych.
+- **Generatory zdjęć i wideo**: integracja z modelami **Gemini Nano Banana 2.1 / Pro / 2 lite**, **Omni 1.1 Flash**, **Veo 3.1-lite / -fast / Quality** oraz **FLUX 3** (zdjęcia i wideo), z automatycznym zapisem do systemu plików BigOS i podglądem w Patrzałce lub Grajaczu Filmów.
+- **Dyktowanie (STT) i głosy asystentów (TTS)**: obsługa Web Speech API 2026, Gemini Audio STT, OpenAI GPT-4o Transcribe, Groq Whisper v3 Turbo, ElevenLabs Scribe v2, Deepgram Nova-3 oraz głosów Gemini Live Audio, OpenAI TTS, ElevenLabs v3 i Cartesia Sonic-2.
+- **Bezpieczeństwo**: walidacja poleceń systemowych, podgląd zmian przy edycji istniejących plików, możliwość zatrzymania żądania w dowolnym momencie oraz uruchamianie generowanych aplikacji wyłącznie w izolowanej piaskownicy `iframe`.
 
-Przy korzystaniu z usług zewnętrznych wysyłana treść trafia do wybranego dostawcy. Nie udostępniaj publicznie swoich kluczy API ani kopii zapasowych zawierających poświadczenia.
+Przy korzystaniu z zewnętrznych usług API wysyłana treść trafia do wybranego dostawcy i wymaga własnego klucza API oraz połączenia z internetem. Nie udostępniaj publicznie swoich kluczy API ani kopii zapasowych zawierających poświadczenia.
 
 ## Dane i kopie zapasowe
 
