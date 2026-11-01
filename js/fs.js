@@ -139,10 +139,11 @@ const fsManager = {
             const defaults = (typeof defaultApps !== 'undefined' && Array.isArray(defaultApps)) ? defaultApps
                 : (typeof window !== 'undefined' && Array.isArray(window.defaultApps)) ? window.defaultApps
                 : [];
+            const maxRows = (typeof desktop !== 'undefined' && desktop.getGridMetrics) ? desktop.getGridMetrics().maxRows : Math.max(1, Math.floor((((typeof window !== 'undefined' ? window.innerHeight : 800) - 48 - 20) / GRID)));
             defaults.forEach((app, i) => {
                 let obj = { ...app, parentId: 'root' };
-                obj.x = (Math.floor(i / 6) * GRID) + 20;
-                obj.y = (i % 6) * GRID + 20;
+                obj.x = (Math.floor(i / maxRows) * GRID) + 20;
+                obj.y = (i % maxRows) * GRID + 20;
                 fs.push(obj);
             });
             await fsManager.save();

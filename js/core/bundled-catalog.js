@@ -71,18 +71,21 @@
     }
 
     function calculateFreeDesktopPos() {
-        if (!Array.isArray(global.fileSystem)) return { x: 30, y: 30 };
-        const maxRows = Math.max(1, Math.floor(((typeof window !== 'undefined' ? window.innerHeight : 800) - 120) / 100));
+        if (global.desktop && typeof global.desktop.findFreeSlot === 'function') {
+            return global.desktop.findFreeSlot();
+        }
+        if (!Array.isArray(global.fileSystem)) return { x: 20, y: 20 };
+        const maxRows = Math.max(1, Math.floor(((typeof window !== 'undefined' ? window.innerHeight : 800) - 48 - 20) / 90));
         let col = 0, row = 0;
-        for (let tries = 0; tries < 50; tries++) {
-            const checkX = 30 + (col * 90);
-            const checkY = 30 + (row * 100);
-            const occupied = global.fileSystem.some((f) => f && f.parentId === 'root' && Math.abs(f.x - checkX) < 40 && Math.abs(f.y - checkY) < 40);
+        for (let tries = 0; tries < 80; tries++) {
+            const checkX = 20 + (col * 90);
+            const checkY = 20 + (row * 90);
+            const occupied = global.fileSystem.some((f) => f && f.parentId === 'root' && Math.abs(f.x - checkX) < 76 && Math.abs(f.y - checkY) < 76);
             if (!occupied) return { x: checkX, y: checkY };
             row++;
             if (row >= maxRows) { row = 0; col++; }
         }
-        return { x: 30, y: 30 };
+        return { x: 20, y: 20 };
     }
 
     function registerInUI(record) {

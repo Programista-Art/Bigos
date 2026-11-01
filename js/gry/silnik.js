@@ -102,8 +102,8 @@ gameStyles.innerHTML = `
     .window[id^="app-pelzacz"], .window[id^="app-murarz"], .window[id^="app-ufoludki"], 
     .window[id^="app-odbijanka"], .window[id^="app-trzepotek"], .window[id^="app-scigacz"], 
     .window[id^="app-bombiarz"], .window[id="app-kolko"], .window[id^="app-tank"] {
-        max-height: calc(100vh - 56px);
-        display: flex;
+        height: max-content !important; 
+        max-height: none !important;
         flex-direction: column; 
     }
     
@@ -112,7 +112,7 @@ gameStyles.innerHTML = `
     .window[id^="app-trzepotek"] > div:nth-child(2), .window[id^="app-scigacz"] > div:nth-child(2), 
     .window[id^="app-bombiarz"] > div:nth-child(2), .window[id="app-kolko"] > div:nth-child(2),
     .window[id^="app-tank"] > div:nth-child(2) {
-        display: flex; flex-direction: column; flex-grow: 1; min-height: 0; overflow-y: auto;
+        display: flex; flex-direction: column; flex-grow: 1; height: 100%; overflow: hidden;
     }
     
     div[id$="-score"], div[id="tic-status"] { flex-shrink: 0; margin-bottom: 5px; }
@@ -120,7 +120,7 @@ gameStyles.innerHTML = `
     canvas[id^="canvas-"] {
         max-width: 100%;
         height: auto;
-        max-height: calc(100vh - 48px - 160px); width: auto;
+        max-width: 100%; height: auto; display: block; margin: 0 auto;
         display: block;
         margin: 0 auto;
     }
@@ -176,6 +176,7 @@ document.head.appendChild(gameStyles);
 setTimeout(() => {
     document.querySelectorAll('canvas[id^="canvas-"]').forEach(c => {
         const gameName = c.id.replace('canvas-', '');
+        if (gameName === 'tank') return;
         const win = c.closest('.window');
         
         c.title = "Zagraj na pełnym oknie (Kliknij dwukrotnie w środek gry)";

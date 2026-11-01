@@ -16,9 +16,10 @@ window.BigOSAppAPI = {
         
         // 2. Dodaj ikonę na fizyczny Pulpit
         if (typeof fileSystem !== 'undefined' && !fileSystem.find(f => f.appId === config.id)) {
+            const slot = (typeof desktop !== 'undefined' && desktop.findFreeSlot) ? desktop.findFreeSlot() : { x: 20, y: 20 };
             fileSystem.push({
                 id: 'app_' + config.id, type: 'app', name: config.name, icon: config.icon, appId: config.id,
-                parentId: 'root', x: Math.floor(Math.random()*200)+50, y: Math.floor(Math.random()*200)+50
+                parentId: 'root', x: slot.x, y: slot.y
             });
             if (typeof fsManager !== 'undefined') fsManager.save();
             if (typeof desktop !== 'undefined') desktop.render();

@@ -180,6 +180,8 @@ games.scigacz = {
 
 
         
+        const win = this.c.closest('.window');
+        if (win) { win.classList.remove('w-[340px]', 'w-[440px]'); win.style.width = '700px'; win.dataset.prefW = '700px'; win.dataset.autoHeight = 'true'; }
         this.ensureMobileControls();
 
         // Obsługa kliknięć z myszy / dotyku (Dla Menu i Wyników)

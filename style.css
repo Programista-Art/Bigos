@@ -14,6 +14,8 @@
         #desktop-bg.custom-wp { background-size: cover !important; background-repeat: no-repeat !important; background-position: center !important; }
 
         .window { display: none; position: absolute; box-shadow: 0 15px 40px rgba(0,0,0,0.7); border-radius: 0.5rem; overflow: hidden; max-width: 100vw; max-height: calc(100vh - 48px); }
+        .window:not(.active), .window.hidden { display: none !important; }
+        .window[data-auto-height="true"] { height: max-content; max-height: none; }
         .window.active { display: flex; flex-direction: column; }
         .window.minimized { opacity: 0; pointer-events: none; transform: scale(0.9) translateY(50px); transition: all 0.2s ease; }
         .title-bar { cursor: move; touch-action: none; }

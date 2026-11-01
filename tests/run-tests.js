@@ -2484,6 +2484,162 @@ async function testWelcomeApp() {
     ctx.powitanieApp.onOpen();
     eq(skipCb.checked, true, 'onOpen synchronizes preference checkbox');
   });
+
+  await test('window.js handles style.height="auto" without 400px truncation and restores original app/game widths', () => {
+    const ls = makeLocalStorage();
+    const elements = new Map();
+    const makeWin = (id, className, style = {}, dataset = {}) => {
+      const classSet = new Set(className.split(/\s+/).filter(Boolean));
+      const el = {
+        id,
+        className,
+        style: { ...style },
+        dataset: { ...dataset },
+        offsetWidth: 380,
+        offsetHeight: 620,
+        classList: {
+          add: (...c) => { c.forEach(x => classSet.add(x)); el.className = Array.from(classSet).join(' '); },
+          remove: (...c) => { c.forEach(x => classSet.delete(x)); el.className = Array.from(classSet).join(' '); },
+          contains: (c) => classSet.has(c)
+        },
+        getBoundingClientRect: () => ({
+          left: parseFloat(el.style.left) || 0,
+          top: parseFloat(el.style.top) || 0,
+          width: parseFloat(el.style.width) || 380,
+          height: parseFloat(el.style.height) || 620
+        }),
+        querySelector: () => null
+      };
+      elements.set(id, el);
+      return el;
+    };
+
+    const rkWin = makeWin('app-rachmistrz-kodu', 'window w-[380px] hidden', { width: '380px', height: 'auto' }, { prefW: '380px', autoHeight: 'true' });
+    const calcWin = makeWin('app-kalkulator', 'window w-[340px] hidden', { width: '340px', height: 'auto' }, { prefW: '340px', autoHeight: 'true' });
+    const grajekWin = makeWin('app-grajek', 'window w-[1050px] h-[650px] hidden', { width: '1050px', height: '650px' }, { prefW: '1050px', prefH: '650px' });
+    const pelzaczWin = makeWin('app-pelzacz', 'window w-[700px] hidden', { width: '700px' }, { prefW: '700px', autoHeight: 'true' });
+
+    const mockDoc = {
+      getElementById: (id) => elements.get(id) || null,
+      querySelectorAll: () => []
+    };
+
+    const ctx = loadModules(['js/window.js'], {
+      localStorage: ls,
+      extras: {
+        document: mockDoc,
+        window: { innerWidth: 1920, innerHeight: 1080, addEventListener: () => {} },
+        openAppsList: new Set(),
+        highestZ: 100
+      }
+    });
+
+    // 1. style.height = 'auto' must be treated as auto-height, NEVER 400px
+    const rkDecl = ctx.winManager._getDeclaredGeometry(rkWin);
+    eq(rkDecl.w, 380, 'rachmistrz-kodu declared width is 380');
+    eq(rkDecl.isAutoH, true, 'rachmistrz-kodu with style.height="auto" is auto-height');
+    eq(rkDecl.h, null, 'rachmistrz-kodu declared height is null (auto)');
+
+    ctx.winManager.open('rachmistrz-kodu');
+    eq(rkWin.style.width, '380px', 'rachmistrz-kodu opens at 380px width');
+    ok(rkWin.style.height === '' || rkWin.style.height === 'auto', 'rachmistrz-kodu height is not clamped to 400px');
+
+    // 2. Rachmistrz Pro opens at 340px width and unclipped height
+    ctx.winManager.open('kalkulator');
+    eq(calcWin.style.width, '340px', 'kalkulator opens at 340px width');
+    ok(calcWin.style.height === '' || calcWin.style.height === 'auto', 'kalkulator height is not clamped to 400px');
+
+    // 3. Stale 400px height in localStorage is rejected as obsolete
+    ok(ctx.winManager._isObsoleteGeometry('rachmistrz-kodu', { w: 380, h: 400 }), 'stale 400px height on rachmistrz-kodu is obsolete');
+    ok(ctx.winManager._isObsoleteGeometry('kalkulator', { w: 300, h: 400 }), 'stale 300x400 geometry on kalkulator is obsolete');
+    ok(ctx.winManager._isObsoleteGeometry('pelzacz', { w: 340, h: null }), 'stale 340px width on pelzacz is obsolete');
+
+    // 4. Grajek opens at 1050x650 and Pelzacz at 700px
+    ctx.winManager.open('grajek');
+    eq(grajekWin.style.width, '1050px', 'grajek opens at 1050px width');
+    eq(grajekWin.style.height, '650px', 'grajek opens at 650px height');
+
+    ctx.winManager.open('pelzacz');
+    eq(pelzaczWin.style.width, '700px', 'pelzacz opens at 700px width');
+  });
+
+  await test('desktop.js places icons on proportional grid without overlaps, including new folders and files', () => {
+    const ls = makeLocalStorage();
+    const fileSystem = [
+      { id: 'app_1', type: 'app', name: 'App 1', icon: '🍲', parentId: 'root', x: 20, y: 20 },
+      { id: 'app_2', type: 'app', name: 'App 2', icon: '📦', parentId: 'root', x: 20, y: 20 }, // duplicate slot
+      { id: 'app_3', type: 'app', name: 'App 3', icon: '🎨', parentId: 'root', x: 30, y: 35 }  // off-grid colliding slot
+    ];
+    const mockArea = {
+      innerHTML: '',
+      clientWidth: 1920,
+      clientHeight: 1032,
+      appendChild: () => {}
+    };
+    const mockMenu = {
+      innerHTML: '',
+      className: '',
+      style: {},
+      classList: { remove: () => {}, add: () => {} }
+    };
+    const mockDoc = {
+      getElementById: (id) => {
+        if (id === 'desktop-area') return mockArea;
+        if (id === 'context-menu') return mockMenu;
+        return null;
+      },
+      createElement: () => ({
+        className: '',
+        style: {},
+        dataset: {},
+        innerHTML: '',
+        addEventListener: () => {}
+      }),
+      querySelectorAll: () => [],
+      addEventListener: () => {}
+    };
+    const mockUi = {
+      showPrompt: (title, defVal, btnText, cb) => cb(defVal)
+    };
+
+    const ctx = loadModules(['js/desktop.js'], {
+      localStorage: ls,
+      extras: {
+        GRID: 90,
+        fileSystem,
+        clipboard: { action: null, item: null },
+        document: mockDoc,
+        window: { innerWidth: 1920, innerHeight: 1080 },
+        ui: mockUi,
+        fsManager: { currentFolder: 'root', save: () => {}, renderExplorerContent: () => {} }
+      }
+    });
+
+    ctx.desktop.render();
+
+    // Create two folders and two files at the same context menu position (20, 20)
+    ctx.desktop.lastContextX = 20;
+    ctx.desktop.lastContextY = 20;
+    ctx.desktop.createFolder('root');
+    ctx.desktop.createFolder('root');
+    ctx.desktop.createFile('root');
+    ctx.desktop.createFile('root');
+
+    const rootItems = fileSystem.filter(f => f.parentId === 'root');
+    eq(rootItems.length, 7, 'all 7 items exist on desktop');
+
+    // Verify proportional grid alignment and zero overlap between any pair of icons
+    for (let i = 0; i < rootItems.length; i++) {
+      const a = rootItems[i];
+      eq((a.x - 20) % 90, 0, `item ${a.id} X (${a.x}) is aligned to 20 + col*90 grid`);
+      eq((a.y - 20) % 90, 0, `item ${a.id} Y (${a.y}) is aligned to 20 + row*90 grid`);
+      for (let j = i + 1; j < rootItems.length; j++) {
+        const b = rootItems[j];
+        const overlaps = Math.abs(a.x - b.x) < 76 && Math.abs(a.y - b.y) < 76;
+        eq(overlaps, false, `icons ${a.id} (${a.x},${a.y}) and ${b.id} (${b.x},${b.y}) must not overlap`);
+      }
+    }
+  });
 }
 
 // ---------------------------------------------------------------------------

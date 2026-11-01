@@ -160,13 +160,15 @@ games.odbijanka = {
         this.c.width = 650; 
         this.c.height = 650;
 
+        const win = this.c.closest('.window');
+        if (win) { win.classList.remove('w-[340px]', 'w-[440px]'); win.style.width = '700px'; win.dataset.prefW = '700px'; win.dataset.autoHeight = 'true'; }
         this.ensureMobileControls();
 
         // Wczytanie historii wyników z IndexedDB (z zabezpieczeniem LocalStorage)
         try {
             if (typeof bigosDB !== 'undefined') {
                 bigosDB.get('bigos_odbijanka_scores').then(saved => { if (saved) this.lastScores = typeof saved === 'string' ? JSON.parse(saved) : saved; }).catch(() => {});
-                if (saved) this.lastScores = typeof saved === 'string' ? JSON.parse(saved) : saved;
+                const saved = localStorage.getItem('bigos_odbijanka_scores'); if (saved) this.lastScores = JSON.parse(saved);
             } else {
                 const saved = localStorage.getItem('bigos_odbijanka_scores');
                 if (saved) this.lastScores = JSON.parse(saved);

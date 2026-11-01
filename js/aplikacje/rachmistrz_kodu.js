@@ -28,6 +28,8 @@ const rachmistrzKoduApp = {
         if (!appWindow) { setTimeout(rachmistrzKoduApp.upgradeUI, 500); return; }
 
         appWindow.style.width = '380px';
+        appWindow.dataset.prefW = '380px';
+        appWindow.dataset.autoHeight = 'true';
         appWindow.style.height = 'auto';
         appWindow.style.transition = 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
         appWindow.style.background = 'transparent';
@@ -154,12 +156,14 @@ const rachmistrzKoduApp = {
             histPanel.classList.add('w-[280px]');
             btn.classList.add('g-accent'); btn.classList.remove('g-text-muted');
             appWindow.style.width = '660px';
+            appWindow.dataset.prefW = '660px';
             rachmistrzKoduApp.renderHistory();
         } else {
             histPanel.classList.add('w-0', 'border-transparent');
             histPanel.classList.remove('w-[280px]');
             btn.classList.remove('g-accent'); btn.classList.add('g-text-muted');
             appWindow.style.width = '380px';
+            appWindow.dataset.prefW = '380px';
         }
     },
 

@@ -10,6 +10,8 @@ games.kolko = {
         games.kolko.ticB=['','','','','','','','','']; 
         games.kolko.ticP='❌'; 
         games.kolko.ticA=true; 
+        const win = document.getElementById('app-kolko');
+        if (win) { win.classList.remove('w-[300px]', 'w-[340px]'); win.style.width = '700px'; win.dataset.prefW = '700px'; win.dataset.autoHeight = 'true'; }
 
 
 

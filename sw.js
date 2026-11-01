@@ -154,15 +154,16 @@ self.addEventListener('fetch', (event) => {
     // RUNTIME_CACHE holds same-origin GETs discovered later.
     const core = await caches.open(CORE_CACHE);
     const runtime = await caches.open(RUNTIME_CACHE);
-    const cached = (await core.match(req, { ignoreSearch: true }))
-      || (await runtime.match(req, { ignoreSearch: true }));
+    const cached = (await runtime.match(req, { ignoreSearch: true }))
+      || (await core.match(req, { ignoreSearch: true }));
     if (cached) {
-      // Stale-while-revalidate for non-navigation assets.
-      if (req.mode !== 'navigate') {
-        event.waitUntil(fetch(req).then((res) => {
-          if (res && res.ok) runtime.put(req, res.clone());
-        }).catch(() => {}));
-      }
+      // Stale-while-revalidate for same-origin assets.
+      event.waitUntil(fetch(req).then((res) => {
+        if (res && res.ok) {
+          runtime.put(req, res.clone());
+          core.put(req, res.clone());
+        }
+      }).catch(() => {}));
       return cached;
     }
     try {

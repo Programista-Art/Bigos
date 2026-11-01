@@ -362,7 +362,7 @@
     </div>
 
    <!-- Zadaniowiec -->
-    <div id="app-zadaniowiec" class="window w-[650px] h-[480px] themed-app g-panel">
+    <div id="app-zadaniowiec" class="window w-[650px] h-[480px] themed-app g-panel" data-pref-w="650px" data-pref-h="480px">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-zadaniowiec')" ontouchstart="winManager.startDrag(event, 'app-zadaniowiec')">
             <span class="text-sm font-bold g-accent drop-shadow-md">📋 Zadaniowiec</span>
             <div class="flex gap-2">
@@ -539,7 +539,7 @@
     <!-- Narzędzia: Nadzorca, Pogodynka, Czasomierz -->
 
     <!-- Nadzorca Systemu (Menedżer zadań) -->
-    <div id="app-nadzorca" class="window w-[500px] h-[420px] themed-app g-panel">
+    <div id="app-nadzorca" class="window w-[500px] h-[420px] themed-app g-panel" data-pref-w="500px" data-pref-h="420px">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-nadzorca')" ontouchstart="winManager.startDrag(event, 'app-nadzorca')">
             <span class="text-sm font-bold g-accent drop-shadow-md">📊 Nadzorca Systemu</span>
             <div class="flex gap-2">
@@ -577,13 +577,13 @@
     </div>
 
 
-<div id="app-pogodynka" class="window hidden"></div>
+<div id="app-pogodynka" class="window w-[850px] h-[600px] hidden" data-pref-w="850px" data-pref-h="600px"></div>
     <!-- 7. Sieciosław (Przeglądarka) -->
-<div id="app-siecioslaw" class="window hidden"></div>
+<div id="app-siecioslaw" class="window w-[1000px] h-[650px] hidden" data-pref-w="1000px" data-pref-h="650px"></div>
 <!-- 34. Podpowiadacz AI -->
-<div id="app-podpowiadacz" class="window hidden"></div>
+<div id="app-podpowiadacz" class="window w-[900px] h-[680px] hidden" data-pref-w="900px" data-pref-h="680px"></div>
 
-  <div id="app-czasomierz" class="window w-[350px] h-[350px] themed-app g-panel">
+  <div id="app-czasomierz" class="window w-[350px] h-[350px] themed-app g-panel" data-pref-w="350px" data-pref-h="350px">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-czasomierz')" ontouchstart="winManager.startDrag(event, 'app-czasomierz')">
             <span class="text-sm font-bold g-accent">⏱️ Czasomierz</span>
             <div class="flex gap-2">
@@ -621,9 +621,9 @@
     </div>
     
     <!-- SKRYBA - Notatnik -->
- <div id="app-skryba" class="window hidden"></div>>
+ <div id="app-skryba" class="window w-[1200px] h-[750px] hidden" data-pref-w="1200px" data-pref-h="750px"></div>
 
-        <div id="app-szkicownik" class="window w-[900px] h-[600px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700">
+        <div id="app-szkicownik" class="window w-[1200px] h-[750px] bg-white dark:bg-[#1e1e1e] border border-gray-300 dark:border-gray-700" data-pref-w="1200px" data-pref-h="750px">
     <div class="title-bar bg-blue-800 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-900 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-szkicownik')" ontouchstart="winManager.startDrag(event, 'app-szkicownik')">
         <span class="text-sm font-bold">🎨 Artysta</span>
         <div class="flex gap-2">
@@ -746,7 +746,7 @@
     </div>
 
     <!-- 3. Aktówka -->
-    <div id="app-aktowka" class="window w-[700px] h-[500px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700">
+    <div id="app-aktowka" class="window w-[800px] h-[500px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700" data-pref-w="800px" data-pref-h="500px">
         <div class="title-bar bg-yellow-600 dark:bg-yellow-800 text-white p-2 flex justify-between items-center border-b border-yellow-700 dark:border-gray-900" onmousedown="winManager.startDrag(event, 'app-aktowka')" ontouchstart="winManager.startDrag(event, 'app-aktowka')">
             <span class="text-sm font-bold">📁 Aktówka (Eksplorator)</span>
             <div class="flex gap-2">
@@ -771,7 +771,7 @@
     </div>
 
  <!-- 4. Tapeciak / Kombinator -->
-    <div id="app-tapeciak" class="window w-[450px] h-[850px] themed-app g-panel">
+    <div id="app-tapeciak" class="window w-[750px] h-[550px] themed-app g-panel" data-pref-w="750px" data-pref-h="550px">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-tapeciak')" ontouchstart="winManager.startDrag(event, 'app-tapeciak')">
             <span class="text-sm font-bold g-accent drop-shadow-md">⚙️ Kombinator</span>
             <div class="flex gap-2">
@@ -813,7 +813,7 @@
 
     
     <!-- 5. Grajek (Skorupa z obsługą dynamicznych motywów) -->
-<div id="app-grajek" class="window w-[420px] h-[580px] themed-app g-panel font-mono border g-border">
+<div id="app-grajek" class="window w-[1050px] h-[650px] themed-app g-panel font-mono border g-border" data-pref-w="1050px" data-pref-h="650px">
     <div class="title-bar bg-black/20 p-2 flex justify-between items-center border-b g-border" onmousedown="winManager.startDrag(event, 'app-grajek')" ontouchstart="winManager.startDrag(event, 'app-grajek')">
         <span class="text-sm font-bold g-accent drop-shadow-md">🎵 Grajek</span>
         <div class="flex gap-2">
@@ -855,7 +855,7 @@
 </div>
 
     <!-- 6. Rachmistrz (Kalkulator) -->
-    <div id="app-kalkulator" class="window w-[300px] themed-app g-panel border g-border" data-pref-w="300px" data-auto-height="true">
+    <div id="app-kalkulator" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
         <div class="title-bar bg-blue-600 dark:bg-[#111] text-white p-2 flex justify-between items-center border-b border-blue-700 dark:border-[#333]" onmousedown="winManager.startDrag(event, 'app-kalkulator')" ontouchstart="winManager.startDrag(event, 'app-kalkulator')">
             <span class="text-sm font-bold">🧮 Rachmistrz</span>
             <div class="flex gap-2">
@@ -913,7 +913,7 @@
 </div> 
 
 <!-- 8. Władca Poleceń (Terminal) -->
-    <div id="app-wladca" class="window w-[500px] h-[350px] themed-app g-panel font-mono border g-border shadow-2xl">
+    <div id="app-wladca" class="window w-[500px] h-[350px] themed-app g-panel font-mono border g-border shadow-2xl" data-pref-w="500px" data-pref-h="350px">
         <div class="title-bar bg-black/30 p-2 flex justify-between items-center border-b g-border cursor-move" onmousedown="winManager.startDrag(event, 'app-wladca')" ontouchstart="winManager.startDrag(event, 'app-wladca')">
             <span class="text-sm font-bold g-accent drop-shadow-md">💻 Władca Poleceń</span>
             <div class="flex gap-2">
@@ -944,7 +944,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     </div>
 
     <!-- 10. Grajacz Filmów -->
-    <div id="app-grajacz" class="window w-[700px] h-[500px] themed-app g-panel">
+    <div id="app-grajacz" class="window w-[900px] h-[550px] themed-app g-panel" data-pref-w="900px" data-pref-h="550px">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-grajacz')" ontouchstart="winManager.startDrag(event, 'app-grajacz')">
             <span class="text-sm font-bold g-accent drop-shadow-md">🎬 Grajacz Filmów</span>
             <div class="flex gap-2">
@@ -974,7 +974,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
     
     <!-- MINIGRY -->
    <!-- 11. Pełzacz -->
-     <div id="app-pelzacz" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
+     <div id="app-pelzacz" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-pelzacz')" ontouchstart="winManager.startDrag(event, 'app-pelzacz')">
             <span class="text-sm font-bold g-accent drop-shadow-md">🐍 Pełzacz</span>
             <div class="flex gap-2">
@@ -984,14 +984,14 @@ Wpisz 'help' aby uzyskać listę komend.</div>
         </div>
         <div class="p-4 flex flex-col items-center bg-black/10">
             <div id="pelzacz-score" class="font-bold mb-2 g-text">Wynik: 0</div>
-            <canvas id="canvas-pelzacz" width="300" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-pelzacz" width="650" height="650" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
             <button onclick="games.pelzacz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Nowa Gra (Spacja)</button>
         </div>
     </div> 
 
  <!-- 12. Murarz -->
 
-    <div id="app-murarz" class="window w-[440px] themed-app g-panel border g-border" data-pref-w="440px" data-auto-height="true">
+    <div id="app-murarz" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-murarz')" ontouchstart="winManager.startDrag(event, 'app-murarz')">
 
@@ -1011,7 +1011,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
             <div id="murarz-score" class="font-bold mb-2 g-text">Klocki: 0</div>
 
-            <canvas id="canvas-murarz" width="400" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-murarz" width="650" height="650" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
 
             <button onclick="games.murarz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Myszka do sterowania)</button>
 
@@ -1022,7 +1022,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 13. Ufoludki -->
 
-    <div id="app-ufoludki" class="window w-[440px] themed-app g-panel border g-border" data-pref-w="440px" data-auto-height="true">
+    <div id="app-ufoludki" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-ufoludki')" ontouchstart="winManager.startDrag(event, 'app-ufoludki')">
 
@@ -1042,7 +1042,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
             <div id="ufoludki-score" class="font-bold mb-2 g-text">Punkty: 0</div>
 
-            <canvas id="canvas-ufoludki" width="400" height="400" class="bg-black rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-ufoludki" width="650" height="650" class="bg-black rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
 
             <button onclick="games.ufoludki.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Strzałki L/P + Spacja)</button>
 
@@ -1053,7 +1053,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 14. Odbijanka -->
 
-    <div id="app-odbijanka" class="window w-[440px] themed-app g-panel border g-border" data-pref-w="440px" data-auto-height="true">
+    <div id="app-odbijanka" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-odbijanka')" ontouchstart="winManager.startDrag(event, 'app-odbijanka')">
 
@@ -1073,7 +1073,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
             <div id="odbijanka-score" class="font-bold mb-2 g-text">Ty: 0 | Komputer: 0</div>
 
-            <canvas id="canvas-odbijanka" width="400" height="300" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-odbijanka" width="650" height="650" class="bg-gray-900 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
 
             <button onclick="games.odbijanka.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Myszka góra/dół)</button>
 
@@ -1084,7 +1084,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 15. Trzepotek -->
 
-    <div id="app-trzepotek" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
+    <div id="app-trzepotek" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-trzepotek')" ontouchstart="winManager.startDrag(event, 'app-trzepotek')">
 
@@ -1104,7 +1104,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
             <div id="trzepotek-score" class="font-bold mb-2 g-text">Punkty: 0</div>
 
-            <canvas id="canvas-trzepotek" width="300" height="400" class="bg-sky-900 rounded shadow-inner cursor-pointer touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-trzepotek" width="650" height="650" class="bg-sky-900 rounded shadow-inner cursor-pointer touch-none outline-none" tabindex="0"></canvas>
 
             <button onclick="games.trzepotek.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Klik/Spacja)</button>
 
@@ -1114,7 +1114,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
 
     <!-- 16. Ścigacz -->
-    <div id="app-scigacz" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
+    <div id="app-scigacz" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-scigacz')" ontouchstart="winManager.startDrag(event, 'app-scigacz')">
 
@@ -1134,7 +1134,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
             <div id="scigacz-score" class="font-bold mb-2 g-text">Dystans: 0</div>
 
-            <canvas id="canvas-scigacz" width="300" height="400" class="bg-gray-500 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-scigacz" width="650" height="650" class="bg-gray-500 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
 
             <button onclick="games.scigacz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Strzałki L/P)</button>
 
@@ -1145,7 +1145,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 17. Bombiarz -->
 
-    <div id="app-bombiarz" class="window w-[340px] themed-app g-panel border g-border" data-pref-w="340px" data-auto-height="true">
+    <div id="app-bombiarz" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-bombiarz')" ontouchstart="winManager.startDrag(event, 'app-bombiarz')">
 
@@ -1165,7 +1165,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
             <div id="bombiarz-score" class="font-bold mb-2 g-text">Punkty: 0</div>
 
-            <canvas id="canvas-bombiarz" width="300" height="300" class="bg-green-800 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
+            <canvas id="canvas-bombiarz" width="650" height="650" class="bg-green-800 rounded shadow-inner touch-none outline-none" tabindex="0"></canvas>
 
             <button onclick="games.bombiarz.init()" class="mt-4 g-btn bg-black/20 hover:bg-white/10 text-white px-4 py-2 rounded font-bold w-full shadow-md transition border g-border">Start (Strzałki + Spacja)</button>
 
@@ -1176,7 +1176,7 @@ Wpisz 'help' aby uzyskać listę komend.</div>
 
     <!-- 18. Kółko i Krzyżyk -->
 
-    <div id="app-kolko" class="window w-[300px] themed-app g-panel border g-border" data-pref-w="300px" data-auto-height="true">
+    <div id="app-kolko" class="window w-[700px] themed-app g-panel border g-border" data-pref-w="700px" data-auto-height="true">
 
         <div class="title-bar px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0" onmousedown="winManager.startDrag(event, 'app-kolko')" ontouchstart="winManager.startDrag(event, 'app-kolko')">
 
@@ -1307,14 +1307,14 @@ Wpisz 'help' aby uzyskać listę komend.</div>
  
 
    <!-- rachmistrz kodu  -->
-   <div id="app-rachmistrz-kodu" class="window absolute"></div>
+   <div id="app-rachmistrz-kodu" class="window w-[380px] absolute" data-pref-w="380px" data-auto-height="true"></div>
 
     <!-- Kasiarz  -->
-   <div id="app-kasiarz" class="window absolute"></div>
+   <div id="app-kasiarz" class="window w-[640px] h-[480px] absolute" data-pref-w="640px" data-pref-h="480px"></div>
    <!-- Montażysta -->
-   <div id="app-montazysta" class="window hidden"></div>
+   <div id="app-montazysta" class="window w-[1200px] h-[800px] hidden" data-pref-w="1200px" data-pref-h="800px"></div>
 
-   <div id="app-kompresor" class="window absolute"></div>
+   <div id="app-kompresor" class="window w-[850px] h-[550px] absolute" data-pref-w="850px" data-pref-h="550px"></div>
 
 <!-- Kalendarz -->
     <div id="calendar-widget" class="absolute bottom-14 right-2 w-80 max-w-[90vw] themed-app g-panel hidden-cal flex-col z-[200] select-none overflow-hidden">

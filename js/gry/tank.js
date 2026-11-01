@@ -173,6 +173,8 @@ games.tank = {
         this.c.height = 650; // Ujednolicony rozmiar wysokiej rozdzielczości
         
         this.initAssets(); 
+        const win = this.c.closest('.window');
+        if (win) { win.classList.remove('w-[480px]', 'w-[440px]', 'w-[340px]'); win.style.width = '700px'; win.dataset.prefW = '700px'; win.dataset.autoHeight = 'true'; }
         this.ensureMobileControls(); 
         
         try {
@@ -217,10 +219,14 @@ games.tank = {
         const parent = this.c.parentElement;
         if (!parent) return; 
 
-        let clearAttempts = 0;
-        const clearJunk = setInterval(() => {
+        const removeJunk = () => {
             const junk = parent.querySelectorAll('.mobile-dpad:not(.mobile-dpad-tank), .game-fs-btn:not(.tank-fs), .pc-start-btn:not(.tank-start)');
             junk.forEach(j => j.remove());
+        };
+        removeJunk();
+        let clearAttempts = 0;
+        const clearJunk = setInterval(() => {
+            removeJunk();
             clearAttempts++;
             if (clearAttempts > 10) clearInterval(clearJunk);
         }, 300);

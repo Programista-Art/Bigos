@@ -669,28 +669,17 @@ const menadzerApp = {
 
                 // Register desktop icon in fileSystem if missing
                 if (typeof fileSystem !== 'undefined' && !fileSystem.some(f => f && (f.appId === record.id || f.id === 'app_' + record.id))) {
-                    let col = 0, row = 0;
-                    const maxRows = Math.max(1, Math.floor((window.innerHeight - 120) / 100));
-                    for (let t = 0; t < 50; t++) {
-                        const checkX = 30 + (col * 90);
-                        const checkY = 30 + (row * 100);
-                        const occupied = fileSystem.some(f => f && f.parentId === 'root' && Math.abs(f.x - checkX) < 40 && Math.abs(f.y - checkY) < 40);
-                        if (!occupied) {
-                            fileSystem.push({
-                                id: 'app_' + record.id,
-                                type: 'app',
-                                name: record.name,
-                                icon: record.icon || '📦',
-                                appId: record.id,
-                                parentId: 'root',
-                                x: checkX,
-                                y: checkY
-                            });
-                            break;
-                        }
-                        row++;
-                        if (row >= maxRows) { row = 0; col++; }
-                    }
+                    const slot = (typeof desktop !== 'undefined' && desktop.findFreeSlot) ? desktop.findFreeSlot() : { x: 20, y: 20 };
+                    fileSystem.push({
+                        id: 'app_' + record.id,
+                        type: 'app',
+                        name: record.name,
+                        icon: record.icon || '📦',
+                        appId: record.id,
+                        parentId: 'root',
+                        x: slot.x,
+                        y: slot.y
+                    });
                     if (typeof fsManager !== 'undefined') await fsManager.save();
                     if (typeof desktop !== 'undefined') desktop.render();
                 }

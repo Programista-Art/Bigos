@@ -9,11 +9,122 @@ function getEventPos(e) {
 const desktop = {
     activeDrag: null, lastContextX: 0, lastContextY: 0,
     escapeHTML: (s) => s.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t]||t)),
+
+    getGridMetrics: () => {
+        const cellW = (typeof GRID !== 'undefined' && GRID > 0) ? GRID : 90;
+        const cellH = (typeof GRID !== 'undefined' && GRID > 0) ? GRID : 90;
+        const marginX = 20;
+        const marginY = 20;
+        const taskbarH = 48;
+        const area = (typeof document !== 'undefined') ? document.getElementById('desktop-area') : null;
+        const winW = (area && area.clientWidth > 0) ? area.clientWidth : ((typeof window !== 'undefined' && window.innerWidth) ? window.innerWidth : 1280);
+        const winH = (area && area.clientHeight > 0) ? area.clientHeight : (((typeof window !== 'undefined' && window.innerHeight) ? window.innerHeight : 800) - taskbarH);
+        const maxCols = Math.max(1, Math.floor(Math.max(cellW, winW - marginX) / cellW));
+        const maxRows = Math.max(1, Math.floor(Math.max(cellH, winH - marginY) / cellH));
+        return { cellW, cellH, marginX, marginY, maxCols, maxRows, winW, winH };
+    },
+
+    findFreeSlot: (prefX = null, prefY = null, excludeId = null, customPlaced = null) => {
+        const { cellW, cellH, marginX, marginY, maxCols, maxRows } = desktop.getGridMetrics();
+        const occupiedList = Array.isArray(customPlaced)
+            ? customPlaced
+            : ((typeof fileSystem !== 'undefined' && Array.isArray(fileSystem))
+                ? fileSystem.filter(f => f && f.parentId === 'root' && f.id !== excludeId && Number.isFinite(f.x) && Number.isFinite(f.y))
+                : []);
+
+        const isSlotTaken = (x, y) => occupiedList.some(f => Math.abs(f.x - x) < 76 && Math.abs(f.y - y) < 76);
+
+        if (prefX !== null && prefY !== null && Number.isFinite(prefX) && Number.isFinite(prefY)) {
+            const baseCol = Math.max(0, Math.min(maxCols - 1, Math.round((prefX - marginX) / cellW)));
+            const baseRow = Math.max(0, Math.min(maxRows - 1, Math.round((prefY - marginY) / cellH)));
+            const directX = marginX + baseCol * cellW;
+            const directY = marginY + baseRow * cellH;
+            if (!isSlotTaken(directX, directY)) {
+                return { x: directX, y: directY };
+            }
+            const maxRadius = Math.max(maxCols, maxRows);
+            for (let r = 1; r <= maxRadius; r++) {
+                for (let dc = -r; dc <= r; dc++) {
+                    for (let dr = -r; dr <= r; dr++) {
+                        if (Math.abs(dc) !== r && Math.abs(dr) !== r) continue;
+                        const c = baseCol + dc;
+                        const row = baseRow + dr;
+                        if (c < 0 || c >= maxCols || row < 0 || row >= maxRows) continue;
+                        const cx = marginX + c * cellW;
+                        const cy = marginY + row * cellH;
+                        if (!isSlotTaken(cx, cy)) return { x: cx, y: cy };
+                    }
+                }
+            }
+        }
+
+        for (let col = 0; col < Math.max(maxCols, 50); col++) {
+            for (let row = 0; row < maxRows; row++) {
+                const cx = marginX + col * cellW;
+                const cy = marginY + row * cellH;
+                if (!isSlotTaken(cx, cy)) return { x: cx, y: cy };
+            }
+        }
+        return { x: marginX, y: marginY };
+    },
+
+    normalizeIcons: () => {
+        if (typeof fileSystem === 'undefined' || !Array.isArray(fileSystem)) return false;
+        const { cellW, cellH, marginX, marginY, maxCols, maxRows } = desktop.getGridMetrics();
+        const rootItems = fileSystem.filter(i => i && i.parentId === 'root');
+        const placed = [];
+        let changed = false;
+
+        for (const item of rootItems) {
+            let hasValidCoords = Number.isFinite(item.x) && Number.isFinite(item.y) && item.x >= 0 && item.y >= 0;
+            let candX = marginX;
+            let candY = marginY;
+
+            if (hasValidCoords) {
+                const col = Math.max(0, Math.min(maxCols - 1, Math.round((item.x - marginX) / cellW)));
+                const row = Math.max(0, Math.min(maxRows - 1, Math.round((item.y - marginY) / cellH)));
+                candX = marginX + col * cellW;
+                candY = marginY + row * cellH;
+            }
+
+            const collides = !hasValidCoords || placed.some(p => Math.abs(p.x - candX) < 76 && Math.abs(p.y - candY) < 76);
+            if (collides) {
+                const free = desktop.findFreeSlot(null, null, item.id, placed);
+                candX = free.x;
+                candY = free.y;
+            }
+
+            if (item.x !== candX || item.y !== candY) {
+                item.x = candX;
+                item.y = candY;
+                changed = true;
+            }
+            placed.push({ id: item.id, x: item.x, y: item.y });
+        }
+        return changed;
+    },
+
+    arrangeIcons: () => {
+        const menu = document.getElementById('context-menu');
+        if (menu) menu.classList.remove('active');
+        if (typeof fileSystem === 'undefined' || !Array.isArray(fileSystem)) return;
+        const { cellW, cellH, marginX, marginY, maxRows } = desktop.getGridMetrics();
+        const rootItems = fileSystem.filter(i => i && i.parentId === 'root');
+        rootItems.forEach((item, idx) => {
+            const col = Math.floor(idx / maxRows);
+            const row = idx % maxRows;
+            item.x = marginX + col * cellW;
+            item.y = marginY + row * cellH;
+        });
+        if (typeof fsManager !== 'undefined' && fsManager.save) fsManager.save();
+        desktop.render();
+    },
     
     render: () => {
         const area = document.getElementById('desktop-area'); 
         if(!area) return;
         area.innerHTML = '';
+        desktop.normalizeIcons();
         
         fileSystem.filter(i => i.parentId === 'root').forEach(item => {
             const el = document.createElement('div');
@@ -112,9 +223,13 @@ const desktop = {
             ui.showPrompt("Nazwa nowego folderu:", "Nowy Folder", "Utwórz", (name) => {
                 if(!name || name.trim() === '') return;
                 let x = 20, y = 20;
-                if(targetId === 'root' && desktop.lastContextX) {
-                    x = Math.round(desktop.lastContextX / GRID) * GRID + 10;
-                    y = Math.round(desktop.lastContextY / GRID) * GRID + 10;
+                if(targetId === 'root') {
+                    const slot = desktop.findFreeSlot(
+                        desktop.lastContextX ? desktop.lastContextX : null,
+                        desktop.lastContextY ? desktop.lastContextY : null
+                    );
+                    x = slot.x;
+                    y = slot.y;
                 }
                 const id = 'fld_'+Date.now();
                 fileSystem.push({ id: id, type: 'folder', name: name.trim(), icon: '📁', parentId: targetId, x: x, y: y });
@@ -137,9 +252,13 @@ const desktop = {
                 if(!name || name.trim() === '') return;
                 if(!name.endsWith('.txt')) name += '.txt';
                 let x = 20, y = 20;
-                if(targetId === 'root' && desktop.lastContextX) {
-                    x = Math.round(desktop.lastContextX / GRID) * GRID + 10;
-                    y = Math.round(desktop.lastContextY / GRID) * GRID + 10;
+                if(targetId === 'root') {
+                    const slot = desktop.findFreeSlot(
+                        desktop.lastContextX ? desktop.lastContextX : null,
+                        desktop.lastContextY ? desktop.lastContextY : null
+                    );
+                    x = slot.x;
+                    y = slot.y;
                 }
                 const id = 'file_'+Date.now();
                 fileSystem.push({ id: id, type: 'file', name: name.trim(), icon: '📄', content: '', parentId: targetId, x: x, y: y });
@@ -203,6 +322,9 @@ const desktop = {
         const item = fileSystem.find(i => i.id === id);
         if(item) {
             item.parentId = 'root'; 
+            const slot = desktop.findFreeSlot(item.x, item.y, item.id);
+            item.x = slot.x;
+            item.y = slot.y;
             if(typeof fsManager !== 'undefined') fsManager.save(); 
             desktop.render();
             
@@ -279,9 +401,13 @@ const desktop = {
             let parentFolder = (typeof fsManager !== 'undefined') ? fsManager.currentFolder : 'root';
             let newItem = {...clipboard.item, id: 'item_'+Date.now(), parentId: parentFolder, x: 20, y: 20};
             
-            if(parentFolder === 'root' && desktop.lastContextX) {
-                newItem.x = Math.round(desktop.lastContextX / GRID) * GRID + 10;
-                newItem.y = Math.round(desktop.lastContextY / GRID) * GRID + 10;
+            if(parentFolder === 'root') {
+                const slot = desktop.findFreeSlot(
+                    desktop.lastContextX ? desktop.lastContextX : null,
+                    desktop.lastContextY ? desktop.lastContextY : null
+                );
+                newItem.x = slot.x;
+                newItem.y = slot.y;
             }
             if(clipboard.action === 'copy') newItem.name += ' - Kopia';
             
@@ -352,6 +478,7 @@ const desktop = {
             menu.innerHTML = `
                 <div class="${btnClass}" onclick="desktop.createFolder('${targetFolder}')">📁 Nowy Folder</div>
                 <div class="${btnClass}" onclick="desktop.createFile('${targetFolder}')">📄 Nowy Plik (.txt)</div>
+                ${targetFolder === 'root' ? `<div class="${btnClass}" onclick="desktop.arrangeIcons()">✨ Uporządkuj ikony</div>` : ''}
                 ${sep}
                 <div class="${btnClass} ${!clipboard.item?'opacity-50 pointer-events-none':''}" onclick="desktop.pasteClipboard()">Wklej</div>
             `;
@@ -460,8 +587,8 @@ function handleDragEnd(e) {
             if(!elBelow || elBelow.id === 'desktop-area' || elBelow.id === 'desktop-bg') {
                 if(desktop.activeDrag.ref.parentId !== 'root') desktop.activeDrag.ref.parentId = 'root';
                 let rawX = pos.x - desktop.activeDrag.oX; let rawY = pos.y - desktop.activeDrag.oY;
-                let snapX = Math.round(rawX / GRID) * GRID + 10; let snapY = Math.round(rawY / GRID) * GRID + 10;
-                desktop.activeDrag.ref.x = snapX; desktop.activeDrag.ref.y = snapY; 
+                const slot = desktop.findFreeSlot(rawX, rawY, desktop.activeDrag.ref.id);
+                desktop.activeDrag.ref.x = slot.x; desktop.activeDrag.ref.y = slot.y; 
                 if(typeof fsManager !== 'undefined') fsManager.save();
             }
             

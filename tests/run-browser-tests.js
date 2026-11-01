@@ -1061,19 +1061,46 @@ async function main() {
     // REGRESSION SUITE: Window Dimensions, Aspect Ratio, Pointer Scaling,
     // Taskbar Safe Clearance, Lifecycle Persistence, and Tabelarz Theming
     // =========================================================================
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    await page.waitForTimeout(200);
+
+    // 0. Ensure Czołgi (tank) and all other game windows are NOT open/visible at startup
+    const gamesHiddenAtStartup = await evaluate(() => {
+      const gameIds = ['pelzacz', 'murarz', 'ufoludki', 'odbijanka', 'trzepotek', 'scigacz', 'bombiarz', 'kolko', 'tank'];
+      const visible = [];
+      for (const id of gameIds) {
+        const win = document.getElementById('app-' + id);
+        if (!win) continue;
+        const cs = getComputedStyle(win);
+        if (cs.display !== 'none' || win.classList.contains('active') || win.offsetHeight > 0) {
+          visible.push({ id, display: cs.display, h: win.offsetHeight });
+        }
+      }
+      return { pass: visible.length === 0, visible };
+    });
+    record(`${name}: Czołgi (tank) and all game windows remain hidden (display: none) at startup until explicitly opened`, gamesHiddenAtStartup.pass, JSON.stringify(gamesHiddenAtStartup.visible));
 
     // 1. Declared baseline window dimensions and auto-height preservation
     const baselineCheck = await evaluate(async () => {
       const targets = [
-        { id: 'pelzacz', expW: 340, autoH: true },
-        { id: 'trzepotek', expW: 340, autoH: true },
-        { id: 'murarz', expW: 440, autoH: true },
-        { id: 'ufoludki', expW: 440, autoH: true },
-        { id: 'odbijanka', expW: 440, autoH: true },
-        { id: 'tank', expW: 700, autoH: true },
-        { id: 'kalkulator', expW: 300, autoH: true },
+        { id: 'pelzacz', expW: 700, autoH: true, minH: 700 },
+        { id: 'trzepotek', expW: 700, autoH: true, minH: 700 },
+        { id: 'murarz', expW: 700, autoH: true, minH: 700 },
+        { id: 'ufoludki', expW: 700, autoH: true, minH: 700 },
+        { id: 'odbijanka', expW: 700, autoH: true, minH: 700 },
+        { id: 'scigacz', expW: 700, autoH: true, minH: 700 },
+        { id: 'bombiarz', expW: 700, autoH: true, minH: 700 },
+        { id: 'kolko', expW: 700, autoH: true, minH: 600 },
+        { id: 'tank', expW: 700, autoH: true, minH: 700 },
+        { id: 'kalkulator', expW: 340, autoH: true, minH: 460 },
+        { id: 'rachmistrz-kodu', expW: 380, autoH: true, minH: 520 },
         { id: 'patrzalka', expW: 850, expH: 600, autoH: false },
-        { id: 'tabelarz', expW: 800, expH: 600, autoH: false }
+        { id: 'tabelarz', expW: 800, expH: 600, autoH: false },
+        { id: 'grajek', expW: 1050, expH: 650, autoH: false },
+        { id: 'tapeciak', expW: 750, expH: 550, autoH: false },
+        { id: 'szkicownik', expW: 1200, expH: 750, autoH: false },
+        { id: 'grajacz', expW: 900, expH: 550, autoH: false },
+        { id: 'aktowka', expW: 800, expH: 500, autoH: false }
       ];
 
       const results = [];
@@ -1087,14 +1114,14 @@ async function main() {
         if (t.expH) {
           hMatch = Math.abs(rect.height - t.expH) <= 2;
         } else {
-          hMatch = rect.height > 100 && (!win.style.height || win.dataset.autoHeight === 'true');
+          hMatch = rect.height >= (t.minH || 100) && (!win.style.height || win.style.height === 'auto' || win.dataset.autoHeight === 'true');
         }
         results.push({ id: t.id, wMatch, hMatch, w: rect.width, h: rect.height });
         winManager.close(t.id);
       }
       return { pass: results.every(r => r.wMatch && r.hMatch), results };
     });
-    record(`${name}: all 9 applications open with declared baseline dimensions and content-driven auto-height`, baselineCheck.pass);
+    record(`${name}: all applications and games open with restored original dimensions and unclipped auto-height`, baselineCheck.pass, JSON.stringify(baselineCheck.results.filter(r => !r.wMatch || !r.hMatch)));
 
     // 2. Canvas intrinsic aspect ratio preservation (no universal forced ratio)
     const aspectCheck = await evaluate(async () => {
@@ -1326,13 +1353,16 @@ async function main() {
     });
     record(`${name}: adaptive welcome window height is strictly scoped and does not leak 640px height to other applications`, welcomeIso.pass);
 
-    // 8. Rachmistrz Pro panels
+    // 8. Rachmistrz Pro and Rachmistrz Kodu panels & unclipped height
     const calcPanels = await evaluate(async () => {
       winManager.resetWindowGeometry('kalkulator');
       winManager.open('kalkulator');
       if (typeof kalkulatorApp !== 'undefined') kalkulatorApp.upgradeUI();
       const win = document.getElementById('app-kalkulator');
-      const wBase = parseFloat(win.style.width) || win.getBoundingClientRect().width;
+      const rCalc = win.getBoundingClientRect();
+      const wBase = parseFloat(win.style.width) || rCalc.width;
+      const calcButtons = Array.from(win.querySelectorAll('button'));
+      const calcUnclipped = rCalc.height > 460 && calcButtons.every(b => b.getBoundingClientRect().bottom <= rCalc.bottom + 1);
 
       // Open scientific panel
       kalkulatorApp.toggleScientific();
@@ -1346,14 +1376,66 @@ async function main() {
       kalkulatorApp.toggleScientific();
       kalkulatorApp.toggleHistory();
       const wContract = parseFloat(win.style.width);
-
       winManager.close('kalkulator');
+
+      // Check Rachmistrz Kodu unclipped height and history toggle
+      winManager.resetWindowGeometry('rachmistrz-kodu');
+      winManager.open('rachmistrz-kodu');
+      const rkWin = document.getElementById('app-rachmistrz-kodu');
+      const rRk = rkWin.getBoundingClientRect();
+      const rkWBase = parseFloat(rkWin.style.width) || rRk.width;
+      const rkButtons = Array.from(rkWin.querySelectorAll('button'));
+      const rkUnclipped = rRk.height > 520 && rkButtons.every(b => b.getBoundingClientRect().bottom <= rRk.bottom + 1);
+      rachmistrzKoduApp.toggleHistory();
+      const rkWHist = parseFloat(rkWin.style.width);
+      rachmistrzKoduApp.toggleHistory();
+      const rkWBack = parseFloat(rkWin.style.width);
+      winManager.close('rachmistrz-kodu');
+
       return {
-        pass: Math.abs(wBase - 300) <= 2 && Math.abs(wSci - 580) <= 2 && Math.abs(wBoth - 860) <= 2 && Math.abs(wContract - 300) <= 2,
-        wBase, wSci, wBoth, wContract
+        pass: Math.abs(wBase - 340) <= 2 && Math.abs(wSci - 620) <= 2 && Math.abs(wBoth - 900) <= 2 && Math.abs(wContract - 340) <= 2 && calcUnclipped && Math.abs(rkWBase - 380) <= 2 && Math.abs(rkWHist - 660) <= 2 && Math.abs(rkWBack - 380) <= 2 && rkUnclipped,
+        wBase, wSci, wBoth, wContract, calcUnclipped, rkWBase, rkWHist, rkWBack, rkUnclipped
       };
     });
-    record(`${name}: Rachmistrz Pro expands smoothly to 580px and 860px with panels and returns to 300px base`, calcPanels.pass);
+    record(`${name}: Rachmistrz Pro (340->620->900px) and Rachmistrz Kodu (380->660px) render full unclipped height and expand/contract panels`, calcPanels.pass, JSON.stringify(calcPanels));
+
+    // 8b. Desktop icons proportional grid & non-overlapping placement (including new folders and files)
+    const desktopIconsCheck = await evaluate(async () => {
+      desktop.render();
+      const origPrompt = ui.showPrompt;
+      ui.showPrompt = (t, defVal, btn, cb) => cb(defVal);
+      desktop.lastContextX = 20;
+      desktop.lastContextY = 20;
+      desktop.createFolder('root');
+      desktop.createFolder('root');
+      desktop.createFile('root');
+      desktop.createFile('root');
+      ui.showPrompt = origPrompt;
+      desktop.render();
+
+      const icons = Array.from(document.querySelectorAll('#desktop-area .desktop-icon'));
+      const rects = icons.map(el => ({
+        id: el.dataset.id,
+        left: parseFloat(el.style.left),
+        top: parseFloat(el.style.top),
+        r: el.getBoundingClientRect()
+      }));
+
+      let overlaps = 0;
+      let offGrid = 0;
+      for (let i = 0; i < rects.length; i++) {
+        const a = rects[i];
+        if ((a.left - 20) % 90 !== 0 || (a.top - 20) % 90 !== 0) offGrid++;
+        for (let j = i + 1; j < rects.length; j++) {
+          const b = rects[j];
+          if (Math.abs(a.left - b.left) < 76 && Math.abs(a.top - b.top) < 76) {
+            overlaps++;
+          }
+        }
+      }
+      return { pass: icons.length >= 25 && overlaps === 0 && offGrid === 0, count: icons.length, overlaps, offGrid };
+    });
+    record(`${name}: desktop icons (including newly created folders and files) are proportionally aligned on 90px grid with zero overlaps`, desktopIconsCheck.pass, JSON.stringify(desktopIconsCheck));
 
     // 9. Patrzałka Pro 850x600
     const patrzalkaCheck = await evaluate(async () => {

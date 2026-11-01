@@ -29,6 +29,11 @@ const winManager = {
         if(appId === 'powitanie' && typeof powitanieApp !== 'undefined' && powitanieApp.render) {
             powitanieApp.render();
         }
+        let gameInitialized = false;
+        if(typeof games !== 'undefined' && games[appId] && games[appId].init) {
+            games[appId].init();
+            gameInitialized = true;
+        }
 
         // Centrowanie i responsywność okna przy pierwszym otwarciu
         // Restore saved geometry when available (ignoring obsolete forced geometry).
@@ -77,14 +82,14 @@ const winManager = {
                     h = savedGeom.h;
                     if (h > maxH) h = maxH;
                     win.style.height = h + 'px';
-                } else {
+                } else if (!win.querySelector || !win.querySelector('iframe')) {
                     win.style.height = '';
                 }
             }
 
             let centerH = h;
             if (centerH == null) {
-                const wasHidden = win.classList.contains('hidden') || win.style.display === 'none';
+                const wasHidden = !win.classList.contains('active') || win.classList.contains('hidden') || win.style.display === 'none';
                 if (wasHidden) {
                     win.style.visibility = 'hidden';
                     win.classList.remove('hidden');
@@ -93,7 +98,6 @@ const winManager = {
                 const measuredH = win.offsetHeight || (win.getBoundingClientRect ? win.getBoundingClientRect().height : 0);
                 if (wasHidden) {
                     win.classList.remove('active');
-                    win.classList.add('hidden');
                     win.style.visibility = '';
                 }
                 centerH = (measuredH > 0) ? Math.min(measuredH, maxH) : 400;
@@ -138,7 +142,10 @@ const winManager = {
         if(appId === 'nadzorca' && typeof nadzorcaApp !== 'undefined') nadzorcaApp.init();
         if(appId === 'szkicownik' && typeof initPaint !== 'undefined') setTimeout(initPaint, 100);
         if(appId === 'grajek' && typeof apps !== 'undefined') apps.loadGrajkoteka();
-        if(typeof games !== 'undefined' && games[appId] && games[appId].init) games[appId].init();
+        if(!gameInitialized && typeof games !== 'undefined' && games[appId] && games[appId].init) games[appId].init();
+        if(typeof games !== 'undefined' && games[appId] && games[appId].c && typeof games[appId].c.focus === 'function') {
+            try { games[appId].c.focus(); } catch (_) {}
+        }
         if(appId === 'powitanie' && typeof powitanieApp !== 'undefined' && powitanieApp.onOpen) powitanieApp.onOpen();
 
         // Ensure window is clamped to viewport after initialization & content rendering.
@@ -276,12 +283,24 @@ const winManager = {
 
     _getDeclaredGeometry: (win) => {
         if (!win) return { w: null, h: null, isAutoH: false };
+        const parsePx = (val) => {
+            if (!val) return null;
+            const s = String(val).trim();
+            if (s === 'auto' || s === 'max-content' || s === 'fit-content' || s === 'none' || s.includes('%') || s.includes('vh') || s.includes('vw')) return null;
+            const n = parseFloat(s);
+            return (Number.isFinite(n) && n > 0) ? n : null;
+        };
         const classW = (win.className && (win.className.match(/\bw-\[(\d+)px\]/) || [])[1]);
         const classH = (win.className && (win.className.match(/\bh-\[(\d+)px\]/) || [])[1]);
-        const prefW = (win.dataset && win.dataset.prefW) ? parseFloat(win.dataset.prefW) : (classW ? parseFloat(classW) : (win.style && win.style.width ? parseFloat(win.style.width) : null));
-        const isAutoH = (win.dataset && win.dataset.autoHeight === 'true') || (!win.dataset?.prefH && (!win.style || !win.style.height) && !classH);
-        const prefH = isAutoH ? null : ((win.dataset && win.dataset.prefH) ? parseFloat(win.dataset.prefH) : (classH ? parseFloat(classH) : (win.style && win.style.height ? parseFloat(win.style.height) : null)));
-        return { w: prefW, h: prefH, isAutoH };
+        const rawStyleH = (win.style && win.style.height) ? String(win.style.height).trim() : '';
+        const rawPrefH = (win.dataset && win.dataset.prefH) ? String(win.dataset.prefH).trim() : '';
+        const isExplicitAutoH = (win.dataset && win.dataset.autoHeight === 'true') ||
+            rawStyleH === 'auto' || rawStyleH === 'max-content' || rawStyleH === 'fit-content' ||
+            rawPrefH === 'auto' || rawPrefH === 'max-content';
+        const prefW = parsePx(win.dataset && win.dataset.prefW) || parsePx(win.style && win.style.width) || parsePx(classW);
+        const parsedH = isExplicitAutoH ? null : (parsePx(win.dataset && win.dataset.prefH) || parsePx(win.style && win.style.height) || parsePx(classH));
+        const isAutoH = isExplicitAutoH || !parsedH;
+        return { w: prefW, h: isAutoH ? null : parsedH, isAutoH };
     },
 
     _clampToViewport: (win) => {
@@ -321,10 +340,14 @@ const winManager = {
                 if (curH > maxH) win.style.height = Math.max(240, maxH - 8) + 'px';
             }
         } else {
-            // Content-driven height: only clamp if style.height was explicitly set by user
-            if (isUserResized && win.style.height) {
-                const curH = parseFloat(win.style.height);
-                if (curH > maxH) win.style.height = Math.max(240, maxH - 8) + 'px';
+            // Content-driven height: only clamp if style.height was explicitly set by user or sandbox iframe
+            if (win.style.height && win.style.height !== 'auto' && win.style.height !== 'max-content') {
+                if (!isUserResized && (!win.querySelector || !win.querySelector('iframe'))) {
+                    win.style.height = '';
+                } else {
+                    const curH = parseFloat(win.style.height);
+                    if (curH > maxH) win.style.height = Math.max(240, maxH - 8) + 'px';
+                }
             }
         }
 
@@ -359,14 +382,22 @@ const winManager = {
                 if (!isUserResized) return true;
             }
         }
-        // General check: if geom is not userResized and has forced height on an auto-height app, or forced arbitrary 500x400
+        if ((appId === 'rachmistrz-kodu' || appId === 'kalkulator') && geom.h === 400) return true;
+        // General check: if geom is not userResized and has forced height on an auto-height app, or mismatched default dimensions
         const win = (typeof document !== 'undefined') ? document.getElementById('app-' + appId) : null;
         if (win && !geom.userResized) {
             const declared = winManager._getDeclaredGeometry(win);
             if (declared.isAutoH && geom.h != null) return true;
-            if (declared.w && geom.w === 500 && declared.w !== 500) return true;
-            if (declared.h && geom.h === 400 && declared.h !== 400) return true;
-            if (geom.w === 700 && declared.w && declared.w !== 700) return true;
+            if (appId === 'kalkulator') {
+                if (geom.w && ![340, 620, 900].includes(geom.w)) return true;
+            } else if (appId === 'rachmistrz-kodu') {
+                if (geom.w && ![380, 660].includes(geom.w)) return true;
+            } else if (declared.w && geom.w && geom.w !== declared.w) {
+                return true;
+            }
+            if (!declared.isAutoH && declared.h && geom.h && geom.h !== declared.h && appId !== 'powitanie') {
+                return true;
+            }
         }
         return false;
     },
@@ -382,6 +413,9 @@ const winManager = {
             if (typeof bigosSandbox !== 'undefined' && bigosSandbox.restoreAppGeometry) {
                 bigosSandbox.restoreAppGeometry(appId);
             }
+            if (!win.classList || !win.classList.contains('active')) {
+                delete win.dataset.centered;
+            }
         }
     },
 
@@ -389,8 +423,25 @@ const winManager = {
         if (!win) return;
         const winW = (typeof window !== 'undefined' && typeof window.innerWidth === 'number') ? window.innerWidth : 1280;
         const winH = (typeof window !== 'undefined' && typeof window.innerHeight === 'number') ? window.innerHeight : 800;
-        const w = parseFloat(win.style.width) || win.offsetWidth || 500;
-        const h = parseFloat(win.style.height) || win.offsetHeight || 400;
+        const declared = winManager._getDeclaredGeometry(win);
+        let measuredW = win.offsetWidth || 0;
+        let measuredH = win.offsetHeight || 0;
+        if ((!measuredW || !measuredH) && win.classList) {
+            const wasHidden = !win.classList.contains('active') || win.classList.contains('hidden');
+            const hadHiddenClass = win.classList.contains('hidden');
+            if (wasHidden) {
+                win.style.visibility = 'hidden';
+                win.classList.remove('hidden');
+                win.classList.add('active');
+                measuredW = win.offsetWidth || 0;
+                measuredH = win.offsetHeight || 0;
+                win.classList.remove('active');
+                if (hadHiddenClass) win.classList.add('hidden');
+                win.style.visibility = '';
+            }
+        }
+        const w = parseFloat(win.style.width) || declared.w || measuredW || 500;
+        const h = parseFloat(win.style.height) || declared.h || measuredH || 400;
         win.style.left = Math.max(0, Math.floor((winW - w) / 2)) + 'px';
         win.style.top = Math.max(0, Math.floor((winH - h - 48) / 2)) + 'px';
         win.dataset.centered = "true";

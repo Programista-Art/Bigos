@@ -61,13 +61,13 @@ const edytorMapApp = {
 
         setTimeout(() => {
             if (typeof fileSystem !== 'undefined' && fileSystem.length > 0 && !fileSystem.find(f => f.appId === 'edytor_map')) {
-                let placed = false, checkX = 30, checkY = 30, col = 0, row = 0;
-                const maxRows = Math.max(1, Math.floor((window.innerHeight - 120) / 100));
+                let placed = false, checkX = 20, checkY = 20, col = 0, row = 0;
+                const maxRows = Math.max(1, Math.floor((window.innerHeight - 48 - 20) / 90));
 
                 while (!placed && col < 20) {
-                    checkX = 30 + (col * 90);
-                    checkY = 30 + (row * 100);
-                    const isOccupied = fileSystem.some(f => f.parentId === 'root' && Math.abs(f.x - checkX) < 40 && Math.abs(f.y - checkY) < 40);
+                    checkX = 20 + (col * 90);
+                    checkY = 20 + (row * 90);
+                    const isOccupied = fileSystem.some(f => f.parentId === 'root' && Math.abs(f.x - checkX) < 76 && Math.abs(f.y - checkY) < 76);
 
                     if (!isOccupied) placed = true;
                     else {
@@ -793,11 +793,11 @@ const edytorMapApp = {
             
             if (parentId === 'root') {
                 let placed = false, col = 0, row = 0;
-                const maxRows = Math.max(1, Math.floor((window.innerHeight - 120) / 100));
+                const maxRows = Math.max(1, Math.floor((window.innerHeight - 48 - 20) / 90));
                 while (!placed && col < 20) {
-                    checkX = 30 + (col * 90);
-                    checkY = 30 + (row * 100);
-                    const isOccupied = fileSystem.some(f => f.parentId === 'root' && Math.abs(f.x - checkX) < 40 && Math.abs(f.y - checkY) < 40);
+                    checkX = 20 + (col * 90);
+                    checkY = 20 + (row * 90);
+                    const isOccupied = fileSystem.some(f => f.parentId === 'root' && Math.abs(f.x - checkX) < 76 && Math.abs(f.y - checkY) < 76);
                     if (!isOccupied) placed = true;
                     else {
                         row++;
