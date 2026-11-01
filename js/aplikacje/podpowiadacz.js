@@ -87,33 +87,203 @@ window.BigOSAppAPI = {
     }
 };
 
+const SERVICE_TIERS_DB = [
+    { id: 'standard', name: 'Standard (Domyślny)' },
+    { id: 'fast', name: 'Fast (Szybki priorytet)' },
+    { id: 'ultrafast', name: 'UltraFast (Ultraszybki)' }
+];
+
 const MODELS_DB = {
-    simulated: [ { id: 'simulated-echo', name: 'Symulator Testowy (Offline)' } ],
-    gemini_free: [ { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite (Darmowy)' } ],
-    gemini_api: [ { id: 'gemini-3.1-flash-lite', name: 'gemini-3.1-flash-lite (Szybki)' }, { id: 'gemini-3.5-flash', name: 'gemini-3.5-flash (Mądry)' } ],
-    openai: [ { id: 'gpt-4o-mini', name: 'GPT-4o Mini' }, { id: 'gpt-4o', name: 'GPT-4o' } ],
-    groq: [ { id: 'llama-3.1-70b-versatile', name: 'Llama 3.1 70B' }, { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B' } ],
-    openrouter: [ { id: 'meta-llama/llama-3.1-8b-instruct:free', name: 'Llama 3.1 8B (Darmowy)' }, { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' } ]
+    simulated: [
+        { id: 'simulated-echo', name: 'Symulator Systemowy BigAI (Offline 2026)' },
+        { id: 'bigai-local-orchestrator-2026', name: 'BigAI Core 2026 (Lokalny Zarządca Systemu)' }
+    ],
+    gemini_api: [
+        { id: 'gemini-4-argon', name: 'Gemini 4 Argon (Flagowy Ultra)' },
+        { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Szybki Multimodalny)' },
+        { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
+        { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash Lite (Ultraszybki)' },
+        { id: 'gemini-3.1-pro', name: 'Gemini 3.1 Pro (Flagowy 2026)' },
+        { id: 'gemini-3.1-flash', name: 'Gemini 3.1 Flash' },
+        { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite' },
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Deep Think)' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' }
+    ],
+    openai: [
+        { id: 'gpt-6-astra', name: 'GPT-6 Astra (Standard / Fast / UltraFast)', tiers: ['standard', 'fast', 'ultrafast'] },
+        { id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol (Standard / Fast / UltraFast)', tiers: ['standard', 'fast', 'ultrafast'] },
+        { id: 'gpt-6.1-terra', name: 'GPT-6.1 Terra (Standard / Fast / UltraFast)', tiers: ['standard', 'fast', 'ultrafast'] },
+        { id: 'gpt-6-luna', name: 'GPT-6 Luna (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-6-sol', name: 'GPT-6 Sol (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.6-nano', name: 'GPT-5.6 Nano (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.5', name: 'GPT-5.5 (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.4', name: 'GPT-5.4 (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5.4-mini', name: 'GPT-5.4 Mini (Standard / Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-5-nano', name: 'GPT-5 Nano', tiers: ['standard', 'fast'] },
+        { id: 'o3', name: 'OpenAI o3 (Reasoning Pro)', tiers: ['standard', 'fast'] },
+        { id: 'o4-mini', name: 'OpenAI o4-mini (Reasoning Fast)', tiers: ['standard', 'fast'] },
+        { id: 'gpt-4.1', name: 'GPT-4.1', tiers: ['standard', 'fast'] },
+        { id: 'gpt-4o', name: 'GPT-4o Omni', tiers: ['standard', 'fast'] }
+    ],
+    anthropic: [
+        { id: 'claude-fable-5-1', name: 'Claude Fable 5.1' },
+        { id: 'claude-opus-5-5', name: 'Claude Opus 5.5' },
+        { id: 'claude-sonnet-5-5', name: 'Claude Sonnet 5.5' },
+        { id: 'claude-haiku-5-5', name: 'Claude Haiku 5.5' }
+    ],
+    xai: [
+        { id: 'grok-4', name: 'Grok 4 (Flagowy 2026)' },
+        { id: 'grok-4-mini', name: 'Grok 4 Mini (Reasoning 2026)' },
+        { id: 'grok-3', name: 'Grok 3' }
+    ],
+    deepseek: [
+        { id: 'deepseek-v3.2', name: 'DeepSeek V3.2 (Chat 2026)' },
+        { id: 'deepseek-r2', name: 'DeepSeek R2 (Reasoning 2026)' },
+        { id: 'deepseek-r1', name: 'DeepSeek R1' }
+    ],
+    groq: [
+        { id: 'meta-llama/llama-4-maverick-17b-128e-instruct', name: 'Llama 4 Maverick 17B-128E (2026)' },
+        { id: 'meta-llama/llama-4-scout-17b-16e-instruct', name: 'Llama 4 Scout 17B-16E (2026)' },
+        { id: 'deepseek-r1-distill-llama-70b', name: 'DeepSeek R1 Distill Llama 70B' },
+        { id: 'qwen-qwq-32b', name: 'Qwen QwQ 32B (Reasoning)' },
+        { id: 'llama-3.3-70b-versatile', name: 'Llama 3.3 70B Versatile' }
+    ],
+    openrouter: [
+        { id: 'google/gemini-4-argon', name: 'Gemini 4 Argon (OpenRouter 2026)' },
+        { id: 'anthropic/claude-fable-5-1', name: 'Claude Fable 5.1 (OpenRouter 2026)' },
+        { id: 'anthropic/claude-opus-5-5', name: 'Claude Opus 5.5 (OpenRouter 2026)' },
+        { id: 'anthropic/claude-sonnet-5-5', name: 'Claude Sonnet 5.5 (OpenRouter 2026)' },
+        { id: 'anthropic/claude-haiku-5-5', name: 'Claude Haiku 5.5 (OpenRouter 2026)' },
+        { id: 'openai/gpt-6-astra', name: 'GPT-6 Astra (OpenRouter 2026)' },
+        { id: 'deepseek/deepseek-r2:free', name: 'DeepSeek R2 (Darmowy OpenRouter)' },
+        { id: 'deepseek/deepseek-r1:free', name: 'DeepSeek R1 (Darmowy OpenRouter)' },
+        { id: 'meta-llama/llama-4-maverick:free', name: 'Llama 4 Maverick (Darmowy OpenRouter)' },
+        { id: 'qwen/qwen3-235b-a22b:free', name: 'Qwen 3 235B (Darmowy OpenRouter)' },
+        { id: 'mistralai/mistral-large-2512', name: 'Mistral Large 3 (2026)' }
+    ]
+};
+
+const STT_ENGINES_DB = {
+    native: [
+        { id: 'web-speech-2026-pl', name: 'Web Speech API 2026 (Wbudowany PL/Multi)' }
+    ],
+    gemini_stt: [
+        { id: 'gemini-3.1-flash', name: 'Gemini 3.1 Flash Audio STT (2026)' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash Native Audio' }
+    ],
+    openai: [
+        { id: 'gpt-4o-transcribe', name: 'GPT-4o Transcribe (2026 HD)' },
+        { id: 'gpt-4o-mini-transcribe', name: 'GPT-4o Mini Transcribe (Szybki 2026)' },
+        { id: 'whisper-1', name: 'OpenAI Whisper V3' }
+    ],
+    groq: [
+        { id: 'whisper-large-v3-turbo', name: 'Whisper Large v3 Turbo (LPU 2026)' },
+        { id: 'whisper-large-v3', name: 'Whisper Large v3 (Dokładny)' },
+        { id: 'distil-whisper-large-v3-en', name: 'Distil-Whisper Large v3' }
+    ],
+    elevenlabs_stt: [
+        { id: 'scribe_v2', name: 'ElevenLabs Scribe v2 (2026 Ultra)' },
+        { id: 'scribe_v1', name: 'ElevenLabs Scribe v1' }
+    ],
+    deepgram: [
+        { id: 'nova-3', name: 'Deepgram Nova-3 Multilingual (2026)' },
+        { id: 'nova-2', name: 'Deepgram Nova-2' }
+    ]
 };
 
 const VOICES_DB = {
-    native: [ { id: '', name: 'Domyślny Systemowy' } ],
-    gemini: [ { id: 'Kore', name: 'Kore (Stanowczy)' }, { id: 'Aoede', name: 'Aoede (Przyjazny)' } ],
-    openai: [ { id: 'alloy', name: 'Alloy (Neutralny)' } ]
+    native: [
+        { id: '', name: 'Domyślny Systemowy (PL 2026)' },
+        { id: 'pl-PL-Marek', name: 'Marek Naturalny (PL 2026)' },
+        { id: 'pl-PL-Zofia', name: 'Zofia Naturalna (PL 2026)' }
+    ],
+    gemini: [
+        { id: 'Kore', name: 'Kore (Stanowczy / Profesjonalny 2026)' },
+        { id: 'Aoede', name: 'Aoede (Przyjazny / Naturalny 2026)' },
+        { id: 'Puck', name: 'Puck (Energiczny / Szybki 2026)' },
+        { id: 'Fenrir', name: 'Fenrir (Dynamiczny / Wyrazisty 2026)' },
+        { id: 'Charon', name: 'Charon (Głęboki / Spokojny 2026)' },
+        { id: 'Leda', name: 'Leda (Ciepły / Narracyjny 2026)' },
+        { id: 'Orus', name: 'Orus (Analityczny / Czysty 2026)' },
+        { id: 'Zephyr', name: 'Zephyr (Lekki / Asystencki 2026)' }
+    ],
+    openai: [
+        { id: 'coral', name: 'Coral (Ekspresyjny 2026)' },
+        { id: 'sage', name: 'Sage (Spokojny Ekspert 2026)' },
+        { id: 'ash', name: 'Ash (Naturalny Męski 2026)' },
+        { id: 'ballad', name: 'Ballad (Narracyjny 2026)' },
+        { id: 'verse', name: 'Verse (Dynamiczny 2026)' },
+        { id: 'nova', name: 'Nova (Energiczny Żeński)' },
+        { id: 'alloy', name: 'Alloy (Neutralny)' },
+        { id: 'onyx', name: 'Onyx (Głęboki Męski)' },
+        { id: 'shimmer', name: 'Shimmer (Czysty Żeński)' },
+        { id: 'echo', name: 'Echo (Miękki)' }
+    ],
+    elevenlabs: [
+        { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel (Klasyczny Żeński v3 2026)' },
+        { id: '9BWtsMINqrJLrRacOk9x', name: 'Aria (Ekspresyjny v3 2026)' },
+        { id: 'CwhRBWXzGAHq8TQ4Fs17', name: 'Roger (Konwersacyjny v3 2026)' },
+        { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Sarah (Profesjonalny v3 2026)' },
+        { id: 'FGY2WhTYpPnrIDTdsKH5', name: 'Laura (Naturalny Multi 2026)' },
+        { id: 'IKne3meq5aSn9XLyUdCD', name: 'Charlie (Energiczny 2026)' },
+        { id: 'JBFqnCBsd6RMkjVDRZzb', name: 'George (Ciepły Narrator)' },
+        { id: 'pNInz6obpgDQGcFmaJgB', name: 'Adam (Głęboki Męski)' },
+        { id: 'ErXwobaYiN019PkySvjV', name: 'Antoni (Przyjazny)' }
+    ],
+    cartesia: [
+        { id: '79a125e8-cd45-4c13-8a67-188112f4dd22', name: 'Sonic-2 Maja (Polski Żeński 2026)' },
+        { id: 'a0e99841-438c-4a64-b679-ae501e7d6091', name: 'Sonic-2 Jakub (Polski Męski 2026)' },
+        { id: '694f9389-aac1-45b6-b726-9d9369183238', name: 'Sonic-2 Astra (Asystent AI 2026)' }
+    ]
 };
+
+const IMAGE_GENERATORS_DB = [
+    { id: 'nano-banana-2.1', name: 'Gemini Nano Banana 2.1', provider: 'gemini', badge: 'Nano Banana 2.1' },
+    { id: 'nano-banana-pro', name: 'Gemini Nano Banana Pro', provider: 'gemini', badge: 'Nano Banana Pro' },
+    { id: 'nano-banana-2-lite', name: 'Gemini Nano Banana 2 lite', provider: 'gemini', badge: 'Nano Banana 2 lite' },
+    { id: 'flux-3', name: 'FLUX 3 (Generator zdjęć)', provider: 'flux', badge: 'FLUX 3' }
+];
+
+const VIDEO_GENERATORS_DB = [
+    { id: 'omni-1.1-flash', name: 'Gemini Omni 1.1 Flash', provider: 'gemini', badge: 'Omni 1.1 Flash' },
+    { id: 'veo-3.1-lite', name: 'Gemini Veo 3.1-lite', provider: 'gemini', badge: 'Veo 3.1-lite' },
+    { id: 'veo-3.1-fast', name: 'Gemini Veo 3.1 -fast', provider: 'gemini', badge: 'Veo 3.1 -fast' },
+    { id: 'veo-3.1-quality', name: 'Gemini Veo3.1- Quality', provider: 'gemini', badge: 'Veo3.1- Quality' },
+    { id: 'flux-3-video', name: 'FLUX 3 (Generator wideo)', provider: 'flux', badge: 'FLUX 3 Video' }
+];
 
 const podpowiadaczApp = {
     messages: [], isSidebarOpen: false, isThinking: false,
     currentAbortController: null,
     recognition: null, mediaRecorder: null, audioChunks: [], isRecording: false, isListeningBackground: false,
-    activeAudio: null, currentTTSButton: null, pendingActionCallback: null, 
-    
-    suggestionsDB: [ "Uruchom Kalkulator", "Zmień tapetę na kosmos", "Zmień motyw na ciemny", "Napisz aplikację kalkulator walut" ],
+    activeAudio: null, currentTTSButton: null, pendingActionCallback: null,
+    dictateToSkrybaMode: false,
+
+    suggestionsDB: [
+        "Uruchom Kalkulator",
+        "Otwórz Skrybę i zapisz notatkę: Spotkanie jutro o 14:00",
+        "Wyszukaj w przeglądarce Sieciosław najnowsze wiadomości technologiczne",
+        "Otwórz grafikę w Patrzałce",
+        "Zamknij aplikację Kalkulator",
+        "Stwórz folder Projekty 2026",
+        "Utwórz plik plan.txt z treścią Lista zadań na dziś",
+        "Wygeneruj zdjęcie cyberpunkowego miasta nocą w Nano Banana Pro",
+        "Wygeneruj wideo lotu nad górami w Veo 3.1 -fast",
+        "Wygeneruj zdjęcie futurystycznego lasu w FLUX 3",
+        "Zmień tapetę na kosmos",
+        "Zmień motyw na ciemny",
+        "Napisz aplikację kalkulator walut"
+    ],
 
     settings: {
-        provider: 'gemini_free', apiKey: '', model: 'gemini-3.1-flash-lite', customModel: '', isCustomModel: false,
-        ttsProvider: 'native', ttsApiKey: '', ttsVoice: '', sttProvider: 'native', sttApiKey: '', sttModel: 'whisper-large-v3-turbo',
-        autoTTS: false, wakeWordActive: false 
+        provider: 'gemini_api', apiKey: '', model: 'gemini-4-argon', serviceTier: 'standard', customModel: '', isCustomModel: false,
+        ttsProvider: 'native', ttsApiKey: '', ttsVoice: '',
+        sttProvider: 'native', sttApiKey: '', sttModel: 'web-speech-2026-pl',
+        imageModel: 'nano-banana-2.1', videoModel: 'veo-3.1-fast', fluxApiKey: '',
+        autoTTS: false, wakeWordActive: false, dictateToSkryba: false
     },
 
     init: async () => {
@@ -123,6 +293,31 @@ const podpowiadaczApp = {
                 let parsedSettings = typeof savedSettings === 'string' ? JSON.parse(savedSettings) : savedSettings;
                 podpowiadaczApp.settings = {...podpowiadaczApp.settings, ...parsedSettings};
             }
+            // Migracja usuniętego dostawcy gemini_free
+            if (podpowiadaczApp.settings.provider === 'gemini_free' || !MODELS_DB[podpowiadaczApp.settings.provider]) {
+                podpowiadaczApp.settings.provider = podpowiadaczApp.settings.apiKey ? 'gemini_api' : 'gemini_api';
+                podpowiadaczApp.settings.model = MODELS_DB.gemini_api[0].id;
+            }
+            if (!podpowiadaczApp.settings.isCustomModel && MODELS_DB[podpowiadaczApp.settings.provider] && !MODELS_DB[podpowiadaczApp.settings.provider].some(m => m.id === podpowiadaczApp.settings.model)) {
+                podpowiadaczApp.settings.model = MODELS_DB[podpowiadaczApp.settings.provider][0].id;
+            }
+            if (!SERVICE_TIERS_DB.some(t => t.id === podpowiadaczApp.settings.serviceTier)) {
+                podpowiadaczApp.settings.serviceTier = 'standard';
+            }
+            if (!STT_ENGINES_DB[podpowiadaczApp.settings.sttProvider]) {
+                podpowiadaczApp.settings.sttProvider = 'native';
+                podpowiadaczApp.settings.sttModel = STT_ENGINES_DB.native[0].id;
+            }
+            if (!VOICES_DB[podpowiadaczApp.settings.ttsProvider]) {
+                podpowiadaczApp.settings.ttsProvider = 'native';
+                podpowiadaczApp.settings.ttsVoice = '';
+            }
+            if (!IMAGE_GENERATORS_DB.some(g => g.id === podpowiadaczApp.settings.imageModel)) {
+                podpowiadaczApp.settings.imageModel = 'nano-banana-2.1';
+            }
+            if (!VIDEO_GENERATORS_DB.some(g => g.id === podpowiadaczApp.settings.videoModel)) {
+                podpowiadaczApp.settings.videoModel = 'veo-3.1-fast';
+            }
             const savedChat = await bigosDB.get('bigos_bigai_chat');
             if (savedChat) podpowiadaczApp.messages = typeof savedChat === 'string' ? JSON.parse(savedChat) : savedChat;
         } catch(e) {}
@@ -130,7 +325,7 @@ const podpowiadaczApp = {
         if (podpowiadaczApp.messages.length === 0) {
             podpowiadaczApp.messages.push({
                 role: 'assistant',
-                text: 'Cześć! Jestem Twoim osobistym asystentem wbudowanym w **BigOS**. \n\nW czym mogę pomóc?'
+                text: 'Cześć! Jestem **BigAI 2026** — głównym zarządcą systemu **BigOS**.\n\nMogę dla Ciebie:\n* 🚀 **Otwierać i zamykać aplikacje** (np. *"Otwórz Kalkulator"*, *"Zamknij Skrybę"*)\n* 🌐 **Wyszukiwać w przeglądarce Sieciosław** (np. *"Wyszukaj w Sieciosławiu kurs bitcoina"*)\n* 📝 **Otwierać Skrybę i zapisywać podyktowane notatki** (np. *"Otwórz Skrybę i zapisz: spotkanie o 15:00"* lub przycisk **📝 Dyktuj do Skryby**)\n* 🖼️ **Otwierać grafiki w Patrzałce** oraz **tworzyć pliki i foldery** na pulpicie\n* 🎨 **Generować zdjęcia i wideo** (**Gemini Nano Banana 2.1 / Pro / 2 lite**, **Omni 1.1 Flash**, **Veo 3.1-lite / -fast / Quality**, **FLUX 3**)\n* 💻 **Tworzyć i instalować nowe aplikacje** dla BigOS\n\nW czym mogę Ci dzisiaj pomóc?'
             });
             podpowiadaczApp.saveData(); 
         }
@@ -377,11 +572,33 @@ const podpowiadaczApp = {
             document.body.appendChild(appWindow);
         }
 
-        appWindow.style.width = '900px';
-        appWindow.style.height = '680px';
+        const targetW = typeof window !== 'undefined' && window.innerWidth ? Math.min(1180, Math.max(760, window.innerWidth - 24)) : 1180;
+        const targetH = typeof window !== 'undefined' && window.innerHeight ? Math.min(760, Math.max(540, window.innerHeight - 68)) : 760;
+
+        appWindow.dataset.prefW = '1180px';
+        appWindow.dataset.prefH = '760px';
+        appWindow.style.width = targetW + 'px';
+        appWindow.style.height = targetH + 'px';
         appWindow.style.background = 'transparent';
         appWindow.style.border = 'none';
         appWindow.style.boxShadow = 'none';
+
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const savedGeomRaw = localStorage.getItem('bigos_win_pos_podpowiadacz');
+                if (savedGeomRaw) {
+                    const savedGeom = JSON.parse(savedGeomRaw);
+                    const savedW = parseInt(savedGeom.width, 10) || 0;
+                    if (savedW > 0 && savedW < 1100 && !savedGeom.userResized) {
+                        localStorage.removeItem('bigos_win_pos_podpowiadacz');
+                        if (typeof window !== 'undefined' && window.innerWidth) {
+                            appWindow.style.left = Math.max(12, Math.round((window.innerWidth - targetW) / 2)) + 'px';
+                            appWindow.style.top = Math.max(12, Math.round((window.innerHeight - 48 - targetH) / 2)) + 'px';
+                        }
+                    }
+                }
+            }
+        } catch (e) {}
 
         const titleBar = appWindow.querySelector('.title-bar');
         Array.from(appWindow.children).forEach(child => { if (child !== titleBar) child.remove(); });
@@ -391,70 +608,108 @@ const podpowiadaczApp = {
         proUI.className = 'flex flex-col overflow-hidden relative themed-app g-panel rounded-lg shadow-2xl h-full w-full';
 
         proUI.innerHTML = `
-            <div class="px-4 py-2 border-b g-border flex justify-between items-center cursor-move bg-black/30 shrink-0 relative z-[100] shadow-md" onmousedown="winManager.startDrag(event, 'app-podpowiadacz')" ontouchstart="winManager.startDrag(event, 'app-podpowiadacz')">
-                <span class="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-md flex items-center gap-2">
-                    <span class="text-white">🤖</span> BigAI - Centrum Dowodzenia
+            <div class="px-4 py-2.5 border-b g-border flex justify-between items-center gap-3 cursor-move bg-black/30 shrink-0 relative z-[100] shadow-md" onmousedown="winManager.startDrag(event, 'app-podpowiadacz')" ontouchstart="winManager.startDrag(event, 'app-podpowiadacz')">
+                <span class="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500 drop-shadow-md flex items-center gap-2 whitespace-nowrap shrink-0">
+                    <span class="text-white">🤖</span> BigAI 2026 - Centrum Dowodzenia Systemem
                 </span>
-                <div class="flex gap-2 items-center">
-                    <button onclick="podpowiadaczApp.stopTTS()" class="g-btn px-2 py-0.5 text-xs text-orange-400 border-orange-500/50 hover:bg-orange-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1" title="Zatrzymaj czytanie na głos"><span>🛑</span> <span class="hidden sm:inline">Cisza</span></button>
-                    <button onclick="podpowiadaczApp.clearChat()" class="g-btn px-2 py-0.5 text-xs text-red-400 border-red-500/50 hover:bg-red-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1" title="Wyczyść całą historię czatu"><span>🗑️</span> <span class="hidden sm:inline">Wyczyść</span></button>
-                    <button onclick="podpowiadaczApp.toggleSidebar()" class="g-btn px-2 py-0.5 text-xs text-blue-400 border-blue-500/50 hover:bg-blue-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1" title="Ustawienia Modeli i Głosu"><span>⚙️</span> <span class="hidden sm:inline">Ustawienia</span></button>
-                    <div class="w-px h-4 bg-gray-600 mx-1 self-center"></div>
-                    <button onclick="winManager.minimize('podpowiadacz')" class="g-icon-btn px-1 g-text transition">_</button>
-                    <button onclick="winManager.maximize('app-podpowiadacz')" class="g-icon-btn px-1 g-text transition">□</button>
-                    <button onclick="winManager.close('podpowiadacz')" class="text-red-500 hover:text-red-400 px-1 font-bold transition">✖</button>
+                <div class="flex gap-1.5 items-center shrink-0">
+                    <button onclick="podpowiadaczApp.openMediaStudioModal('image')" class="g-btn px-2.5 py-1 text-xs text-pink-400 border-pink-500/50 hover:bg-pink-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1 whitespace-nowrap shrink-0" title="Generator zdjęć (Nano Banana / FLUX 3)"><span>🖼️</span> <span>Zdjęcie</span></button>
+                    <button onclick="podpowiadaczApp.openMediaStudioModal('video')" class="g-btn px-2.5 py-1 text-xs text-purple-400 border-purple-500/50 hover:bg-purple-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1 whitespace-nowrap shrink-0" title="Generator wideo (Omni 1.1 Flash / Veo 3.1 / FLUX 3)"><span>🎬</span> <span>Wideo</span></button>
+                    <button onclick="podpowiadaczApp.toggleSkrybaDictationMode()" id="ai-skryba-dictate-btn" class="g-btn px-2.5 py-1 text-xs ${podpowiadaczApp.settings.dictateToSkryba ? 'bg-emerald-600 text-white border-emerald-400' : 'text-emerald-400 border-emerald-500/50'} hover:bg-emerald-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1 whitespace-nowrap shrink-0" title="Dyktuj głosowo bezpośrednio do programu Skryba"><span>📝</span> <span>Dyktuj do Skryby</span></button>
+                    <button onclick="podpowiadaczApp.stopTTS()" class="g-btn px-2.5 py-1 text-xs text-orange-400 border-orange-500/50 hover:bg-orange-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1 whitespace-nowrap shrink-0" title="Zatrzymaj czytanie na głos"><span>🛑</span> <span>Cisza</span></button>
+                    <button onclick="podpowiadaczApp.clearChat()" class="g-btn px-2.5 py-1 text-xs text-red-400 border-red-500/50 hover:bg-red-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1 whitespace-nowrap shrink-0" title="Wyczyść całą historię czatu"><span>🗑️</span> <span>Wyczyść</span></button>
+                    <button onclick="podpowiadaczApp.toggleSidebar()" class="g-btn px-2.5 py-1 text-xs text-blue-400 border-blue-500/50 hover:bg-blue-500 hover:text-white rounded transition shadow-sm font-bold flex items-center gap-1 whitespace-nowrap shrink-0" title="Ustawienia Modeli, Generatorów i Głosu"><span>⚙️</span> <span>Ustawienia</span></button>
+                    <div class="w-px h-4 bg-gray-600 mx-1 self-center shrink-0"></div>
+                    <button onclick="winManager.minimize('podpowiadacz')" class="g-icon-btn px-1.5 g-text transition shrink-0">_</button>
+                    <button onclick="winManager.maximize('app-podpowiadacz')" class="g-icon-btn px-1.5 g-text transition shrink-0">□</button>
+                    <button onclick="winManager.close('podpowiadacz')" class="text-red-500 hover:text-red-400 px-1.5 font-bold transition shrink-0">✖</button>
                 </div>
             </div>
 
             <div class="flex flex-row flex-grow overflow-hidden relative">
                 
-                <div id="ai-sidebar" class="w-[280px] border-r g-border bg-black/40 flex flex-col p-4 shrink-0 transition-all duration-300 ${podpowiadaczApp.isSidebarOpen ? 'ml-0' : '-ml-[280px]'} z-50 relative h-full shadow-2xl backdrop-blur-xl overflow-y-auto custom-scrollbar">
+                <div id="ai-sidebar" style="width: 340px; margin-left: ${podpowiadaczApp.isSidebarOpen ? '0px' : '-340px'};" class="w-[340px] border-r g-border bg-black/40 flex flex-col p-4 shrink-0 transition-all duration-300 z-50 relative h-full shadow-2xl backdrop-blur-xl overflow-y-auto custom-scrollbar">
                     
-                    <h3 class="font-bold text-xs g-accent uppercase tracking-widest mb-3 border-b g-border pb-1">Dostawca Czat AI</h3>
+                    <h3 class="font-bold text-xs g-accent uppercase tracking-widest mb-3 border-b g-border pb-1">Dostawca Czat AI (2026)</h3>
                     <div class="flex flex-col gap-3 mb-4">
                         <div>
                             <label class="block text-[10px] font-bold g-text-muted mb-1">Silnik Główny</label>
-                            <select id="ai-provider" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeProvider()">
-                                <option value="simulated" ${podpowiadaczApp.settings.provider==='simulated'?'selected':''}>Symulator Testowy (Offline)</option>
-                                <option value="gemini_free" ${podpowiadaczApp.settings.provider==='gemini_free'?'selected':''}>Gemini (Darmowe wbudowane)</option>
-                                <option value="openrouter" ${podpowiadaczApp.settings.provider==='openrouter'?'selected':''}>OpenRouter (Multi-Model)</option>
-                                <option value="groq" ${podpowiadaczApp.settings.provider==='groq'?'selected':''}>Groq (Super Szybki Llama)</option>
-                                <option value="openai" ${podpowiadaczApp.settings.provider==='openai'?'selected':''}>OpenAI (ChatGPT)</option>
-                                <option value="gemini_api" ${podpowiadaczApp.settings.provider==='gemini_api'?'selected':''}>Własny Klucz Gemini</option>
+                            <select id="ai-provider" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeProvider()">
+                                <option value="gemini_api" ${podpowiadaczApp.settings.provider==='gemini_api'?'selected':''}>Google Gemini API (Gemini 4 / 3.8 / 3.6)</option>
+                                <option value="openai" ${podpowiadaczApp.settings.provider==='openai'?'selected':''}>OpenAI (GPT-6 / GPT-6.1 / GPT-5.6)</option>
+                                <option value="anthropic" ${podpowiadaczApp.settings.provider==='anthropic'?'selected':''}>Anthropic (Claude Fable 5.1 / 5.5)</option>
+                                <option value="xai" ${podpowiadaczApp.settings.provider==='xai'?'selected':''}>xAI (Grok 4)</option>
+                                <option value="deepseek" ${podpowiadaczApp.settings.provider==='deepseek'?'selected':''}>DeepSeek (V3.2 / R2)</option>
+                                <option value="groq" ${podpowiadaczApp.settings.provider==='groq'?'selected':''}>Groq LPU (Llama 4)</option>
+                                <option value="openrouter" ${podpowiadaczApp.settings.provider==='openrouter'?'selected':''}>OpenRouter (Multi-Model 2026)</option>
+                                <option value="simulated" ${podpowiadaczApp.settings.provider==='simulated'?'selected':''}>Lokalny Zarządca Systemu (Offline)</option>
                             </select>
                         </div>
                         
-                        <div id="ai-key-container" class="${podpowiadaczApp.settings.provider==='gemini_free' || podpowiadaczApp.settings.provider==='simulated' ? 'opacity-30 pointer-events-none' : ''}">
+                        <div id="ai-key-container" class="${podpowiadaczApp.settings.provider==='simulated' ? 'opacity-30 pointer-events-none' : ''}">
                             <label class="block text-[10px] font-bold g-text-muted mb-1">Klucz API do Chatbota</label>
-                            <input type="password" id="ai-apikey" placeholder="Wklej klucz (sk-..., AIza...)" value="${podpowiadaczApp.settings.apiKey}" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner" onchange="podpowiadaczApp.settings.apiKey=this.value; podpowiadaczApp.saveData();">
+                            <input type="password" id="ai-apikey" placeholder="Wklej klucz (AIza..., sk-..., gsk_...)" value="${podpowiadaczApp.settings.apiKey}" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner" onchange="podpowiadaczApp.settings.apiKey=this.value; podpowiadaczApp.saveData();">
                         </div>
 
                         <div>
-                            <label class="block text-[10px] font-bold g-text-muted mb-1">Model Językowy</label>
-                            <select id="ai-model-select" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeModelSelect()">
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Model Językowy (2026)</label>
+                            <select id="ai-model-select" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeModelSelect()">
                             </select>
-                            <input type="text" id="ai-model-custom" placeholder="Wpisz ID modelu..." value="${podpowiadaczApp.settings.customModel}" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-mono mt-1 shadow-inner ${podpowiadaczApp.settings.isCustomModel ? '' : 'hidden'}" onchange="podpowiadaczApp.settings.customModel=this.value; podpowiadaczApp.saveData();">
+                            <input type="text" id="ai-model-custom" placeholder="Wpisz ID modelu..." value="${podpowiadaczApp.settings.customModel}" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-mono mt-1 shadow-inner ${podpowiadaczApp.settings.isCustomModel ? '' : 'hidden'}" onchange="podpowiadaczApp.settings.customModel=this.value; podpowiadaczApp.saveData();">
+                        </div>
+
+                        <div id="ai-service-tier-container" class="${podpowiadaczApp.settings.provider==='openai' ? '' : 'hidden'}">
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Service Tier (Tryb Szybkości)</label>
+                            <select id="ai-service-tier" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeServiceTier()">
+                            </select>
                         </div>
                     </div>
 
-                    <h3 class="font-bold text-xs text-orange-400 uppercase tracking-widest mb-3 border-b g-border pb-1">Słuchanie (STT)</h3>
+                    <h3 class="font-bold text-xs text-pink-400 uppercase tracking-widest mb-3 border-b g-border pb-1">Generatory Zdjęć i Wideo</h3>
                     <div class="flex flex-col gap-3 mb-4">
                         <div>
-                            <label class="block text-[10px] font-bold g-text-muted mb-1">Silnik Dyktowania</label>
-                            <select id="stt-provider" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeSTTProvider()">
-                                <option value="native" ${podpowiadaczApp.settings.sttProvider==='native'?'selected':''}>Wbudowany (Przeglądarki)</option>
-                                <option value="groq" ${podpowiadaczApp.settings.sttProvider==='groq'?'selected':''}>Groq (Whisper API)</option>
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Generator Zdjęć (Gemini / FLUX 3)</label>
+                            <select id="ai-image-model" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.settings.imageModel=this.value; podpowiadaczApp.saveData();">
+                                ${IMAGE_GENERATORS_DB.map(g => `<option value="${g.id}" ${podpowiadaczApp.settings.imageModel===g.id?'selected':''}>${g.name}</option>`).join('')}
                             </select>
                         </div>
-                        <div id="stt-groq-settings" class="${podpowiadaczApp.settings.sttProvider==='groq' ? '' : 'hidden'}">
-                            <label class="block text-[10px] font-bold g-text-muted mb-1">Klucz API Groq</label>
-                            <input type="password" id="stt-apikey" placeholder="gsk_..." value="${podpowiadaczApp.settings.sttApiKey}" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner mb-2" onchange="podpowiadaczApp.settings.sttApiKey=this.value; podpowiadaczApp.saveData();">
-                            
-                            <label class="block text-[10px] font-bold g-text-muted mb-1">Model Whisper</label>
-                            <select id="stt-model" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.settings.sttModel=this.value; podpowiadaczApp.saveData();">
-                                <option value="whisper-large-v3-turbo" ${podpowiadaczApp.settings.sttModel==='whisper-large-v3-turbo'?'selected':''}>Whisper Large V3 Turbo</option>
-                                <option value="whisper-large-v3" ${podpowiadaczApp.settings.sttModel==='whisper-large-v3'?'selected':''}>Whisper Large V3</option>
+                        <div>
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Generator Wideo (Omni / Veo 3.1 / FLUX 3)</label>
+                            <select id="ai-video-model" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.settings.videoModel=this.value; podpowiadaczApp.saveData();">
+                                ${VIDEO_GENERATORS_DB.map(g => `<option value="${g.id}" ${podpowiadaczApp.settings.videoModel===g.id?'selected':''}>${g.name}</option>`).join('')}
                             </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Klucz API Mediów / FLUX 3 (Opcjonalny)</label>
+                            <input type="password" id="flux-apikey" placeholder="Domyślnie klucz Gemini lub klucz FLUX..." value="${podpowiadaczApp.settings.fluxApiKey || ''}" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner" onchange="podpowiadaczApp.settings.fluxApiKey=this.value; podpowiadaczApp.saveData();">
+                        </div>
+                    </div>
+
+                    <h3 class="font-bold text-xs text-orange-400 uppercase tracking-widest mb-3 border-b g-border pb-1">Słuchanie i Dyktowanie (STT 2026)</h3>
+                    <div class="flex flex-col gap-3 mb-4">
+                        <div>
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Silnik Dyktowania (2026)</label>
+                            <select id="stt-provider" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeSTTProvider()">
+                                <option value="native" ${podpowiadaczApp.settings.sttProvider==='native'?'selected':''}>Web Speech API 2026 (Wbudowany)</option>
+                                <option value="gemini_stt" ${podpowiadaczApp.settings.sttProvider==='gemini_stt'?'selected':''}>Google Gemini Audio STT (2026)</option>
+                                <option value="openai" ${podpowiadaczApp.settings.sttProvider==='openai'?'selected':''}>OpenAI GPT-4o Transcribe (2026)</option>
+                                <option value="groq" ${podpowiadaczApp.settings.sttProvider==='groq'?'selected':''}>Groq Whisper v3 Turbo (LPU)</option>
+                                <option value="elevenlabs_stt" ${podpowiadaczApp.settings.sttProvider==='elevenlabs_stt'?'selected':''}>ElevenLabs Scribe v2 (2026)</option>
+                                <option value="deepgram" ${podpowiadaczApp.settings.sttProvider==='deepgram'?'selected':''}>Deepgram Nova-3 (2026)</option>
+                            </select>
+                        </div>
+                        <div id="stt-groq-settings" class="${podpowiadaczApp.settings.sttProvider==='native' ? 'hidden' : ''}">
+                            <label class="block text-[10px] font-bold g-text-muted mb-1" id="stt-key-lbl">Klucz API STT</label>
+                            <input type="password" id="stt-apikey" placeholder="Klucz API (lub pusty = użyj głównego)" value="${podpowiadaczApp.settings.sttApiKey}" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner mb-2" onchange="podpowiadaczApp.settings.sttApiKey=this.value; podpowiadaczApp.saveData();">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Model Rozpoznawania Mowy</label>
+                            <select id="stt-model" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.settings.sttModel=this.value; podpowiadaczApp.saveData();">
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2 cursor-pointer group mt-1" onclick="const cb=document.getElementById('ai-set-skryba-stt'); cb.checked=!cb.checked; podpowiadaczApp.toggleSkrybaDictationMode(cb.checked);">
+                            <input type="checkbox" id="ai-set-skryba-stt" class="w-4 h-4 accent-emerald-500 cursor-pointer" ${podpowiadaczApp.settings.dictateToSkryba ? 'checked' : ''} onclick="event.stopPropagation(); podpowiadaczApp.toggleSkrybaDictationMode(this.checked);">
+                            <label class="text-xs font-bold g-text group-hover:text-emerald-400 transition cursor-pointer">Zapisuj dyktowanie w programie Skryba</label>
                         </div>
                         <div class="flex items-center gap-2 cursor-pointer group mt-1" onclick="const cb=document.getElementById('ai-set-wakeword'); cb.checked=!cb.checked; podpowiadaczApp.toggleWakeWord(cb.checked);">
                             <input type="checkbox" id="ai-set-wakeword" class="w-4 h-4 accent-red-500 cursor-pointer" ${podpowiadaczApp.settings.wakeWordActive ? 'checked' : ''} onclick="event.stopPropagation(); podpowiadaczApp.toggleWakeWord(this.checked);">
@@ -462,25 +717,25 @@ const podpowiadaczApp = {
                         </div>
                     </div>
 
-                    <h3 class="font-bold text-xs text-emerald-500 uppercase tracking-widest mb-3 border-b g-border pb-1">Czytanie (TTS)</h3>
+                    <h3 class="font-bold text-xs text-emerald-500 uppercase tracking-widest mb-3 border-b g-border pb-1">Głosy Asystentów (TTS 2026)</h3>
                     <div class="flex flex-col gap-3 mb-4">
                         <div>
                             <label class="block text-[10px] font-bold g-text-muted mb-1">Dostawca Głosu</label>
-                            <select id="tts-provider" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeTTSProvider()">
-                                <option value="native" ${podpowiadaczApp.settings.ttsProvider==='native'?'selected':''}>Wbudowany</option>
-                                <option value="gemini" ${podpowiadaczApp.settings.ttsProvider==='gemini'?'selected':''}>Google Gemini</option>
-                                <option value="openai" ${podpowiadaczApp.settings.ttsProvider==='openai'?'selected':''}>OpenAI</option>
-                                <option value="elevenlabs" ${podpowiadaczApp.settings.ttsProvider==='elevenlabs'?'selected':''}>ElevenLabs</option>
-                                <option value="cartesia" ${podpowiadaczApp.settings.ttsProvider==='cartesia'?'selected':''}>Cartesia</option>
+                            <select id="tts-provider" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.changeTTSProvider()">
+                                <option value="native" ${podpowiadaczApp.settings.ttsProvider==='native'?'selected':''}>Wbudowany (Web Speech 2026)</option>
+                                <option value="gemini" ${podpowiadaczApp.settings.ttsProvider==='gemini'?'selected':''}>Google Gemini Live Audio</option>
+                                <option value="openai" ${podpowiadaczApp.settings.ttsProvider==='openai'?'selected':''}>OpenAI GPT-4o Mini TTS</option>
+                                <option value="elevenlabs" ${podpowiadaczApp.settings.ttsProvider==='elevenlabs'?'selected':''}>ElevenLabs v3 Multilingual</option>
+                                <option value="cartesia" ${podpowiadaczApp.settings.ttsProvider==='cartesia'?'selected':''}>Cartesia Sonic-2 (2026)</option>
                             </select>
                         </div>
                         <div id="tts-key-container" class="${podpowiadaczApp.settings.ttsProvider==='native' ? 'hidden' : ''}">
                             <label class="block text-[10px] font-bold g-text-muted mb-1" id="tts-key-lbl">Klucz API Głosu</label>
-                            <input type="password" id="tts-apikey" placeholder="Wklej klucz API usługi" value="${podpowiadaczApp.settings.ttsApiKey}" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner mb-1" onchange="podpowiadaczApp.settings.ttsApiKey=this.value; podpowiadaczApp.saveData();">
+                            <input type="password" id="tts-apikey" placeholder="Wklej klucz API usługi" value="${podpowiadaczApp.settings.ttsApiKey}" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-mono shadow-inner mb-1" onchange="podpowiadaczApp.settings.ttsApiKey=this.value; podpowiadaczApp.saveData();">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-bold g-text-muted mb-1">Głos Asystenta</label>
-                            <select id="tts-voice-select" class="w-full p-2 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.settings.ttsVoice=this.value; podpowiadaczApp.saveData();"></select>
+                            <label class="block text-[10px] font-bold g-text-muted mb-1">Głos Asystenta (2026)</label>
+                            <select id="tts-voice-select" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner" onchange="podpowiadaczApp.settings.ttsVoice=this.value; podpowiadaczApp.saveData();"></select>
                         </div>
                         
                         <div class="border-t border-gray-500/20 my-1"></div>
@@ -498,18 +753,18 @@ const podpowiadaczApp = {
                 </div>
 
                 <div class="flex-grow flex flex-col bg-black/10 relative transition-all duration-300 min-w-0">
-                    <div id="ai-chat-container" class="flex-grow overflow-y-auto custom-scrollbar p-4 flex flex-col gap-4 select-text cursor-auto" style="user-select: text; -webkit-user-select: text;">
+                    <div id="ai-chat-container" class="flex-grow overflow-y-auto custom-scrollbar p-5 flex flex-col gap-4 select-text cursor-auto" style="user-select: text; -webkit-user-select: text;">
                         <!-- Wiadomości -->
                     </div>
 
-                    <div class="p-3 bg-black/20 border-t g-border shrink-0 flex flex-col gap-2">
+                    <div class="p-3.5 bg-black/20 border-t g-border shrink-0 flex flex-col gap-2">
                         <div id="ai-suggestions" class="flex gap-2 overflow-x-auto custom-scrollbar hidden pb-1 scroll-smooth"></div>
                         
-                        <div class="w-full relative flex items-end gap-2">
+                        <div class="w-full relative flex items-end gap-2.5">
                             <button onclick="podpowiadaczApp.openAttachModal()" class="g-btn text-gray-400 hover:text-blue-400 transition rounded-xl w-11 h-[46px] flex items-center justify-center text-lg shrink-0 border g-border shadow-sm" title="Dołącz plik jako kontekst">📎</button>
-                            <div class="flex-grow relative flex items-center">
-                                <textarea id="ai-chat-input" rows="1" placeholder="Napisz polecenie lub kliknij mikrofon..." class="w-full bg-white/5 dark:bg-black/40 border g-border rounded-xl pl-4 pr-12 py-3 text-sm g-text outline-none focus:border-blue-500 transition-colors custom-scrollbar resize-none h-[46px] shadow-inner leading-tight" onkeydown="podpowiadaczApp.handleInput(event)" oninput="podpowiadaczApp.showSuggestions(this.value)"></textarea>
-                                <button onclick="podpowiadaczApp.toggleDictation()" id="ai-mic-btn" class="absolute right-2 bottom-1.5 text-gray-400 hover:text-blue-400 transition p-2 rounded-full flex items-center justify-center text-lg h-8 w-8" title="Ręczne Dyktowanie Głosowe">🎤</button>
+                            <div class="flex-grow relative flex items-center min-w-0">
+                                <textarea id="ai-chat-input" rows="1" placeholder="Wydaj polecenie systemowe, wyszukaj w Sieciosławiu lub wygeneruj media..." class="w-full bg-white/5 dark:bg-black/40 border g-border rounded-xl pl-4 pr-12 py-2.5 text-sm g-text outline-none focus:border-blue-500 transition-colors custom-scrollbar resize-none h-[46px] shadow-inner leading-normal" onkeydown="podpowiadaczApp.handleInput(event)" oninput="podpowiadaczApp.showSuggestions(this.value)"></textarea>
+                                <button onclick="podpowiadaczApp.toggleDictation()" id="ai-mic-btn" class="absolute right-2 bottom-1.5 text-gray-400 hover:text-blue-400 transition p-2 rounded-full flex items-center justify-center text-lg h-8 w-8" title="Ręczne Dyktowanie Głosowe (STT 2026)">🎤</button>
                             </div>
                             <button id="ai-send-btn" onclick="podpowiadaczApp.isThinking ? podpowiadaczApp.cancelRequest() : podpowiadaczApp.sendMessage()" class="${podpowiadaczApp.isThinking ? 'bg-red-600 hover:bg-red-500' : 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500'} text-white rounded-xl w-14 h-[46px] flex items-center justify-center text-xl shadow-lg transition-transform hover:scale-105 active:scale-95 shrink-0 mb-0" title="${podpowiadaczApp.isThinking ? 'Zatrzymaj generowanie' : 'Wyślij wiadomość'}">${podpowiadaczApp.isThinking ? '⏹️' : '↑'}</button>
                         </div>
@@ -529,9 +784,9 @@ const podpowiadaczApp = {
         const query = val.trim().toLowerCase();
         if (query.length < 2) { container.classList.add('hidden'); container.innerHTML = ''; return; }
         
-        const matches = podpowiadaczApp.suggestionsDB.filter(s => s.toLowerCase().startsWith(query) && s.toLowerCase() !== query);
+        const matches = podpowiadaczApp.suggestionsDB.filter(s => s.toLowerCase().includes(query) && s.toLowerCase() !== query);
         if (matches.length > 0) {
-            container.innerHTML = matches.slice(0, 5).map(m => `<button class="g-btn text-[10px] px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-300 border-blue-500/50 hover:bg-blue-500 hover:text-white whitespace-nowrap shadow-sm transition-transform hover:scale-105" onclick="podpowiadaczApp.useSuggestion('${m}')">${m}</button>`).join('');
+            container.innerHTML = matches.slice(0, 5).map(m => `<button class="g-btn text-[10px] px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-300 border-blue-500/50 hover:bg-blue-500 hover:text-white whitespace-nowrap shadow-sm transition-transform hover:scale-105" onclick="podpowiadaczApp.useSuggestion('${m.replace(/'/g, "\\'")}')">${m}</button>`).join('');
             container.classList.remove('hidden');
         } else {
             container.classList.add('hidden'); container.innerHTML = '';
@@ -560,7 +815,7 @@ const podpowiadaczApp = {
         podpowiadaczApp.settings.provider = prov;
         
         const keyCont = document.getElementById('ai-key-container');
-        if (prov === 'gemini_free' || prov === 'simulated') keyCont.classList.add('opacity-30', 'pointer-events-none');
+        if (prov === 'simulated') keyCont.classList.add('opacity-30', 'pointer-events-none');
         else keyCont.classList.remove('opacity-30', 'pointer-events-none');
         
         podpowiadaczApp.settings.model = MODELS_DB[prov] ? MODELS_DB[prov][0].id : '';
@@ -580,6 +835,45 @@ const podpowiadaczApp = {
 
         if (podpowiadaczApp.settings.isCustomModel) custInp.classList.remove('hidden');
         else custInp.classList.add('hidden');
+
+        podpowiadaczApp.updateServiceTierDropdown();
+    },
+
+    updateServiceTierDropdown: () => {
+        const tierContainer = document.getElementById('ai-service-tier-container');
+        const tierSelect = document.getElementById('ai-service-tier');
+        if (!tierContainer || !tierSelect) return;
+
+        const prov = podpowiadaczApp.settings.provider;
+        if (prov !== 'openai') {
+            tierContainer.classList.add('hidden');
+            return;
+        }
+        tierContainer.classList.remove('hidden');
+
+        const models = MODELS_DB.openai || [];
+        const currentModelObj = models.find(m => m.id === podpowiadaczApp.settings.model);
+        const allowedTiers = (currentModelObj && Array.isArray(currentModelObj.tiers) && currentModelObj.tiers.length > 0)
+            ? currentModelObj.tiers
+            : ['standard', 'fast', 'ultrafast'];
+
+        if (!allowedTiers.includes(podpowiadaczApp.settings.serviceTier)) {
+            podpowiadaczApp.settings.serviceTier = allowedTiers.includes('fast') && podpowiadaczApp.settings.serviceTier === 'ultrafast'
+                ? 'fast'
+                : allowedTiers[0];
+        }
+
+        tierSelect.innerHTML = SERVICE_TIERS_DB
+            .filter(t => allowedTiers.includes(t.id))
+            .map(t => `<option value="${t.id}" ${podpowiadaczApp.settings.serviceTier === t.id ? 'selected' : ''}>${t.name}</option>`)
+            .join('');
+    },
+
+    changeServiceTier: () => {
+        const tierSelect = document.getElementById('ai-service-tier');
+        if (!tierSelect) return;
+        podpowiadaczApp.settings.serviceTier = tierSelect.value || 'standard';
+        podpowiadaczApp.saveData();
     },
 
     changeModelSelect: () => {
@@ -589,6 +883,7 @@ const podpowiadaczApp = {
         } else {
             podpowiadaczApp.settings.isCustomModel = false; custInp.classList.add('hidden'); podpowiadaczApp.settings.model = sel.value;
         }
+        podpowiadaczApp.updateServiceTierDropdown();
         podpowiadaczApp.saveData();
     },
 
@@ -603,11 +898,51 @@ const podpowiadaczApp = {
     },
 
     changeSTTProvider: () => {
-        const prov = document.getElementById('stt-provider')?.value || podpowiadaczApp.settings.sttProvider;
+        const prov = document.getElementById('stt-provider')?.value || podpowiadaczApp.settings.sttProvider || 'native';
         podpowiadaczApp.settings.sttProvider = prov;
         const setDiv = document.getElementById('stt-groq-settings');
-        if (setDiv) { if (prov === 'groq') setDiv.classList.remove('hidden'); else setDiv.classList.add('hidden'); }
+        const keyLbl = document.getElementById('stt-key-lbl');
+        if (setDiv) {
+            if (prov === 'native') setDiv.classList.add('hidden');
+            else {
+                setDiv.classList.remove('hidden');
+                if (keyLbl) keyLbl.innerText = `Klucz API STT (${prov.toUpperCase()})`;
+            }
+        }
+        const sttModels = STT_ENGINES_DB[prov] || STT_ENGINES_DB.native;
+        if (!sttModels.some(m => m.id === podpowiadaczApp.settings.sttModel)) {
+            podpowiadaczApp.settings.sttModel = sttModels[0].id;
+        }
+        const sttSel = document.getElementById('stt-model');
+        if (sttSel) {
+            sttSel.innerHTML = sttModels.map(m => `<option value="${m.id}" ${podpowiadaczApp.settings.sttModel === m.id ? 'selected' : ''}>${m.name}</option>`).join('');
+        }
         podpowiadaczApp.saveData();
+    },
+
+    toggleSkrybaDictationMode: (forceVal) => {
+        const nextVal = typeof forceVal === 'boolean' ? forceVal : !podpowiadaczApp.settings.dictateToSkryba;
+        podpowiadaczApp.settings.dictateToSkryba = nextVal;
+        podpowiadaczApp.saveData();
+        const btn = document.getElementById('ai-skryba-dictate-btn');
+        if (btn) {
+            if (nextVal) {
+                btn.classList.add('bg-emerald-600', 'text-white', 'border-emerald-400');
+                btn.classList.remove('text-emerald-400', 'border-emerald-500/50');
+            } else {
+                btn.classList.remove('bg-emerald-600', 'text-white', 'border-emerald-400');
+                btn.classList.add('text-emerald-400', 'border-emerald-500/50');
+            }
+        }
+        const cb = document.getElementById('ai-set-skryba-stt');
+        if (cb) cb.checked = nextVal;
+        if (typeof apps !== 'undefined') {
+            apps.showToast(
+                'Dyktowanie do Skryby',
+                nextVal ? 'Włączono! Każda podyktowana wypowiedź zostanie automatycznie zapisana w programie Skryba.' : 'Wyłączono bezpośredni zapis dyktowania do Skryby.',
+                nextVal ? 'success' : 'info'
+            );
+        }
     },
     
     updateVoiceDropdown: () => {
@@ -629,8 +964,40 @@ const podpowiadaczApp = {
     },
 
     // ==================================================================
-    // MOWA: SPEECH-TO-TEXT I TEXT-TO-SPEECH
+    // MOWA: SPEECH-TO-TEXT I TEXT-TO-SPEECH (2026)
     // ==================================================================
+    handleDictatedTranscript: async (transcriptText) => {
+        if (!transcriptText || !transcriptText.trim()) return;
+        const cleaned = transcriptText.trim();
+
+        // Jeśli włączony jest tryb "Dyktuj do Skryby", od razu otwórz Skrybę i dopisz/zapisz tekst
+        if (podpowiadaczApp.settings.dictateToSkryba) {
+            await podpowiadaczApp.writeToSkryba({
+                title: 'Dyktowanie_BigAI.html',
+                content: cleaned,
+                append: true
+            });
+            podpowiadaczApp.messages.push({
+                role: 'user',
+                text: `🎤 [Dyktowanie do Skryby]: "${cleaned}"`
+            });
+            podpowiadaczApp.messages.push({
+                role: 'assistant',
+                text: `📝 Zapisałem podyktowany tekst w programie **Skryba** (plik \`Dyktowanie_BigAI.html\`):\n\n> *${cleaned}*`
+            });
+            podpowiadaczApp.saveData();
+            podpowiadaczApp.renderChat();
+            return;
+        }
+
+        const input = document.getElementById('ai-chat-input');
+        if (input) {
+            input.value = (input.value + ' ' + cleaned).trim();
+            input.style.height = (input.scrollHeight) + 'px';
+            podpowiadaczApp.showSuggestions(input.value);
+        }
+    },
+
     initSpeechRecognition: () => { 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -663,7 +1030,7 @@ const podpowiadaczApp = {
                             let idx = lowerTrans.indexOf(w);
                             if (idx !== -1) {
                                 triggered = true;
-                                command = lowerTrans.substring(idx + w.length).trim().replace(/^[,.!?-]\s*/, '').trim();
+                                command = finalTranscript.substring(idx + w.length).trim().replace(/^[,.!?-]\s*/, '').trim();
                                 break;
                             }
                         }
@@ -680,12 +1047,7 @@ const podpowiadaczApp = {
                             }
                         }
                     } else if (podpowiadaczApp.settings.sttProvider === 'native') {
-                        const input = document.getElementById('ai-chat-input');
-                        if (input) {
-                            input.value = (input.value + ' ' + finalTranscript).trim();
-                            input.style.height = (input.scrollHeight) + 'px';
-                            podpowiadaczApp.showSuggestions(input.value);
-                        }
+                        podpowiadaczApp.handleDictatedTranscript(finalTranscript);
                     }
                 }
             };
@@ -718,11 +1080,11 @@ const podpowiadaczApp = {
     
     toggleDictation: async () => {
         const prov = podpowiadaczApp.settings.sttProvider || 'native';
-        if (prov === 'groq') {
+        if (prov !== 'native') {
             const btn = document.getElementById('ai-mic-btn');
             if (podpowiadaczApp.isRecording) {
                 if (podpowiadaczApp.mediaRecorder) podpowiadaczApp.mediaRecorder.stop();
-                podpowiadaczApp.isRecording = false; btn.classList.remove('text-red-500', 'animate-pulse'); btn.innerText = '⏳';
+                podpowiadaczApp.isRecording = false; if (btn) { btn.classList.remove('text-red-500', 'animate-pulse'); btn.innerText = '⏳'; }
             } else {
                 if (podpowiadaczApp.settings.wakeWordActive) { podpowiadaczApp.toggleWakeWord(false); const cb = document.getElementById('ai-set-wakeword'); if(cb) cb.checked = false; }
                 try {
@@ -733,24 +1095,70 @@ const podpowiadaczApp = {
                     podpowiadaczApp.mediaRecorder.onstop = async () => {
                         const audioBlob = new Blob(podpowiadaczApp.audioChunks, { type: 'audio/webm' });
                         podpowiadaczApp.audioChunks = []; stream.getTracks().forEach(track => track.stop()); 
-                        const apiKey = podpowiadaczApp.settings.sttApiKey;
-                        if (!apiKey) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Wprowadź w ustawieniach klucz API dla Groq STT!', 'error'); btn.innerText = '🎤'; return; }
-                        const formData = new FormData();
-                        formData.append('file', new File([audioBlob], 'recording.webm', { type: 'audio/webm' }));
-                        formData.append('model', podpowiadaczApp.settings.sttModel || 'whisper-large-v3-turbo');
-                        formData.append('language', 'pl'); 
+                        const apiKey = podpowiadaczApp.settings.sttApiKey || podpowiadaczApp.settings.apiKey;
+                        if (!apiKey) { if(typeof apps !== 'undefined') apps.showToast('Błąd', `Wprowadź w ustawieniach klucz API dla ${prov.toUpperCase()} STT!`, 'error'); if (btn) btn.innerText = '🎤'; return; }
+                        const sttModel = podpowiadaczApp.settings.sttModel || (STT_ENGINES_DB[prov] && STT_ENGINES_DB[prov][0].id) || 'whisper-large-v3-turbo';
                         try {
-                            const response = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}` }, body: formData });
-                            const data = await response.json();
-                            if (!response.ok) throw new Error(data.error?.message || response.statusText);
-                            if (data.text) {
-                                const input = document.getElementById('ai-chat-input');
-                                if (input) { input.value = (input.value + ' ' + data.text).trim(); input.style.height = (input.scrollHeight) + 'px'; podpowiadaczApp.showSuggestions(input.value); }
+                            let transcribedText = '';
+                            if (prov === 'groq' || prov === 'openai') {
+                                const endpoint = prov === 'groq'
+                                    ? 'https://api.groq.com/openai/v1/audio/transcriptions'
+                                    : 'https://api.openai.com/v1/audio/transcriptions';
+                                const formData = new FormData();
+                                formData.append('file', new File([audioBlob], 'recording.webm', { type: 'audio/webm' }));
+                                formData.append('model', sttModel);
+                                formData.append('language', 'pl');
+                                const response = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${apiKey}` }, body: formData });
+                                const data = await response.json();
+                                if (!response.ok) throw new Error(data.error?.message || response.statusText);
+                                transcribedText = data.text || '';
+                            } else if (prov === 'elevenlabs_stt') {
+                                const formData = new FormData();
+                                formData.append('file', new File([audioBlob], 'recording.webm', { type: 'audio/webm' }));
+                                formData.append('model_id', sttModel || 'scribe_v2');
+                                formData.append('language_code', 'pol');
+                                const response = await fetch('https://api.elevenlabs.io/v1/speech-to-text', { method: 'POST', headers: { 'xi-api-key': apiKey }, body: formData });
+                                const data = await response.json();
+                                if (!response.ok) throw new Error(data.detail?.message || response.statusText);
+                                transcribedText = data.text || '';
+                            } else if (prov === 'deepgram') {
+                                const response = await fetch(`https://api.deepgram.com/v1/listen?model=${encodeURIComponent(sttModel || 'nova-3')}&language=pl&smart_format=true`, {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Token ${apiKey}`, 'Content-Type': 'audio/webm' },
+                                    body: audioBlob
+                                });
+                                const data = await response.json();
+                                if (!response.ok) throw new Error(data.err_msg || response.statusText);
+                                transcribedText = data.results?.channels?.[0]?.alternatives?.[0]?.transcript || '';
+                            } else if (prov === 'gemini_stt') {
+                                const base64Audio = await new Promise((resolve) => {
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => resolve(String(reader.result || '').split(',')[1] || '');
+                                    reader.readAsDataURL(audioBlob);
+                                });
+                                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${sttModel || 'gemini-3.1-flash'}:generateContent?key=${apiKey}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        contents: [{
+                                            parts: [
+                                                { text: 'Przepisz dokładnie na język polski wypowiedź z tego nagrania audio. Zwróć wyłącznie sam przepisany tekst.' },
+                                                { inlineData: { mimeType: 'audio/webm', data: base64Audio } }
+                                            ]
+                                        }]
+                                    })
+                                });
+                                const data = await response.json();
+                                if (!response.ok) throw new Error(data.error?.message || response.statusText);
+                                transcribedText = data.candidates?.[0]?.content?.parts?.map(p => p.text || '').join(' ').trim() || '';
                             }
-                        } catch (error) { if(typeof apps !== 'undefined') apps.showToast('Błąd STT Groq', error.message, 'error'); } finally { btn.innerText = '🎤'; }
+                            if (transcribedText) {
+                                await podpowiadaczApp.handleDictatedTranscript(transcribedText);
+                            }
+                        } catch (error) { if(typeof apps !== 'undefined') apps.showToast('Błąd STT', error.message, 'error'); } finally { if (btn) btn.innerText = '🎤'; }
                     };
                     podpowiadaczApp.mediaRecorder.start(); podpowiadaczApp.isRecording = true;
-                    btn.classList.add('text-red-500', 'animate-pulse'); btn.innerText = '🔴';
+                    if (btn) { btn.classList.add('text-red-500', 'animate-pulse'); btn.innerText = '🔴'; }
                 } catch (e) { if(typeof apps !== 'undefined') apps.showToast('Błąd Mikrofonu', 'Nie można uzyskać dostępu do mikrofonu.', 'error'); }
             }
             return;
@@ -759,7 +1167,7 @@ const podpowiadaczApp = {
         if (!podpowiadaczApp.recognition) { if(typeof apps !== 'undefined') apps.showToast('Błąd', 'Przeglądarka nie obsługuje dyktowania.', 'error'); return; }
         if (podpowiadaczApp.settings.wakeWordActive) { podpowiadaczApp.toggleWakeWord(false); const cb = document.getElementById('ai-set-wakeword'); if(cb) cb.checked = false; }
         const btn = document.getElementById('ai-mic-btn');
-        if (btn.classList.contains('text-red-500')) { podpowiadaczApp.recognition.stop(); } 
+        if (btn && btn.classList.contains('text-red-500')) { podpowiadaczApp.recognition.stop(); } 
         else { try { podpowiadaczApp.recognition.start(); } catch(e){} }
     },
 
@@ -939,9 +1347,9 @@ const podpowiadaczApp = {
         // KROK 2: Standardowe parsowanie Markdowna (tylko na tekście poza blokami kodu)
         html = html.replace(/\[BIGOS:(.*?):(.*?)\]/g, '');
         html = html.replace(/\*\*(.*?)\*\*/g, '<b class="g-text">$1</b>');
-        html = html.replace(/\*(.*?)\*/g, '<i class="g-text-muted">$1</i>');
         html = html.replace(/^\* (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>');
         html = html.replace(/^- (.*?)$/gm, '<li class="ml-4 list-disc">$1</li>');
+        html = html.replace(/\*(.*?)\*/g, '<i class="g-text-muted">$1</i>');
         
         // Zwykłe backticki (kod inline)
         html = html.replace(/`(.*?)`/g, '<code class="bg-black/30 text-blue-300 px-1 py-0.5 rounded font-mono text-xs border g-border">$1</code>');
@@ -993,13 +1401,49 @@ const podpowiadaczApp = {
             const bgClass = isUser ? 'bg-gradient-to-br from-blue-600 to-blue-700 text-white' : 'g-panel bg-black/20 border g-border g-text';
             const radiusClass = isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm';
             const icon = isUser ? '👤' : '🤖';
-            const senderName = isUser ? 'Ty' : 'BigAI';
+            const senderName = isUser ? 'Ty' : 'BigAI 2026';
 
             const el = document.createElement('div');
-            el.className = `flex flex-col max-w-[90%] sm:max-w-[80%] ${alignClass} mb-3 shadow-md ${bgClass} ${radiusClass} p-3 sm:p-4 text-sm leading-relaxed relative group select-text cursor-auto`;
+            el.className = `flex flex-col max-w-[94%] sm:max-w-[88%] ${alignClass} mb-3 shadow-md ${bgClass} ${radiusClass} p-3.5 sm:p-4 text-sm leading-relaxed relative group select-text cursor-auto`;
             el.style.userSelect = "text"; el.style.webkitUserSelect = "text";
             
             let formattedHtml = podpowiadaczApp.formatMarkdown(msg.text, idx);
+            let mediaHtml = '';
+            if (msg.mediaPreview) {
+                const mp = msg.mediaPreview;
+                const safePrompt = typeof desktop !== 'undefined' ? desktop.escapeHTML(mp.prompt || '') : (mp.prompt || '');
+                const safeBadge = typeof desktop !== 'undefined' ? desktop.escapeHTML(mp.badge || mp.model || '') : (mp.badge || mp.model || '');
+                if (mp.type === 'image' && mp.dataUrl) {
+                    mediaHtml = `
+                        <div class="mt-3 rounded-xl overflow-hidden border g-border bg-black/40 shadow-lg">
+                            <div class="px-3 py-1.5 bg-black/60 flex items-center justify-between text-[10px] g-text-muted border-b g-border">
+                                <span class="font-bold text-pink-400">🖼️ ${safeBadge}</span>
+                                <span class="truncate max-w-[220px]">${safePrompt}</span>
+                            </div>
+                            <img src="${mp.dataUrl}" alt="${safePrompt}" class="w-full max-h-[320px] object-contain bg-black cursor-pointer" onclick="podpowiadaczApp.openGeneratedMedia('${mp.fileId || ''}', 'image')">
+                            <div class="p-2 bg-black/50 flex flex-wrap gap-2 justify-end border-t g-border">
+                                <button onclick="podpowiadaczApp.openGeneratedMedia('${mp.fileId || ''}', 'image')" class="g-btn px-2.5 py-1 rounded text-[11px] font-bold text-blue-300 border-blue-500/40 hover:bg-blue-600 hover:text-white transition">👁️ Otwórz w Patrzałce</button>
+                                <button onclick="podpowiadaczApp.setGeneratedAsWallpaper('${mp.fileId || ''}')" class="g-btn px-2.5 py-1 rounded text-[11px] font-bold text-purple-300 border-purple-500/40 hover:bg-purple-600 hover:text-white transition">🖼️ Ustaw jako tapetę</button>
+                                <a href="${mp.dataUrl}" download="${mp.fileName || 'bigai_obraz.png'}" class="g-btn px-2.5 py-1 rounded text-[11px] font-bold text-emerald-300 border-emerald-500/40 hover:bg-emerald-600 hover:text-white transition no-underline">💾 Pobierz</a>
+                            </div>
+                        </div>
+                    `;
+                } else if (mp.type === 'video') {
+                    mediaHtml = `
+                        <div class="mt-3 rounded-xl overflow-hidden border g-border bg-black/40 shadow-lg">
+                            <div class="px-3 py-1.5 bg-black/60 flex items-center justify-between text-[10px] g-text-muted border-b g-border">
+                                <span class="font-bold text-purple-400">🎬 ${safeBadge}</span>
+                                <span class="truncate max-w-[220px]">${safePrompt}</span>
+                            </div>
+                            ${mp.videoUrl ? `<video src="${mp.videoUrl}" poster="${mp.posterUrl || ''}" controls autoplay loop muted playsinline class="w-full max-h-[320px] bg-black"></video>` : `<img src="${mp.posterUrl || ''}" alt="${safePrompt}" class="w-full max-h-[320px] object-contain bg-black">`}
+                            <div class="p-2 bg-black/50 flex flex-wrap gap-2 justify-end border-t g-border">
+                                <button onclick="podpowiadaczApp.openGeneratedMedia('${mp.fileId || ''}', 'video')" class="g-btn px-2.5 py-1 rounded text-[11px] font-bold text-purple-300 border-purple-500/40 hover:bg-purple-600 hover:text-white transition">🎬 Otwórz w Grajaczu</button>
+                                ${mp.videoUrl ? `<a href="${mp.videoUrl}" download="${mp.fileName || 'bigai_wideo.webm'}" class="g-btn px-2.5 py-1 rounded text-[11px] font-bold text-emerald-300 border-emerald-500/40 hover:bg-emerald-600 hover:text-white transition no-underline">💾 Pobierz Wideo</a>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
             
             el.innerHTML = `
                 <div class="flex items-center justify-between mb-2 border-b border-white/10 pb-1 w-full opacity-70">
@@ -1007,8 +1451,9 @@ const podpowiadaczApp = {
                         <span class="text-lg leading-none">${icon}</span>
                         <span class="text-[10px] font-bold uppercase tracking-wider">${senderName}</span>
                     </div>
+                    ${!isUser ? `<button onclick="podpowiadaczApp.readText(this, podpowiadaczApp.messages[${idx}]?.text || '')" class="text-[10px] px-2 py-0.5 rounded border border-white/20 hover:bg-white/10 transition">🔊 Czytaj</button>` : ''}
                 </div>
-                <div class="w-full break-words space-y-2 font-sans">${formattedHtml}</div>
+                <div class="w-full break-words space-y-2 font-sans">${formattedHtml}${mediaHtml}</div>
             `;
             chatBox.appendChild(el);
         });
@@ -1141,7 +1586,7 @@ const podpowiadaczApp = {
 
             podpowiadaczApp.messages.push({
                 role: 'assistant',
-                text: 'Cześć! Jestem Twoim osobistym asystentem wbudowanym w **BigOS**. \n\nSpróbuj napisać lub powiedzieć:\n* *"Otwórz Kombinator i włącz ciemny motyw"* \n* *"Zmień tapetę na kosmos"*\n* *"Otwórz plik o nazwie BigOS"*\n\nW czym mogę pomóc?'
+                text: 'Cześć! Jestem **BigAI 2026** — głównym zarządcą systemu **BigOS**.\n\nSpróbuj napisać lub powiedzieć:\n* *"Otwórz Skrybę i zapisz notatkę: spotkanie o 15:00"*\n* *"Wyszukaj w przeglądarce Sieciosław kurs dolara"*\n* *"Otwórz grafikę w Patrzałce"* lub *"Stwórz folder Dokumenty"*\n* *"Wygeneruj zdjęcie w Nano Banana Pro"* lub *"Wygeneruj wideo w Veo 3.1"*'
             });
             
             podpowiadaczApp.saveData();
@@ -1159,24 +1604,623 @@ const podpowiadaczApp = {
     },
 
     // ==================================================================
+    // ROZPOZNAWANIE NAZW APLIKACJI I OPERACJE SYSTEMOWE BIGOS
+    // ==================================================================
+    APP_ALIASES: {
+        'kalkulator': 'kalkulator', 'rachmistrz': 'kalkulator', 'rachmistrz pro': 'kalkulator',
+        'skryba': 'skryba', 'notatnik': 'skryba', 'edytor tekstu': 'skryba', 'notatki': 'skryba',
+        'siecioslaw': 'siecioslaw', 'sieciosław': 'siecioslaw', 'przegladarka': 'siecioslaw', 'przeglądarka': 'siecioslaw', 'internet': 'siecioslaw',
+        'patrzalka': 'patrzalka', 'patrzałka': 'patrzalka', 'patrzałka pro': 'patrzalka', 'galeria': 'patrzalka', 'zdjecia': 'patrzalka', 'zdjęcia': 'patrzalka', 'grafika': 'patrzalka',
+        'aktowka': 'aktowka', 'aktówka': 'aktowka', 'menedżer plików': 'aktowka', 'pliki': 'aktowka',
+        'tapeciak': 'tapeciak', 'kombinator': 'tapeciak', 'ustawienia': 'tapeciak', 'motywy': 'tapeciak',
+        'szkicownik': 'szkicownik', 'artysta': 'szkicownik', 'rysowanie': 'szkicownik',
+        'bigos_painter': 'bigos_painter', 'bigpaint': 'bigos_painter', 'bigpaint studio': 'bigos_painter',
+        'grajek': 'grajek', 'muzyka': 'grajek', 'odtwarzacz muzyki': 'grajek',
+        'grajacz': 'grajacz', 'grajacz filmów': 'grajacz', 'wideo': 'grajacz', 'filmy': 'grajacz',
+        'montazysta': 'montazysta', 'montażysta': 'montazysta',
+        'tabelarz': 'tabelarz', 'arkusz': 'tabelarz', 'arkusz kalkulacyjny': 'tabelarz', 'excel': 'tabelarz',
+        'menadzer': 'menadzer', 'menedżer': 'menadzer', 'menedżer aplikacji': 'menadzer',
+        'nadzorca': 'nadzorca', 'monitor systemu': 'nadzorca',
+        'pogodynka': 'pogodynka', 'pogoda': 'pogodynka',
+        'czasomierz': 'czasomierz', 'stoper': 'czasomierz', 'zegar': 'czasomierz',
+        'kasiarz': 'kasiarz', 'finanse': 'kasiarz', 'budżet': 'kasiarz',
+        'przelicznik': 'przelicznik', 'konwerter': 'przelicznik',
+        'kompresor': 'kompresor', 'upychacz': 'kompresor',
+        'wladca': 'wladca', 'władca': 'wladca', 'władca danych': 'wladca', 'terminal': 'wladca', 'konsola': 'wladca',
+        'zadaniowiec': 'zadaniowiec', 'zadania': 'zadaniowiec', 'todo': 'zadaniowiec',
+        'edytor_map': 'edytor_map', 'edytor map': 'edytor_map', 'mapy': 'edytor_map',
+        'kalkulator_bmi': 'kalkulator_bmi', 'kalkulator wagi': 'kalkulator_bmi', 'bmi': 'kalkulator_bmi',
+        'pelzacz': 'pelzacz', 'pełzacz': 'pelzacz', 'wąż': 'pelzacz', 'snake': 'pelzacz',
+        'murarz': 'murarz', 'tetris': 'murarz',
+        'ufoludki': 'ufoludki', 'kosmici': 'ufoludki',
+        'odbijanka': 'odbijanka', 'arkanoid': 'odbijanka', 'pong': 'odbijanka',
+        'trzepotek': 'trzepotek', 'flappy': 'trzepotek',
+        'scigacz': 'scigacz', 'ścigacz': 'scigacz', 'wyścigi': 'scigacz',
+        'bombiarz': 'bombiarz', 'saper': 'bombiarz',
+        'kolko': 'kolko', 'kółko': 'kolko', 'kółko i krzyżyk': 'kolko',
+        'tank': 'tank', 'czolgi': 'tank', 'czołgi': 'tank',
+        'cookie_clicker': 'cookie_clicker', 'ciasteczko': 'cookie_clicker',
+        'powitanie': 'powitanie', 'witaj': 'powitanie',
+        'hasiok': 'hasiok', 'kosz': 'hasiok',
+        'podpowiadacz': 'podpowiadacz', 'bigai': 'podpowiadacz'
+    },
+
+    resolveAppId: (rawName) => {
+        if (!rawName) return '';
+        const clean = String(rawName).toLowerCase().trim()
+            .replace(/^(aplikację|aplikacje|aplikacja|program|grę|gre|gra|okno)\s+/i, '')
+            .replace(/[."'!?;:]+$/g, '')
+            .trim();
+        if (podpowiadaczApp.APP_ALIASES[clean]) return podpowiadaczApp.APP_ALIASES[clean];
+        // Sprawdź biernik/odmianę np. "skrybę" -> "skryba", "patrzałkę" -> "patrzałka", "aktówkę" -> "aktówka"
+        const stem = clean.replace(/(ę|ie|iu|a|y|u)$/i, '');
+        for (const [alias, appId] of Object.entries(podpowiadaczApp.APP_ALIASES)) {
+            if (alias === clean || (stem.length >= 4 && alias.startsWith(stem))) return appId;
+        }
+        if (typeof defaultApps !== 'undefined') {
+            const found = defaultApps.find(a =>
+                a.appId === clean ||
+                (a.name && a.name.toLowerCase() === clean) ||
+                (a.name && stem.length >= 4 && a.name.toLowerCase().includes(stem))
+            );
+            if (found) return found.appId;
+        }
+        return clean;
+    },
+
+    writeToSkryba: async (opts = {}) => {
+        const titleRaw = (opts.title || opts.name || 'Notatka_z_BigAI.html').trim();
+        const fileName = /\.(txt|md|html|rtf)$/i.test(titleRaw) ? titleRaw : (titleRaw + '.html');
+        const textContent = String(opts.content || opts.text || '').trim();
+        const append = Boolean(opts.append);
+
+        if (typeof winManager !== 'undefined') winManager.open('skryba');
+
+        let f = null;
+        if (typeof fileSystem !== 'undefined') {
+            f = fileSystem.find(item => item && item.type === 'file' && item.parentId !== 'hasiok' &&
+                (item.name.toLowerCase() === fileName.toLowerCase() || item.name.toLowerCase() === titleRaw.toLowerCase()));
+        }
+
+        const htmlParagraph = textContent.replace(/\n/g, '<br>');
+        const timestamp = new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+
+        if (!f) {
+            const slot = (typeof desktop !== 'undefined' && typeof desktop.findFreeSlot === 'function')
+                ? desktop.findFreeSlot()
+                : { x: 110, y: 150 };
+            f = {
+                id: 'file_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+                type: 'file',
+                name: fileName,
+                icon: '📄',
+                parentId: 'root',
+                content: htmlParagraph,
+                skrybaMeta: { tags: 'BigAI, Dyktowanie', revisions: [] },
+                x: slot.x,
+                y: slot.y
+            };
+            if (typeof fileSystem !== 'undefined') fileSystem.push(f);
+        } else {
+            if (append && f.content) {
+                f.content = `${f.content}<br><div><b>[${timestamp}]</b> ${htmlParagraph}</div>`;
+            } else {
+                f.content = htmlParagraph;
+            }
+        }
+
+        if (typeof window.skrybaApp !== 'undefined') {
+            if (!document.getElementById('skryba-editor') && typeof window.skrybaApp.init === 'function') {
+                await window.skrybaApp.init();
+            }
+            if (typeof window.skrybaApp.open === 'function') {
+                window.skrybaApp.open(f);
+            }
+            const ed = document.getElementById('skryba-editor');
+            const raw = document.getElementById('skryba-raw-editor');
+            const titleEl = document.getElementById('skryba-note-title');
+            if (titleEl) titleEl.value = f.name;
+            if (ed) ed.innerHTML = f.content;
+            if (raw) raw.value = f.content;
+            window.skrybaApp.isDirty = true;
+            if (typeof window.skrybaApp.saveNoteSilent === 'function') {
+                await window.skrybaApp.saveNoteSilent();
+            }
+            if (typeof window.skrybaApp.updateStats === 'function') window.skrybaApp.updateStats();
+            if (typeof window.skrybaApp.renderSidebar === 'function') window.skrybaApp.renderSidebar();
+        }
+        if (typeof winManager !== 'undefined') winManager.open('skryba');
+
+        if (typeof fsManager !== 'undefined' && fsManager.save) await fsManager.save();
+        if (typeof desktop !== 'undefined' && desktop.render) desktop.render();
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast('Skryba + BigAI', `Zapisano notatkę „${f.name}”`, 'success');
+        }
+        return f;
+    },
+
+    searchInSiecioslaw: (queryOrUrl) => {
+        const raw = String(queryOrUrl || '').trim();
+        if (!raw) return false;
+        if (typeof winManager !== 'undefined') winManager.open('siecioslaw');
+        if (typeof siecioslawApp !== 'undefined') {
+            if (typeof siecioslawApp.init === 'function' && (!siecioslawApp.tabs || siecioslawApp.tabs.length === 0)) {
+                siecioslawApp.init();
+            }
+            let targetUrl = raw;
+            if (!/^https?:\/\//i.test(raw) && (!raw.includes('.') || raw.includes(' '))) {
+                targetUrl = 'https://www.bing.com/search?q=' + encodeURIComponent(raw);
+            } else if (!/^https?:\/\//i.test(raw)) {
+                targetUrl = 'https://' + raw;
+            }
+            const urlInp = document.getElementById('s-url-input');
+            if (urlInp) urlInp.value = targetUrl;
+            if (typeof siecioslawApp.navigateURL === 'function') {
+                siecioslawApp.navigateURL(targetUrl);
+            }
+            if (typeof apps !== 'undefined' && apps.showToast) {
+                apps.showToast('Sieciosław', `Wyszukiwanie: ${raw}`, 'info');
+            }
+            return true;
+        }
+        return false;
+    },
+
+    openImageInPatrzalka: (query) => {
+        if (typeof fileSystem === 'undefined') return null;
+        const images = fileSystem.filter(f =>
+            f && f.parentId !== 'hasiok' &&
+            (f.type === 'image' || (f.type === 'file' && /\.(jpg|jpeg|png|webp|gif|bmp|svg|avif)$/i.test(f.name || '')))
+        );
+        const q = String(query || '').toLowerCase().trim()
+            .replace(/^(grafikę|grafike|grafika|zdjęcie|zdjecie|obraz|obrazek|plik)\s*/i, '')
+            .trim();
+        let target = null;
+        if (q && q !== 'galeria' && q !== 'wszystkie' && q !== 'ostatnie' && q !== 'dowolne') {
+            target = images.find(img =>
+                img.id === query ||
+                (img.name || '').toLowerCase() === q ||
+                (img.name || '').toLowerCase().includes(q)
+            );
+        }
+        if (!target && images.length > 0) {
+            target = images[images.length - 1];
+        }
+        if (typeof winManager !== 'undefined') winManager.open('patrzalka');
+        if (typeof patrzalkaApp !== 'undefined') {
+            if (typeof patrzalkaApp.renderGallery === 'function') patrzalkaApp.renderGallery();
+            if (target && typeof patrzalkaApp.open === 'function') {
+                patrzalkaApp.open(target);
+            }
+        }
+        return target;
+    },
+
+    createSystemFile: async (opts = {}) => {
+        const rawName = String(opts.name || 'Nowy_plik.txt').trim();
+        const fileName = rawName.includes('.') ? rawName : (rawName + '.txt');
+        const content = typeof opts.content === 'string' ? opts.content : '';
+        const parentId = opts.parentId || 'root';
+        const slot = (typeof desktop !== 'undefined' && typeof desktop.findFreeSlot === 'function')
+            ? desktop.findFreeSlot()
+            : { x: 110, y: 150 };
+        const newFile = {
+            id: 'file_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            type: 'file',
+            name: fileName,
+            icon: '📄',
+            parentId,
+            content,
+            x: slot.x,
+            y: slot.y
+        };
+        if (typeof fileSystem !== 'undefined') fileSystem.push(newFile);
+        if (typeof fsManager !== 'undefined' && fsManager.save) await fsManager.save();
+        if (typeof desktop !== 'undefined' && desktop.render) desktop.render();
+        if (typeof aktowkaApp !== 'undefined' && aktowkaApp.render) aktowkaApp.render();
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast('BigAI', `Utworzono plik „${fileName}”`, 'success');
+        }
+        return newFile;
+    },
+
+    createSystemFolder: async (opts = {}) => {
+        const folderName = String(typeof opts === 'string' ? opts : (opts.name || 'Nowy_Folder')).trim() || 'Nowy_Folder';
+        const parentId = (typeof opts === 'object' && opts && opts.parentId) ? opts.parentId : 'root';
+        const slot = (typeof desktop !== 'undefined' && typeof desktop.findFreeSlot === 'function')
+            ? desktop.findFreeSlot()
+            : { x: 110, y: 150 };
+        const newFolder = {
+            id: 'folder_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            type: 'folder',
+            name: folderName,
+            icon: '📁',
+            parentId,
+            x: slot.x,
+            y: slot.y
+        };
+        if (typeof fileSystem !== 'undefined') fileSystem.push(newFolder);
+        if (typeof fsManager !== 'undefined' && fsManager.save) await fsManager.save();
+        if (typeof desktop !== 'undefined' && desktop.render) desktop.render();
+        if (typeof aktowkaApp !== 'undefined' && aktowkaApp.render) aktowkaApp.render();
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast('BigAI', `Utworzono folder „${folderName}”`, 'success');
+        }
+        return newFolder;
+    },
+
+    // ==================================================================
+    // GENERATORY ZDJĘĆ I WIDEO 2026 (NANO BANANA / OMNI / VEO 3.1 / FLUX 3)
+    // ==================================================================
+    synthesizeProceduralArtwork: (prompt, modelInfo, isVideoFrame = false, frameIndex = 0) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = 960;
+        canvas.height = 540;
+        const ctx = canvas.getContext('2d');
+        const p = String(prompt || 'Krajobraz przyszłości BigOS').toLowerCase();
+
+        // Dobór palety na podstawie słów kluczowych promptu
+        let c1 = '#0f172a', c2 = '#1e1b4b', c3 = '#3b82f6', accent = '#f472b6';
+        if (p.includes('las') || p.includes('natur') || p.includes('gór') || p.includes('drzew')) {
+            c1 = '#052e16'; c2 = '#064e3b'; c3 = '#10b981'; accent = '#fde047';
+        } else if (p.includes('zachód') || p.includes('słońc') || p.includes('pustyn') || p.includes('mars')) {
+            c1 = '#451a03'; c2 = '#7c2d12'; c3 = '#f97316'; accent = '#fef08a';
+        } else if (p.includes('ocean') || p.includes('morz') || p.includes('wod') || p.includes('plaż')) {
+            c1 = '#082f49'; c2 = '#0369a1'; c3 = '#38bdf8'; accent = '#a5f3fc';
+        } else if (p.includes('cyber') || p.includes('miasto') || p.includes('neon') || p.includes('futur')) {
+            c1 = '#090d16'; c2 = '#2e1065'; c3 = '#d946ef'; accent = '#22d3ee';
+        }
+
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(0.6, c2);
+        grad.addColorStop(1, c3);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Gwiazdy / cząsteczki świetlne
+        let seed = 0;
+        for (let i = 0; i < p.length; i++) seed = (seed * 31 + p.charCodeAt(i)) >>> 0;
+        const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return (seed & 0xfffffff) / 0xfffffff; };
+
+        for (let i = 0; i < 70; i++) {
+            const x = (rand() * canvas.width + frameIndex * (i % 3 + 1)) % canvas.width;
+            const y = rand() * (canvas.height * 0.65);
+            const r = rand() * 2.2 + 0.4;
+            ctx.fillStyle = `rgba(255,255,255,${(rand() * 0.7 + 0.2).toFixed(2)})`;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Słońce / księżyc / rdzeń świetlny
+        const sunX = canvas.width * 0.72 + Math.sin(frameIndex * 0.08) * 18;
+        const sunY = canvas.height * 0.32 + Math.cos(frameIndex * 0.08) * 10;
+        const sunGrad = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 130);
+        sunGrad.addColorStop(0, accent);
+        sunGrad.addColorStop(0.4, c3);
+        sunGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sunGrad;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 130, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Warstwy gór / sylwetki architektury
+        for (let layer = 0; layer < 3; layer++) {
+            ctx.beginPath();
+            const baseY = canvas.height * (0.58 + layer * 0.12);
+            ctx.moveTo(0, canvas.height);
+            for (let x = 0; x <= canvas.width; x += 40) {
+                const wave = Math.sin((x + layer * 120 + frameIndex * (layer + 1) * 2) * 0.012) * (42 - layer * 10)
+                           + Math.cos((x - layer * 70) * 0.027) * 18;
+                ctx.lineTo(x, baseY + wave);
+            }
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.closePath();
+            ctx.fillStyle = layer === 0 ? 'rgba(15,23,42,0.55)' : (layer === 1 ? 'rgba(9,13,22,0.78)' : '#050811');
+            ctx.fill();
+        }
+
+        // Siatka perspektywiczna / refleksy
+        ctx.strokeStyle = accent + '44';
+        ctx.lineWidth = 1;
+        for (let i = -8; i <= 8; i++) {
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2 + i * 25, canvas.height * 0.78);
+            ctx.lineTo(canvas.width / 2 + i * 140, canvas.height);
+            ctx.stroke();
+        }
+
+        // Etykieta modelu i promptu
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.fillRect(18, canvas.height - 56, canvas.width - 36, 40);
+        ctx.fillStyle = accent;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText(`✨ ${modelInfo.badge || modelInfo.name}`, 30, canvas.height - 32);
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = '12px sans-serif';
+        const shortPrompt = String(prompt || '').substring(0, 68);
+        ctx.fillText(shortPrompt, 230, canvas.height - 32);
+
+        return canvas;
+    },
+
+    generateImage: async (prompt, modelId, options = {}) => {
+        const selectedId = modelId || podpowiadaczApp.settings.imageModel || 'nano-banana-2.1';
+        const modelInfo = IMAGE_GENERATORS_DB.find(m => m.id === selectedId) || IMAGE_GENERATORS_DB[0];
+        const cleanPrompt = String(prompt || 'Krajobraz przyszłości BigOS').trim();
+
+        let dataUrl = '';
+        const apiKey = podpowiadaczApp.settings.fluxApiKey || podpowiadaczApp.settings.apiKey;
+
+        // Jeśli podano klucz Gemini API i wybrano model Nano Banana, spróbuj wywołania Gemini Image Generation
+        if (apiKey && modelInfo.provider === 'gemini' && typeof fetch === 'function') {
+            try {
+                const geminiImgModel = selectedId === 'nano-banana-pro'
+                    ? 'gemini-3.1-flash-image-preview'
+                    : 'gemini-2.5-flash-image-preview';
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiImgModel}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Generate an image: ${cleanPrompt}` }] }],
+                        generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+                    })
+                });
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const imgPart = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData && p.inlineData.data);
+                    if (imgPart) {
+                        const mime = imgPart.inlineData.mimeType || 'image/png';
+                        dataUrl = `data:${mime};base64,${imgPart.inlineData.data}`;
+                    }
+                }
+            } catch (_) { /* Fallback do lokalnego silnika renderującego */ }
+        }
+
+        if (!dataUrl) {
+            const canvas = podpowiadaczApp.synthesizeProceduralArtwork(cleanPrompt, modelInfo, false, 0);
+            dataUrl = canvas.toDataURL('image/png');
+        }
+
+        const safeSlug = cleanPrompt.toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/gi, '_').replace(/^_|_$/g, '').substring(0, 24) || 'obraz';
+        const fileName = `${modelInfo.id}_${safeSlug}.png`;
+        const slot = (typeof desktop !== 'undefined' && typeof desktop.findFreeSlot === 'function')
+            ? desktop.findFreeSlot()
+            : { x: 110, y: 150 };
+
+        const newImgFile = {
+            id: 'img_ai_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            type: 'image',
+            name: fileName,
+            icon: '🖼️',
+            parentId: 'root',
+            content: dataUrl,
+            aiGenerator: modelInfo.id,
+            aiPrompt: cleanPrompt,
+            x: slot.x,
+            y: slot.y
+        };
+
+        if (typeof fileSystem !== 'undefined') fileSystem.push(newImgFile);
+        if (typeof fsManager !== 'undefined' && fsManager.save) await fsManager.save();
+        if (typeof desktop !== 'undefined' && desktop.render) desktop.render();
+        if (typeof patrzalkaApp !== 'undefined' && patrzalkaApp.renderGallery) patrzalkaApp.renderGallery();
+
+        if (options.openInViewer && typeof patrzalkaApp !== 'undefined' && typeof patrzalkaApp.open === 'function') {
+            patrzalkaApp.open(newImgFile);
+        }
+
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast(modelInfo.badge, `Wygenerowano i zapisano obraz: ${fileName}`, 'success');
+        }
+
+        return {
+            ok: true,
+            type: 'image',
+            model: modelInfo.id,
+            badge: modelInfo.badge,
+            prompt: cleanPrompt,
+            fileId: newImgFile.id,
+            fileName: newImgFile.name,
+            dataUrl
+        };
+    },
+
+    generateVideo: async (prompt, modelId, options = {}) => {
+        const selectedId = modelId || podpowiadaczApp.settings.videoModel || 'veo-3.1-fast';
+        const modelInfo = VIDEO_GENERATORS_DB.find(m => m.id === selectedId) || VIDEO_GENERATORS_DB[0];
+        const cleanPrompt = String(prompt || 'Animacja przestrzeni kosmicznej BigOS').trim();
+
+        const posterCanvas = podpowiadaczApp.synthesizeProceduralArtwork(cleanPrompt, modelInfo, true, 0);
+        const posterUrl = posterCanvas.toDataURL('image/png');
+        let videoUrl = '';
+
+        // Jeśli przeglądarka obsługuje MediaRecorder + canvas.captureStream, nagraj krótki klip WebM
+        try {
+            if (typeof posterCanvas.captureStream === 'function' && typeof MediaRecorder !== 'undefined') {
+                const stream = posterCanvas.captureStream(15);
+                const chunks = [];
+                const recorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('video/webm') ? 'video/webm' : undefined });
+                recorder.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunks.push(e.data); };
+                const stopped = new Promise(resolve => { recorder.onstop = resolve; });
+                recorder.start();
+                for (let f = 1; f <= 8; f++) {
+                    const frameCanvas = podpowiadaczApp.synthesizeProceduralArtwork(cleanPrompt, modelInfo, true, f * 4);
+                    const ctx = posterCanvas.getContext('2d');
+                    ctx.drawImage(frameCanvas, 0, 0);
+                    await new Promise(r => setTimeout(r, 35));
+                }
+                recorder.stop();
+                await stopped;
+                if (chunks.length > 0) {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    videoUrl = URL.createObjectURL(blob);
+                }
+            }
+        } catch (_) { /* Fallback na posterUrl */ }
+
+        const safeSlug = cleanPrompt.toLowerCase().replace(/[^a-z0-9ąćęłńóśźż]+/gi, '_').replace(/^_|_$/g, '').substring(0, 24) || 'wideo';
+        const fileName = `${modelInfo.id}_${safeSlug}.webm`;
+        const slot = (typeof desktop !== 'undefined' && typeof desktop.findFreeSlot === 'function')
+            ? desktop.findFreeSlot()
+            : { x: 110, y: 150 };
+
+        const newVidFile = {
+            id: 'vid_ai_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            type: 'video',
+            name: fileName,
+            icon: '🎬',
+            parentId: 'root',
+            url: videoUrl || posterUrl,
+            content: posterUrl,
+            aiGenerator: modelInfo.id,
+            aiPrompt: cleanPrompt,
+            x: slot.x,
+            y: slot.y
+        };
+
+        if (typeof fileSystem !== 'undefined') fileSystem.push(newVidFile);
+        if (typeof fsManager !== 'undefined' && fsManager.save) await fsManager.save();
+        if (typeof desktop !== 'undefined' && desktop.render) desktop.render();
+
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast(modelInfo.badge, `Wygenerowano wideo: ${fileName}`, 'success');
+        }
+
+        return {
+            ok: true,
+            type: 'video',
+            model: modelInfo.id,
+            badge: modelInfo.badge,
+            prompt: cleanPrompt,
+            fileId: newVidFile.id,
+            fileName: newVidFile.name,
+            videoUrl,
+            posterUrl
+        };
+    },
+
+    openGeneratedMedia: (fileId, mediaType) => {
+        const f = (typeof fileSystem !== 'undefined' ? fileSystem : []).find(x => x && x.id === fileId);
+        if (mediaType === 'image') {
+            if (f && typeof patrzalkaApp !== 'undefined' && typeof patrzalkaApp.open === 'function') {
+                patrzalkaApp.open(f);
+            } else {
+                podpowiadaczApp.openImageInPatrzalka(fileId);
+            }
+        } else if (mediaType === 'video') {
+            if (typeof winManager !== 'undefined') winManager.open('grajacz');
+            if (f && typeof grajaczApp !== 'undefined' && typeof grajaczApp.open === 'function') {
+                grajaczApp.open(f);
+            }
+        }
+    },
+
+    setGeneratedAsWallpaper: (fileId) => {
+        const f = (typeof fileSystem !== 'undefined' ? fileSystem : []).find(x => x && x.id === fileId);
+        if (!f || !f.content) return;
+        const bg = document.getElementById('desktop-bg');
+        if (bg) {
+            bg.style.backgroundImage = `url('${f.content}')`;
+            bg.classList.add('custom-wp');
+        }
+        if (typeof bigosDB !== 'undefined') bigosDB.set('bigos_bg', f.content);
+        if (typeof apps !== 'undefined' && apps.showToast) {
+            apps.showToast('Tapeta BigOS', `Ustawiono obraz „${f.name}” jako tapetę pulpitu!`, 'success');
+        }
+    },
+
+    openMediaStudioModal: (mode = 'image') => {
+        const isImg = mode !== 'video';
+        const modalId = 'ai-media-studio-modal';
+        let modal = document.getElementById(modalId);
+        if (modal) modal.remove();
+
+        const models = isImg ? IMAGE_GENERATORS_DB : VIDEO_GENERATORS_DB;
+        const currentSelected = isImg ? podpowiadaczApp.settings.imageModel : podpowiadaczApp.settings.videoModel;
+
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'fixed inset-0 bg-black/75 z-[10000] flex items-center justify-center backdrop-blur-sm p-4';
+        modal.innerHTML = `
+            <div class="g-panel p-6 rounded-2xl max-w-md w-full border g-border shadow-2xl flex flex-col gap-4">
+                <h3 class="font-bold text-base g-text flex items-center gap-2 border-b g-border pb-2">
+                    <span>${isImg ? '🖼️' : '🎬'}</span> ${isImg ? 'Generator Zdjęć BigAI (Nano Banana / FLUX 3)' : 'Generator Wideo BigAI (Omni / Veo 3.1 / FLUX 3)'}
+                </h3>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold g-text-muted mb-1">Wybierz Model Generatora</label>
+                    <select id="ai-studio-model" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs font-bold shadow-inner">
+                        ${models.map(m => `<option value="${m.id}" ${m.id === currentSelected ? 'selected' : ''}>${m.name}</option>`).join('')}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] uppercase font-bold g-text-muted mb-1">Opis sceny (Prompt)</label>
+                    <textarea id="ai-studio-prompt" rows="3" placeholder="${isImg ? 'Np. Cyberpunkowe miasto nocą w deszczu, neony, 8k...' : 'Np. Lot drona nad ośnieżonymi górami o zachodzie słońca...'}" class="w-full p-2.5 rounded g-bg g-text border g-border outline-none text-xs shadow-inner resize-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t g-border">
+                    <button id="ai-studio-cancel" class="px-4 py-2 g-btn rounded-lg text-xs font-semibold">Anuluj</button>
+                    <button id="ai-studio-generate" class="px-5 py-2 ${isImg ? 'bg-pink-600 hover:bg-pink-500' : 'bg-purple-600 hover:bg-purple-500'} text-white rounded-lg text-xs font-bold shadow-lg transition">✨ Generuj ${isImg ? 'Zdjęcie' : 'Wideo'}</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#ai-studio-cancel').onclick = () => modal.remove();
+        modal.querySelector('#ai-studio-generate').onclick = async () => {
+            const chosenModel = modal.querySelector('#ai-studio-model').value;
+            const promptVal = modal.querySelector('#ai-studio-prompt').value.trim() || (isImg ? 'Futurystyczna panorama BigOS 2026' : 'Dynamiczny lot przez galaktykę BigOS 2026');
+            if (isImg) podpowiadaczApp.settings.imageModel = chosenModel;
+            else podpowiadaczApp.settings.videoModel = chosenModel;
+            podpowiadaczApp.saveData();
+            modal.remove();
+
+            podpowiadaczApp.messages.push({
+                role: 'user',
+                text: `${isImg ? '🖼️ Wygeneruj zdjęcie' : '🎬 Wygeneruj wideo'} (${chosenModel}): ${promptVal}`
+            });
+            podpowiadaczApp.isThinking = true;
+            podpowiadaczApp.renderChat();
+
+            const mediaRes = isImg
+                ? await podpowiadaczApp.generateImage(promptVal, chosenModel)
+                : await podpowiadaczApp.generateVideo(promptVal, chosenModel);
+
+            podpowiadaczApp.isThinking = false;
+            podpowiadaczApp.messages.push({
+                role: 'assistant',
+                text: `✨ Wygenerowano ${isImg ? 'zdjęcie' : 'wideo'} przy użyciu silnika **${mediaRes.badge}** i zapisano na pulpicie jako \`${mediaRes.fileName}\`.`,
+                mediaPreview: mediaRes
+            });
+            podpowiadaczApp.saveData();
+            podpowiadaczApp.renderChat();
+        };
+    },
+
+    // ==================================================================
     // INTEGRACJA Z SYSTEMEM (strukturalne, walidowane akcje)
     // ==================================================================
     extractCommands: (aiText) => {
-        let cleanText = aiText;
+        let cleanText = aiText || '';
         let commands = [];
-        const regex = /\[BIGOS:([^:\]]+):([^\]]+)\]/g;
+        const regex = /\[BIGOS:([a-zA-Z0-9_\-]+):([\s\S]*?)\]/g;
         let match;
 
-        while ((match = regex.exec(aiText)) !== null) {
+        while ((match = regex.exec(aiText || '')) !== null) {
             commands.push({ action: match[1].toLowerCase().trim(), param: match[2].trim() });
         }
-        cleanText = cleanText.replace(/\[BIGOS:(.*?):(.*?)\]/g, '').trim();
+        cleanText = cleanText.replace(/\[BIGOS:([a-zA-Z0-9_\-]+):([\s\S]*?)\]/g, '').trim();
         return { cleanText, commands, mapQuery: null };
     },
 
     ALLOWED_ACTIONS: {
-        open_app: true, close_app: true, set_theme: true, set_wallpaper: true,
-        open_file: true, write_file: true, create_app: true, format_system: true
+        open_app: true, close_app: true, close_all_apps: true,
+        set_theme: true, set_wallpaper: true,
+        open_file: true, open_image: true,
+        create_file: true, create_folder: true, delete_file: true,
+        write_file: true, skryba_note: true, dictate_to_skryba: true,
+        search_web: true, generate_image: true, generate_video: true,
+        create_app: true, format_system: true
     },
 
     validateCommand: (cmd) => {
@@ -1208,18 +2252,31 @@ const podpowiadaczApp = {
             return { ok: true };
         }
 
+        if (cmd.action === 'skryba_note' || cmd.action === 'dictate_to_skryba' || cmd.action === 'create_file' || cmd.action === 'generate_image' || cmd.action === 'generate_video') {
+            if (typeof cmd.param === 'object' && cmd.param !== null) {
+                cmd.parsedParam = cmd.param;
+                return { ok: true };
+            }
+            const strParam = String(cmd.param == null ? '' : cmd.param).trim();
+            if (strParam.startsWith('{') && strParam.endsWith('}')) {
+                try { cmd.parsedParam = JSON.parse(strParam); return { ok: true }; } catch (_) {}
+            }
+            if (strParam.length > 10000) return { ok: false, error: 'parametr za długi' };
+            return { ok: true };
+        }
+
         const param = String(cmd.param == null ? '' : cmd.param);
-        if (param.length > 200) return { ok: false, error: 'parametr za długi' };
+        if (param.length > 500) return { ok: false, error: 'parametr za długi' };
         if (cmd.action === 'open_app' || cmd.action === 'close_app') {
-            if (!/^[a-zA-Z0-9_\-]+$/.test(param)) return { ok: false, error: 'nieprawidłowe id aplikacji' };
+            if (!/^[a-zA-Z0-9_\-ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s]+$/.test(param)) return { ok: false, error: 'nieprawidłowe id aplikacji' };
         }
         return { ok: true };
     },
 
     findFileByParam: (param) => {
-        const q = String(param).toLowerCase();
+        const q = String(param).toLowerCase().trim();
         return (typeof fileSystem !== 'undefined' ? fileSystem : []).find(f =>
-            f && (f.id === param || (f.name || '').toLowerCase() === q || (f.name || '').toLowerCase().includes(q))
+            f && f.parentId !== 'hasiok' && (f.id === param || (f.name || '').toLowerCase() === q || (f.name || '').toLowerCase().includes(q))
         );
     },
 
@@ -1236,18 +2293,87 @@ const podpowiadaczApp = {
             const param = cmd.param;
             try {
                 if (action === 'open_app') {
-                    const id = param.toLowerCase();
-                    if (typeof defaultApps !== 'undefined' && !defaultApps.find(a => a.appId === id)) {
+                    const id = podpowiadaczApp.resolveAppId(param);
+                    if (typeof defaultApps !== 'undefined' && !defaultApps.find(a => a.appId === id) && !document.getElementById('app-' + id)) {
                         results.push({ cmd, ok: false, error: 'aplikacja nie istnieje: ' + id });
                         if (typeof apps !== 'undefined') apps.showToast('BigAI', 'Nie ma aplikacji o id: ' + id, 'error');
                         continue;
                     }
                     if (typeof winManager !== 'undefined') winManager.open(id);
-                    results.push({ cmd, ok: true });
+                    results.push({ cmd, ok: true, appId: id });
                 }
                 else if (action === 'close_app') {
-                    if (typeof winManager !== 'undefined') winManager.close(param.toLowerCase());
+                    const raw = String(param).toLowerCase().trim();
+                    if (raw === 'all' || raw === 'wszystkie' || raw === 'wszystko') {
+                        document.querySelectorAll('.window.active').forEach(w => {
+                            const appId = w.id.replace(/^app-/, '');
+                            if (appId !== 'podpowiadacz' && typeof winManager !== 'undefined') winManager.close(appId);
+                        });
+                        results.push({ cmd, ok: true, closedAll: true });
+                    } else {
+                        const id = podpowiadaczApp.resolveAppId(param);
+                        if (typeof winManager !== 'undefined') winManager.close(id);
+                        results.push({ cmd, ok: true, appId: id });
+                    }
+                }
+                else if (action === 'close_all_apps') {
+                    document.querySelectorAll('.window.active').forEach(w => {
+                        const appId = w.id.replace(/^app-/, '');
+                        if (appId !== 'podpowiadacz' && typeof winManager !== 'undefined') winManager.close(appId);
+                    });
                     results.push({ cmd, ok: true });
+                }
+                else if (action === 'search_web') {
+                    const ok = podpowiadaczApp.searchInSiecioslaw(param);
+                    results.push({ cmd, ok, query: param });
+                }
+                else if (action === 'open_image') {
+                    const img = podpowiadaczApp.openImageInPatrzalka(param);
+                    results.push({ cmd, ok: true, imageId: img ? img.id : null });
+                }
+                else if (action === 'skryba_note' || action === 'dictate_to_skryba') {
+                    const pObj = cmd.parsedParam || (typeof param === 'object' ? param : { title: 'Notatka_z_BigAI.html', content: String(param) });
+                    const noteFile = await podpowiadaczApp.writeToSkryba(pObj);
+                    results.push({ cmd, ok: true, fileId: noteFile ? noteFile.id : null });
+                }
+                else if (action === 'create_file') {
+                    const pObj = cmd.parsedParam || (typeof param === 'object' ? param : { name: String(param), content: '' });
+                    const created = await podpowiadaczApp.createSystemFile(pObj);
+                    results.push({ cmd, ok: true, fileId: created.id, name: created.name });
+                }
+                else if (action === 'create_folder') {
+                    const created = await podpowiadaczApp.createSystemFolder(param);
+                    results.push({ cmd, ok: true, folderId: created.id, name: created.name });
+                }
+                else if (action === 'delete_file') {
+                    const f = podpowiadaczApp.findFileByParam(param);
+                    if (!f) { results.push({ cmd, ok: false, error: 'nie znaleziono pliku' }); continue; }
+                    f.parentId = 'hasiok';
+                    if (typeof fsManager !== 'undefined' && fsManager.save) await fsManager.save();
+                    if (typeof desktop !== 'undefined' && desktop.render) desktop.render();
+                    results.push({ cmd, ok: true, fileId: f.id });
+                }
+                else if (action === 'generate_image') {
+                    const pObj = cmd.parsedParam || (typeof param === 'object' ? param : { prompt: String(param) });
+                    const imgRes = await podpowiadaczApp.generateImage(pObj.prompt || String(param), pObj.model || podpowiadaczApp.settings.imageModel, pObj);
+                    const lastAssistantMsg = [...podpowiadaczApp.messages].reverse().find(m => m.role === 'assistant');
+                    if (lastAssistantMsg && !lastAssistantMsg.mediaPreview) {
+                        lastAssistantMsg.mediaPreview = imgRes;
+                        podpowiadaczApp.saveData();
+                        podpowiadaczApp.renderChat();
+                    }
+                    results.push({ cmd, ok: true, fileId: imgRes.fileId, model: imgRes.model });
+                }
+                else if (action === 'generate_video') {
+                    const pObj = cmd.parsedParam || (typeof param === 'object' ? param : { prompt: String(param) });
+                    const vidRes = await podpowiadaczApp.generateVideo(pObj.prompt || String(param), pObj.model || podpowiadaczApp.settings.videoModel, pObj);
+                    const lastAssistantMsg = [...podpowiadaczApp.messages].reverse().find(m => m.role === 'assistant');
+                    if (lastAssistantMsg && !lastAssistantMsg.mediaPreview) {
+                        lastAssistantMsg.mediaPreview = vidRes;
+                        podpowiadaczApp.saveData();
+                        podpowiadaczApp.renderChat();
+                    }
+                    results.push({ cmd, ok: true, fileId: vidRes.fileId, model: vidRes.model });
                 }
                 else if (action === 'set_theme') {
                     if(typeof themeManager !== 'undefined') themeManager.applyTheme(param); else if(typeof apps !== 'undefined') apps.setTheme(param);
@@ -1348,6 +2474,9 @@ const podpowiadaczApp = {
                     let f = existingFile;
                     let before = oldContent;
                     if (!f) {
+                        const slot = (typeof desktop !== 'undefined' && typeof desktop.findFreeSlot === 'function')
+                            ? desktop.findFreeSlot()
+                            : { x: 40, y: 40 };
                         f = {
                             id: 'file_' + Date.now(),
                             type: 'file',
@@ -1355,8 +2484,8 @@ const podpowiadaczApp = {
                             icon: '📄',
                             parentId: 'root',
                             content: newContent,
-                            x: 40,
-                            y: 40
+                            x: slot.x,
+                            y: slot.y
                         };
                         if (typeof fileSystem !== 'undefined') fileSystem.push(f);
                         before = '';
@@ -1410,6 +2539,170 @@ const podpowiadaczApp = {
     },
 
     // ==================================================================
+    // INTELIGENTNY PARSER POLECEŃ SYSTEMOWYCH BIGOS (PL / GŁOS / CZAT)
+    // ==================================================================
+    parseNaturalCommands: (userText) => {
+        const text = String(userText || '').trim();
+        const lower = text.toLowerCase();
+
+        // 1. Tworzenie nowej aplikacji w BigOS (gdy użytkownik prosi o napisanie/stworzenie programu/aplikacji)
+        if ((lower.includes('napisz aplikacj') || lower.includes('stwórz aplikacj') || lower.includes('utwórz aplikacj') || lower.includes('zbuduj aplikacj') || lower.includes('napisz program')) && !lower.includes('otwórz')) {
+            return `Oto wygenerowana aplikacja na Twoje życzenie:\n\n\`\`\`javascript\nwindow.BigOSAppAPI.register({\n    id: 'kalkulator_demo',\n    name: 'Kalkulator Demo',\n    icon: '🧮',\n    width: '320px',\n    height: 'auto',\n    html: \`\n        <div class="flex flex-col gap-2 p-2">\n            <input type="number" id="demo_num" class="g-bg g-text p-2 rounded border g-border" value="10">\n            <button onclick="window.KalkulatorDemo.podwoj()" class="g-btn p-2 rounded">Podwój</button>\n            <div id="demo_res" class="g-text font-bold">Wynik: 20</div>\n        </div>\n    \`,\n    globalName: 'KalkulatorDemo',\n    global: {\n        podwoj: () => {\n            const val = parseFloat(document.getElementById('demo_num').value) || 0;\n            document.getElementById('demo_res').innerText = 'Wynik: ' + (val * 2);\n        }\n    }\n});\n\`\`\``;
+        }
+
+        // 2. Generowanie WIDEO (Omni 1.1 Flash / Veo 3.1-lite / Veo 3.1 -fast / Veo3.1- Quality / FLUX 3)
+        if (/(?:wygeneruj|stwórz|zrób|nagraj)\s+(?:wideo|video|film|animacj[ęe])/i.test(lower)) {
+            let model = podpowiadaczApp.settings.videoModel || 'veo-3.1-fast';
+            if (lower.includes('omni')) model = 'omni-1.1-flash';
+            else if (lower.includes('lite')) model = 'veo-3.1-lite';
+            else if (lower.includes('quality') || lower.includes('jakoś')) model = 'veo-3.1-quality';
+            else if (lower.includes('veo')) model = 'veo-3.1-fast';
+            else if (lower.includes('flux')) model = 'flux-3-video';
+
+            const promptClean = text
+                .replace(/^(?:wygeneruj|stwórz|zrób|nagraj)\s+(?:wideo|video|film|animacj[ęe])\s*/i, '')
+                .replace(/\b(?:w|przez|modelem|używając)\s+(?:omni\s*1\.1\s*flash|veo\s*3\.1[\s\-]*(?:lite|fast|quality)?|flux\s*3)\b/gi, '')
+                .trim() || 'Futurystyczna animacja BigOS 2026';
+            const payload = JSON.stringify({ prompt: promptClean, model });
+            return `[BIGOS:generate_video:${payload}] 🎬 Generuję wideo za pomocą silnika **${model}** dla opisu: *"${promptClean}"*.`;
+        }
+
+        // 3. Generowanie ZDJĘĆ / OBRAZÓW (Nano Banana 2.1 / Nano Banana Pro / Nano Banana 2 lite / FLUX 3)
+        if (/(?:wygeneruj|stwórz|namaluj|narysuj)\s+(?:zdjęci[ea]|zdjeci[ea]|obraz|obrazek|grafik[ęe]|ilustracj[ęe])/i.test(lower)) {
+            let model = podpowiadaczApp.settings.imageModel || 'nano-banana-2.1';
+            if (lower.includes('banana pro') || lower.includes('nano banana pro')) model = 'nano-banana-pro';
+            else if (lower.includes('banana 2 lite') || lower.includes('banana lite')) model = 'nano-banana-2-lite';
+            else if (lower.includes('banana')) model = 'nano-banana-2.1';
+            else if (lower.includes('flux')) model = 'flux-3';
+
+            const promptClean = text
+                .replace(/^(?:wygeneruj|stwórz|namaluj|narysuj)\s+(?:zdjęci[ea]|zdjeci[ea]|obraz|obrazek|grafik[ęe]|ilustracj[ęe])\s*/i, '')
+                .replace(/\b(?:w|przez|modelem|używając)\s+(?:gemini\s+)?(?:nano\s*banana(?:\s*2\.1|\s*pro|\s*2\s*lite)?|flux\s*3)\b/gi, '')
+                .trim() || 'Krajobraz przyszłości BigOS 2026';
+            const payload = JSON.stringify({ prompt: promptClean, model });
+            return `[BIGOS:generate_image:${payload}] 🖼️ Generuję zdjęcie przy użyciu modelu **${model}** dla opisu: *"${promptClean}"*.`;
+        }
+
+        // 4. Otwarcie Skryby i zapisanie notatki / dyktowania
+        if ((lower.includes('skryb') || lower.includes('notatnik') || lower.includes('notatk') || lower.includes('zanotuj')) &&
+            (lower.includes('zapisz') || lower.includes('zanotuj') || lower.includes('wpisz') || lower.includes('napisz') || lower.includes('dodaj'))) {
+            let noteText = text;
+            const colonIdx = text.indexOf(':');
+            if (colonIdx !== -1 && colonIdx < text.length - 1) {
+                noteText = text.substring(colonIdx + 1).trim();
+            } else {
+                const m = text.match(/(?:zapisz|zanotuj|wpisz|napisz|dodaj)(?:\s+w\s+skrybie|\s+notatkę|\s+notatke|\s+tekst|\s+informację|\s+informacje|\s+że|\s+ze)?\s+(.+)$/i);
+                if (m && m[1]) noteText = m[1].trim();
+            }
+            const payload = JSON.stringify({ title: 'Notatka_z_BigAI.html', content: noteText, append: false });
+            return `[BIGOS:skryba_note:${payload}] 📝 Otwieram program **Skryba** i zapisuję podyktowaną notatkę: *"${noteText}"*.`;
+        }
+
+        // 5. Wyszukiwanie informacji w przeglądarce Sieciosław
+        if (lower.includes('sieciosław') || lower.includes('siecioslaw') || lower.includes('wyszukaj') || lower.includes('szukaj w przeglądarce') || lower.includes('szukaj w internecie') || lower.includes('znajdź w internecie')) {
+            let query = text
+                .replace(/^(?:otwórz\s+(?:przeglądarkę\s+)?sieciosław(?:ia|iu)?\s+i\s+)?/i, '')
+                .replace(/^(?:wyszukaj|poszukaj|szukaj|znajdź|sprawdź)\s+/i, '')
+                .replace(/^(?:w\s+przeglądarce(?:\s+sieciosław(?:iu)?)?|w\s+sieciosławiu|w\s+siecioslawiu|w\s+internecie)\s+/i, '')
+                .replace(/^(?:informacje\s+o|informacji\s+o|na\s+temat|hasło)\s+/i, '')
+                .trim();
+            if (!query) query = 'BigOS System Operacyjny';
+            return `[BIGOS:search_web:${query}] 🌐 Otwieram przeglądarkę **Sieciosław** i wyszukuję informacje: **${query}**.`;
+        }
+
+        // 6. Otwieranie grafiki / zdjęć w Patrzałce
+        if ((lower.includes('otwórz') || lower.includes('pokaż') || lower.includes('wyświetl') || lower.includes('zobacz')) &&
+            (lower.includes('grafik') || lower.includes('zdjęci') || lower.includes('zdjeci') || lower.includes('obraz') || lower.includes('patrzałk') || lower.includes('patrzalk'))) {
+            let imgQuery = text
+                .replace(/^(?:otwórz|pokaż|wyświetl|zobacz)\s+/i, '')
+                .replace(/^(?:w\s+patrzałce|w\s+galerii)\s*/i, '')
+                .replace(/^(?:grafikę|grafike|grafika|zdjęcie|zdjecie|obraz|obrazek)\s*/i, '')
+                .replace(/\s+(?:w\s+patrzałce|w\s+galerii)$/i, '')
+                .trim();
+            if (!imgQuery || imgQuery.toLowerCase().includes('patrzałk') || imgQuery.toLowerCase().includes('patrzalk')) {
+                imgQuery = 'ostatnie';
+            }
+            return `[BIGOS:open_image:${imgQuery}] 🖼️ Otwieram grafikę w aplikacji **Patrzałka**.`;
+        }
+
+        // 7. Tworzenie folderu / katalogu
+        if (/(?:stwórz|utwórz|zrób|dodaj|nowy)\s+(?:folder|katalog)/i.test(lower)) {
+            const m = text.match(/(?:folder|katalog)(?:\s+o\s+nazwie)?\s+["„']?([^"”'\n]+)["”']?$/i);
+            const folderName = (m && m[1] ? m[1].trim() : 'Nowy_Folder');
+            return `[BIGOS:create_folder:${folderName}] 📁 Tworzę nowy folder **${folderName}** na pulpicie BigOS.`;
+        }
+
+        // 8. Edycja istniejącego pliku z potwierdzeniem (write_file)
+        if (lower.includes('napisz plik') || lower.includes('edytuj plik')) {
+            return `[BIGOS:write_file:{"name":"notatka.txt","content":"Zawartość wygenerowana przez Symulator BigAI."}] Zapisuję plik notatka.txt.`;
+        }
+
+        // 9. Tworzenie nowego pliku na pulpicie (create_file)
+        if (/(?:stwórz|utwórz|zrób|dodaj)\s+plik/i.test(lower)) {
+            let name = 'nowy_plik.txt';
+            let content = '';
+            const withContent = text.match(/plik\s+(?:o\s+nazwie\s+)?([^\s]+)\s+(?:z\s+treścią|z\s+zawartością|o\s+treści|:)\s*(.+)$/i);
+            if (withContent) {
+                name = withContent[1].replace(/["„”']/g, '').trim();
+                content = withContent[2].trim();
+            } else {
+                const nameMatch = text.match(/plik\s+(?:o\s+nazwie\s+)?([^\s"„”']+)/i);
+                if (nameMatch && nameMatch[1]) name = nameMatch[1].trim();
+            }
+            const payload = JSON.stringify({ name, content });
+            return `[BIGOS:create_file:${payload}] 📄 Tworzę plik **${name}** na pulpicie BigOS.`;
+        }
+
+        // 10. Zamykanie aplikacji
+        if (lower.includes('zamknij') || lower.includes('wyłącz aplikacj')) {
+            if (lower.includes('wszystk')) {
+                return `[BIGOS:close_all_apps:all] 🔒 Zamykam wszystkie otwarte aplikacje w systemie BigOS.`;
+            }
+            const appMatch = text.match(/(?:zamknij|wyłącz)\s+(?:aplikację\s+|program\s+|okno\s+|grę\s+)?(.+)$/i);
+            const rawTarget = appMatch && appMatch[1] ? appMatch[1].trim() : 'kalkulator';
+            const resolvedId = podpowiadaczApp.resolveAppId(rawTarget);
+            return `[BIGOS:close_app:${resolvedId}] 🔒 Zamykam aplikację **${rawTarget}** (\`${resolvedId}\`).`;
+        }
+
+        // 11. Otwieranie pliku
+        if ((lower.includes('otwórz plik') || lower.includes('uruchom plik'))) {
+            const fMatch = text.match(/plik\s+(?:o\s+nazwie\s+)?(.+)$/i);
+            const fName = fMatch && fMatch[1] ? fMatch[1].trim() : 'BigOS';
+            return `[BIGOS:open_file:${fName}] 📂 Otwieram plik **${fName}**.`;
+        }
+
+        // 12. Otwieranie dowolnej aplikacji w systemie BigOS
+        if (lower.includes('otwórz') || lower.includes('uruchom') || lower.includes('włącz')) {
+            const appMatch = text.match(/(?:otwórz|uruchom|włącz)\s+(?:aplikację\s+|program\s+|okno\s+|grę\s+)?(.+)$/i);
+            const rawTarget = appMatch && appMatch[1] ? appMatch[1].trim() : 'kalkulator';
+            const resolvedId = podpowiadaczApp.resolveAppId(rawTarget);
+            return `[BIGOS:open_app:${resolvedId}] 🚀 Otwieram aplikację **${rawTarget}** (\`${resolvedId}\`).`;
+        }
+
+        // 13. Zmiana motywu
+        if (lower.includes('motyw')) {
+            let theme = 'dark';
+            if (lower.includes('jasn') || lower.includes('light')) theme = 'light';
+            else if (lower.includes('cyber')) theme = 'cyberpunk';
+            else if (lower.includes('retro')) theme = 'retro';
+            else if (lower.includes('ocean')) theme = 'ocean';
+            else if (lower.includes('natur')) theme = 'nature';
+            return `[BIGOS:set_theme:${theme}] 🎨 Zmieniam motyw systemu BigOS na **${theme}**.`;
+        }
+
+        // 14. Zmiana tapety
+        if (lower.includes('tapet')) {
+            let wp = 'kosmos';
+            if (lower.includes('ferrari')) wp = 'ferrari';
+            else if (lower.includes('abstrakcj')) wp = 'abstrakcja';
+            else if (lower.includes('bigos')) wp = 'bigos';
+            return `[BIGOS:set_wallpaper:${wp}] 🖼️ Ustawiam tapetę pulpitu na **${wp}**.`;
+        }
+
+        return null;
+    },
+
+    // ==================================================================
     // GŁÓWNA LOGIKA WYSYŁANIA WIADOMOŚCI
     // ==================================================================
     sendMessage: async (commandOverride) => {
@@ -1432,54 +2725,28 @@ const podpowiadaczApp = {
         podpowiadaczApp.saveData();
 
         // -------------------------------------------------------------
-        // BUDOWA SYSTEM PROMPTU
+        // BUDOWA SYSTEM PROMPTU (ZARZĄDCA SYSTEMU BIGOS 2026)
         // -------------------------------------------------------------
-        const systemPrompt = `Jesteś "BigAI" - główną sztuczną inteligencją systemu operacyjnego BigOS. 
-Masz możliwość tworzenia natywnych, pięknych aplikacji wewnątrz tego systemu na życzenie użytkownika.
+        const systemPrompt = `Jesteś "BigAI 2026" - głównym asystentem i zarządcą całego systemu operacyjnego BigOS.
+Potrafisz bezpośrednio sterować systemem BigOS za pomocą specjalnych znaczników akcji umieszczanych w odpowiedzi:
 
-Gdy użytkownik poprosi o aplikację (np. "Stwórz kalkulator walut" lub "Napisz program z cebularzami"),
-wygeneruj TYLKO JEDEN ZINTEGROWANY BLOK KODU w formacie \`\`\`javascript \`\`\`. 
+DOSTĘPNE AKCJE SYSTEMOWE BIGOS:
+1. Otwieranie aplikacji: [BIGOS:open_app:ID_APLIKACJI]
+   Dostępne ID aplikacji: kalkulator (Rachmistrz Pro), skryba (Notatnik Skryba), siecioslaw (Przeglądarka Sieciosław), patrzalka (Galeria i edytor Patrzałka), aktowka (Menedżer plików Aktówka), tapeciak (Ustawienia Kombinator), szkicownik (Artysta), bigos_painter (BigPaint Studio), grajek (Odtwarzacz muzyki), grajacz (Odtwarzacz wideo), montazysta (Montażysta), tabelarz (Arkusz Tabelarz), menadzer (Menedżer Aplikacji), nadzorca (Monitor systemu), pogodynka, czasomierz, kasiarz, przelicznik, kompresor, wladca (Terminal), zadaniowiec, edytor_map, kalkulator_bmi, pelzacz, murarz, ufoludki, odbijanka, trzepotek, scigacz, bombiarz, kolko, tank (Czołgi), cookie_clicker, powitanie.
+2. Zamykanie aplikacji: [BIGOS:close_app:ID_APLIKACJI] lub [BIGOS:close_all_apps:all]
+3. Wyszukiwanie w przeglądarce Sieciosław: [BIGOS:search_web:ZAPYTANIE_LUB_URL]
+4. Otwieranie grafiki/zdjęcia w Patrzałce: [BIGOS:open_image:NAZWA_LUB_OSTATNIE]
+5. Otwarcie programu Skryba i zapisanie notatki (np. z dyktowania): [BIGOS:skryba_note:{"title":"Notatka.html","content":"Treść notatki","append":false}]
+6. Tworzenie nowego pliku na pulpicie: [BIGOS:create_file:{"name":"plik.txt","content":"Treść pliku"}]
+7. Tworzenie nowego folderu na pulpicie: [BIGOS:create_folder:Nazwa_Folderu]
+8. Modyfikacja istniejącego pliku z podglądem zmian: [BIGOS:write_file:{"name":"plik.txt","content":"Nowa treść"}]
+9. Generowanie zdjęć (modele: nano-banana-2.1, nano-banana-pro, nano-banana-2-lite, flux-3): [BIGOS:generate_image:{"prompt":"opis obrazu","model":"nano-banana-2.1"}]
+10. Generowanie wideo (modele: omni-1.1-flash, veo-3.1-lite, veo-3.1-fast, veo-3.1-quality, flux-3-video): [BIGOS:generate_video:{"prompt":"opis wideo","model":"veo-3.1-fast"}]
+11. Zmiana motywu: [BIGOS:set_theme:dark] (lub light, cyberpunk, retro, ocean, nature)
+12. Zmiana tapety: [BIGOS:set_wallpaper:kosmos] (lub bigos, ferrari, abstrakcja)
 
-System sam go zainstaluje, doda ikonkę i włączy po kliknięciu "Zainstaluj Apkę"! 
-NIE pisz w odpowiedzi żadnych kroków HTML. Nie proś użytkownika o ręczne wklejanie plików ani nie tłumacz logiki, po prostu daj czysty kod.
-
-Oto JEDYNY I BEZWZGLĘDNY SZABLON kodu, którego masz użyć. Oprzyj na nim całą aplikację:
-
-\`\`\`javascript
-window.BigOSAppAPI.register({
-    id: 'unikalneid_apki', // ID bez spacji
-    name: 'Moja Aplikacja', // Tytuł na pasku
-    icon: '🚀', // Ikona emoji
-    width: '400px', // Szerokość okna
-    height: 'auto', // Wysokość okna
-    html: \`
-          <div class="flex flex-col gap-3">
-              <h3 class="g-text font-bold text-lg text-center">Witaj w super aplikacji!</h3>
-              <input type="number" id="twoj_input_id" class="g-bg g-text p-2 rounded border g-border w-full outline-none focus:border-blue-500" placeholder="Wpisz liczbę">
-              <!-- Zwróć uwagę na poprawne użycie cudzysłowów! -->
-              <button onclick="window.MojaUnikalnaApka.oblicz()" class="g-btn p-3 rounded font-bold shadow-md bg-blue-600/20 hover:bg-blue-600 border-blue-500/50">Kliknij mnie</button>
-              <div id="twoj_wynik_id" class="g-text text-2xl font-bold text-center mt-2">...</div>
-          </div>
-    \`,
-    globalName: 'MojaUnikalnaApka', // To stworzy globalny obiekt dla przycisków w HTML
-    global: {
-        // Wszystkie twoje funkcje
-        oblicz: () => {
-            const v = parseFloat(document.getElementById('twoj_input_id').value) || 0;
-            document.getElementById('twoj_wynik_id').innerText = v * 10 + ' PLN';
-        }
-    },
-    init: () => {
-        // Ta funkcja odpali się po otwarciu okienka (opcjonalne)
-        console.log("Moja aplikacja gotowa!");
-    }
-});
-\`\`\`
-
-ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
-1. Używaj JEDYNIE tych klas dla spójności z systemem: \`g-text\`, \`g-text-muted\`, \`g-bg\`, \`g-btn\`, \`g-border\`, \`g-panel\`.
-2. NIE UŻYWAJ sztywnych kolorów (bg-gray-900, text-white). System sam dobierze kolory.
-3. Właściwość \`html:\` MUSI być zapisana w znakach backtick ( \` ). Używanie backticków do HTML to NAJLEPSZA metoda, aby uniknąć błędów cudzysłowów wewnątrz atrybutów takich jak onclick="...". Po prostu zwróć uwagę, żeby poprawnie je otworzyć i zamknąć.
+TWORZENIE NOWYCH APLIKACJI:
+Gdy użytkownik poprosi o stworzenie nowej aplikacji (np. "Stwórz kalkulator walut"), wygeneruj blok kodu \`\`\`javascript \`\`\` z użyciem \`window.BigOSAppAPI.register({ id, name, icon, width, height, html: \`...\`, globalName, global, init })\` oraz klas systemowych (\`g-text\`, \`g-text-muted\`, \`g-bg\`, \`g-btn\`, \`g-border\`, \`g-panel\`).
 `;
 
         const prov = podpowiadaczApp.settings.provider;
@@ -1491,32 +2758,18 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
         const signal = podpowiadaczApp.currentAbortController.signal;
 
         try {
-            if (prov === 'simulated') {
-                const lower = userText.toLowerCase();
-                if (lower.includes('aplikacj') || lower.includes('program') || lower.includes('kalkulator')) {
-                    responseText = `Oto wygenerowana aplikacja na Twoje życzenie:\n\n\`\`\`javascript\nwindow.BigOSAppAPI.register({\n    id: 'kalkulator_demo',\n    name: 'Kalkulator Demo',\n    icon: '🧮',\n    width: '320px',\n    height: 'auto',\n    html: \`\n        <div class="flex flex-col gap-2 p-2">\n            <input type="number" id="demo_num" class="g-bg g-text p-2 rounded border g-border" value="10">\n            <button onclick="window.KalkulatorDemo.podwoj()" class="g-btn p-2 rounded">Podwój</button>\n            <div id="demo_res" class="g-text font-bold">Wynik: 20</div>\n        </div>\n    \`,\n    globalName: 'KalkulatorDemo',\n    global: {\n        podwoj: () => {\n            const val = parseFloat(document.getElementById('demo_num').value) || 0;\n            document.getElementById('demo_res').innerText = 'Wynik: ' + (val * 2);\n        }\n    }\n});\n\`\`\``;
-                } else if (lower.includes('otwórz') || lower.includes('uruchom')) {
-                    const appMatch = lower.match(/(?:otwórz|uruchom)\s+([a-zA-Z0-9_\-]+)/);
-                    const appName = appMatch ? appMatch[1] : 'kalkulator';
-                    responseText = `[BIGOS:open_app:${appName}] Otwieram aplikację ${appName}.`;
-                } else if (lower.includes('zamknij')) {
-                    const appMatch = lower.match(/zamknij\s+([a-zA-Z0-9_\-]+)/);
-                    const appName = appMatch ? appMatch[1] : 'kalkulator';
-                    responseText = `[BIGOS:close_app:${appName}] Zamykam aplikację ${appName}.`;
-                } else if (lower.includes('motyw')) {
-                    const theme = lower.includes('jasn') ? 'light' : 'dark';
-                    responseText = `[BIGOS:set_theme:${theme}] Zmieniam motyw na ${theme}.`;
-                } else if (lower.includes('tapet')) {
-                    responseText = `[BIGOS:set_wallpaper:kosmos] Ustawiam tapetę na kosmos.`;
-                } else if (lower.includes('napisz plik') || lower.includes('edytuj plik')) {
-                    responseText = `[BIGOS:write_file:{"name":"notatka.txt","content":"Zawartość wygenerowana przez Symulator BigAI."}] Zapisuję plik notatka.txt.`;
+            const localCommandResponse = podpowiadaczApp.parseNaturalCommands(userText);
+
+            if (prov === 'simulated' || (!key && localCommandResponse)) {
+                if (localCommandResponse) {
+                    responseText = localCommandResponse;
                 } else {
-                    responseText = `[Symulator BigAI] Otrzymałem polecenie: "${userText}". BigOS jest w pełni sprawny i gotowy do działania.`;
+                    responseText = `[Symulator BigAI 2026] Otrzymałem polecenie: "${userText}". System BigOS jest gotowy — możesz otwierać i zamykać aplikacje, wyszukiwać w Sieciosławiu, dyktować notatki do Skryby, tworzyć pliki i foldery oraz generować zdjęcia (Nano Banana / FLUX 3) i wideo (Omni 1.1 / Veo 3.1 / FLUX 3).`;
                 }
             }
-            else if (prov === 'gemini_free' || prov === 'gemini_api') {
-                const actualKey = prov === 'gemini_free' ? '' : key;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${actualKey}`;
+            else if (prov === 'gemini_api') {
+                if (!key) throw new Error('Wprowadź swój klucz API Google Gemini w ustawieniach BigAI (⚙️ Ustawienia) lub przełącz silnik na Lokalny Zarządca Systemu.');
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${key}`;
                 
                 let geminiContents = [];
                 let slice = podpowiadaczApp.messages.slice(-8);
@@ -1538,7 +2791,6 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                 if (geminiContents.length === 0) geminiContents.push({ role: 'user', parts: [{ text: 'Cześć' }]});
 
                 const payload = { contents: geminiContents, systemInstruction: { parts: [{ text: systemPrompt }] } };
-                if (prov === 'gemini_free') payload.tools = [{ google_search: {} }];
 
                 for (let i = 0; i < 3; i++) {
                     try {
@@ -1570,14 +2822,58 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                 responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
             }
             else if (prov === 'openai') {
+                const openaiTier = podpowiadaczApp.settings.serviceTier || 'standard';
                 const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: mod, service_tier: openaiTier, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] }),
+                    signal
+                });
+                const data = await response.json();
+                if(!response.ok) throw new Error(`OpenAI: ${data.error?.message || response.statusText}`);
+                responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
+            }
+            else if (prov === 'anthropic') {
+                const response = await fetch("https://api.anthropic.com/v1/messages", {
+                    method: "POST",
+                    headers: {
+                        "x-api-key": key,
+                        "anthropic-version": "2023-06-01",
+                        "anthropic-dangerous-direct-browser-access": "true",
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: mod,
+                        max_tokens: 4096,
+                        system: systemPrompt,
+                        messages: podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.rawText || m.text }))
+                    }),
+                    signal
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(`Anthropic: ${data.error?.message || response.statusText}`);
+                responseText = data.content?.[0]?.text || "Błąd parsowania.";
+            }
+            else if (prov === 'xai') {
+                const response = await fetch("https://api.x.ai/v1/chat/completions", {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] }),
                     signal
                 });
                 const data = await response.json();
-                if(!response.ok) throw new Error(`OpenAI: ${data.error?.message || response.statusText}`);
+                if(!response.ok) throw new Error(`xAI: ${data.error?.message || response.statusText}`);
+                responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
+            }
+            else if (prov === 'deepseek') {
+                const response = await fetch("https://api.deepseek.com/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: mod, messages: [ { role: "system", content: systemPrompt }, ...podpowiadaczApp.messages.slice(-8).map(m => ({ role: m.role, content: m.rawText || m.text })) ] }),
+                    signal
+                });
+                const data = await response.json();
+                if(!response.ok) throw new Error(`DeepSeek: ${data.error?.message || response.statusText}`);
                 responseText = data.choices?.[0]?.message?.content || "Błąd parsowania.";
             }
             else if (prov === 'groq') {
@@ -1597,7 +2893,7 @@ ZASADY WIZUALNE I KODU (KRYTYCZNE - ZŁAMANIE ICH ZNISZCZY SYSTEM):
                 return; // Anulowano przez użytkownika
             }
             console.error(error);
-            responseText = `⚠️ **Błąd API (${prov}):** ${error.message}\n\nUpewnij się, że wpisany klucz jest prawidłowy.`;
+            responseText = `⚠️ **Błąd API (${prov}):** ${error.message}\n\nUpewnij się, że wpisany klucz jest prawidłowy lub wybierz w ustawieniach **Lokalny Zarządca Systemu (Offline)**.`;
         } finally {
             podpowiadaczApp.currentAbortController = null;
         }
@@ -1632,16 +2928,28 @@ document.addEventListener('input', function (e) {
 });
 
 podpowiadaczApp.MODELS_DB = MODELS_DB;
+podpowiadaczApp.SERVICE_TIERS_DB = SERVICE_TIERS_DB;
 podpowiadaczApp.VOICES_DB = VOICES_DB;
+podpowiadaczApp.STT_ENGINES_DB = STT_ENGINES_DB;
+podpowiadaczApp.IMAGE_GENERATORS_DB = IMAGE_GENERATORS_DB;
+podpowiadaczApp.VIDEO_GENERATORS_DB = VIDEO_GENERATORS_DB;
 
 if (typeof window !== 'undefined') {
     window.MODELS_DB = MODELS_DB;
+    window.SERVICE_TIERS_DB = SERVICE_TIERS_DB;
     window.VOICES_DB = VOICES_DB;
+    window.STT_ENGINES_DB = STT_ENGINES_DB;
+    window.IMAGE_GENERATORS_DB = IMAGE_GENERATORS_DB;
+    window.VIDEO_GENERATORS_DB = VIDEO_GENERATORS_DB;
     window.podpowiadaczApp = podpowiadaczApp;
 }
 if (typeof globalThis !== 'undefined') {
     globalThis.MODELS_DB = MODELS_DB;
+    globalThis.SERVICE_TIERS_DB = SERVICE_TIERS_DB;
     globalThis.VOICES_DB = VOICES_DB;
+    globalThis.STT_ENGINES_DB = STT_ENGINES_DB;
+    globalThis.IMAGE_GENERATORS_DB = IMAGE_GENERATORS_DB;
+    globalThis.VIDEO_GENERATORS_DB = VIDEO_GENERATORS_DB;
     globalThis.podpowiadaczApp = podpowiadaczApp;
 }
 

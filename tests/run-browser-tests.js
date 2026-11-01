@@ -1489,6 +1489,112 @@ async function main() {
     });
     record(`${name}: Tabelarz integrates BigOS semantic theme, preserves formulas, custom cell colors, and maintains accessible contrast`, tabelarzTest.pass);
 
+    // --- BigAI 2026: Removal of gemini_free, 2026 models/STT/TTS/media generators, and full system orchestration ---
+    const bigAiTest = await evaluate(async () => {
+      winManager.open('podpowiadacz');
+      const provSelect = document.getElementById('ai-provider');
+      const provOptions = provSelect ? Array.from(provSelect.options).map(o => o.value) : [];
+      const noGeminiFree = !provOptions.includes('gemini_free') && !('gemini_free' in MODELS_DB);
+
+      // Verify new Gemini & OpenAI models + Service Tiers + expanded uncrowded window
+      const geminiIds = (MODELS_DB.gemini_api || []).map(m => m.id);
+      const hasGeminiModels = ['gemini-4-argon', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite'].every(id => geminiIds.includes(id));
+
+      const openaiIds = (MODELS_DB.openai || []).map(m => m.id);
+      const hasOpenAiModels = [
+        'gpt-6-astra', 'gpt-6.1-sol', 'gpt-6.1-terra',
+        'gpt-6-luna', 'gpt-6-sol', 'gpt-5.5',
+        'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.6-nano'
+      ].every(id => openaiIds.includes(id));
+
+      const anthropicNames = (MODELS_DB.anthropic || []).map(m => m.name);
+      const hasAnthropicModels = [
+        'Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5', 'Claude Haiku 5.5'
+      ].every(n => anthropicNames.includes(n));
+
+      // Switch to OpenAI and test Service Tier options for gpt-6.1-sol (3 tiers) vs gpt-6-luna (2 tiers)
+      provSelect.value = 'openai';
+      podpowiadaczApp.changeProvider();
+      const modelSelect = document.getElementById('ai-model-select');
+      const tierSelect = document.getElementById('ai-service-tier');
+      modelSelect.value = 'gpt-6.1-sol';
+      podpowiadaczApp.changeModelSelect();
+      const tiersSol = tierSelect ? Array.from(tierSelect.options).map(o => o.value) : [];
+      const hasUltraFastForSol = tiersSol.includes('standard') && tiersSol.includes('fast') && tiersSol.includes('ultrafast');
+
+      modelSelect.value = 'gpt-6-luna';
+      podpowiadaczApp.changeModelSelect();
+      const tiersLuna = tierSelect ? Array.from(tierSelect.options).map(o => o.value) : [];
+      const hasStandardFastForLuna = tiersLuna.length === 2 && tiersLuna.includes('standard') && tiersLuna.includes('fast') && !tiersLuna.includes('ultrafast');
+
+      // Check expanded window dimensions & non-wrapping header buttons
+      const aiWin = document.getElementById('app-podpowiadacz');
+      const winRect = aiWin.getBoundingClientRect();
+      const dictateBtn = document.getElementById('ai-skryba-dictate-btn');
+      const dictateBtnRect = dictateBtn ? dictateBtn.getBoundingClientRect() : { height: 999 };
+      const layoutUncrowded = winRect.width >= 1100 && dictateBtnRect.height <= 36;
+
+      const imgSelect = document.getElementById('ai-image-model');
+      const imgOpts = imgSelect ? Array.from(imgSelect.options).map(o => o.value) : [];
+      const hasImageModels = ['nano-banana-2.1', 'nano-banana-pro', 'nano-banana-2-lite', 'flux-3'].every(id => imgOpts.includes(id));
+
+      const vidSelect = document.getElementById('ai-video-model');
+      const vidOpts = vidSelect ? Array.from(vidSelect.options).map(o => o.value) : [];
+      const hasVideoModels = ['omni-1.1-flash', 'veo-3.1-lite', 'veo-3.1-fast', 'veo-3.1-quality', 'flux-3-video'].every(id => vidOpts.includes(id));
+
+      // Test Skryba note creation via BigAI
+      const noteFile = await podpowiadaczApp.writeToSkryba({
+        title: 'Test_Dyktowania_2026.html',
+        content: 'Notatka głosowa zapisana przez BigAI',
+        append: false
+      });
+      const skrybaOpened = document.getElementById('app-skryba')?.classList.contains('active') === true;
+      const skrybaSaved = !!(noteFile && fileSystem.some(f => f.id === noteFile.id && f.content.includes('Notatka głosowa zapisana przez BigAI')));
+      winManager.close('skryba');
+
+      // Test Sieciosław browser search via BigAI
+      const searchOk = podpowiadaczApp.searchInSiecioslaw('BigOS 2026 AI');
+      const siecioslawOpened = document.getElementById('app-siecioslaw')?.classList.contains('active') === true;
+      winManager.close('siecioslaw');
+
+      // Test image generation (Nano Banana 2.1) and opening in Patrzałka
+      const genImg = await podpowiadaczApp.generateImage('Cyberpunkowe miasto BigOS', 'nano-banana-2.1', { openInViewer: true });
+      const patrzalkaOpened = document.getElementById('app-patrzalka')?.classList.contains('active') === true;
+      winManager.close('patrzalka');
+
+      // Test video generation (Veo 3.1-fast)
+      const genVid = await podpowiadaczApp.generateVideo('Lot nad górami BigOS', 'veo-3.1-fast');
+
+      // Test folder & file creation via BigAI
+      const createdFolder = await podpowiadaczApp.createSystemFolder('Folder_BigAI_2026');
+      const createdFile = await podpowiadaczApp.createSystemFile({ name: 'plik_bigai.txt', content: 'Test 2026' });
+
+      winManager.close('podpowiadacz');
+
+      return {
+        pass: noGeminiFree && hasGeminiModels && hasOpenAiModels && hasAnthropicModels && hasUltraFastForSol && hasStandardFastForLuna && layoutUncrowded && hasImageModels && hasVideoModels && skrybaOpened && skrybaSaved && searchOk && siecioslawOpened && genImg.ok && patrzalkaOpened && genVid.ok && !!createdFolder.id && !!createdFile.id,
+        noGeminiFree,
+        hasGeminiModels,
+        hasOpenAiModels,
+        hasAnthropicModels,
+        hasUltraFastForSol,
+        hasStandardFastForLuna,
+        layoutUncrowded,
+        winWidth: Math.round(winRect.width),
+        dictateBtnHeight: Math.round(dictateBtnRect.height),
+        hasImageModels,
+        hasVideoModels,
+        skrybaOpened,
+        skrybaSaved,
+        searchOk,
+        siecioslawOpened,
+        imgOk: genImg.ok,
+        patrzalkaOpened,
+        vidOk: genVid.ok
+      };
+    });
+    record(`${name}: BigAI 2026 removes gemini_free, exposes 2026 LLM/STT/TTS/Nano Banana/Veo 3.1/FLUX 3 models, and orchestrates Skryba, Sieciosław, Patrzałka, and files`, bigAiTest.pass, JSON.stringify(bigAiTest));
+
     // Restore standard viewport
     await page.setViewportSize({ width: 1280, height: 800 });
 

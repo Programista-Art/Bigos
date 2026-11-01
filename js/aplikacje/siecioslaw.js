@@ -684,7 +684,7 @@ const siecioslawApp = {
         const promptText = `Pytanie użytkownika: ${msgText}\n\nAktualnie przeglądany adres URL w przeglądarce to: ${currentUrl}. Jeśli pyta o tę stronę lub prosi o streszczenie, użyj narzędzia wyszukiwarki internetowej aby zdobyć o niej informacje i streścić zawartość.`;
 
         // POBIERANIE USTAWIEŃ Z GŁÓWNEGO PODPOWIADACZA
-        const prov = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.provider : 'gemini_free';
+        const prov = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.provider : 'gemini_api';
         const key = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.apiKey : '';
         const mod = typeof podpowiadaczApp !== 'undefined' ? (podpowiadaczApp.settings.isCustomModel ? podpowiadaczApp.settings.customModel : podpowiadaczApp.settings.model) : 'gemini-3.1-flash-lite';
 
@@ -693,8 +693,8 @@ const siecioslawApp = {
         let responseText = "Błąd API.";
 
         try {
-            if (prov === 'gemini_free' || prov === 'gemini_api') {
-                const actualKey = prov === 'gemini_free' ? '' : key;
+            if (prov === 'gemini_api') {
+                const actualKey = key;
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${actualKey}`;
                 
                 let geminiContents = [];
@@ -728,7 +728,7 @@ const siecioslawApp = {
                     systemInstruction: { parts: [{ text: systemPrompt }] }
                 };
 
-                if (prov === 'gemini_free') payload.tools = [{ google_search: {} }];
+                // Wyszukiwarka Gemini API
 
                 for (let i = 0; i < 3; i++) {
                     try {
@@ -806,7 +806,7 @@ const siecioslawApp = {
 
         } catch (error) {
             console.error(error);
-            if (prov === 'gemini_free' && (error.message.includes("unregistered callers") || error.message.includes("API Key"))) {
+            if (false) {
                 responseText = `⚠️ **Zabezpieczenie Google API:** \nUruchamiasz system BigOS lokalnie na własnym komputerze. Opcja "Darmowe wbudowane" działa tylko wewnątrz mojego symulatora (Canvas).\n\n👉 Wybierz w ustawieniach **"Własny Klucz Gemini"** i wklej tam swój darmowy klucz ze strony Google AI Studio.`;
             } else {
                 responseText = `⚠️ **Błąd API (${prov}):** ${error.message}\nSprawdź poprawność klucza API w systemowym "Podpowiadaczu AI".`;

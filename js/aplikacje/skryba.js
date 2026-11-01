@@ -587,12 +587,12 @@ window.skrybaApp = {
             }
         }
 
-        const prov = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.provider : 'gemini_free';
+        const prov = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.provider : 'gemini_api';
         const key = typeof podpowiadaczApp !== 'undefined' ? podpowiadaczApp.settings.apiKey : '';
-        const mod = typeof podpowiadaczApp !== 'undefined' ? (podpowiadaczApp.settings.isCustomModel ? podpowiadaczApp.settings.customModel : podpowiadaczApp.settings.model) : 'gemini-3.1-flash-lite';
+        const mod = typeof podpowiadaczApp !== 'undefined' ? (podpowiadaczApp.settings.isCustomModel ? podpowiadaczApp.settings.customModel : podpowiadaczApp.settings.model) : 'gemini-3.1-pro';
         
         if (prov === 'gemini_api' && !key) {
-            if(typeof apps !== 'undefined') apps.showToast('Błąd API', 'Ustaw klucz Gemini w aplikacji Podpowiadacz', 'error'); 
+            if(typeof apps !== 'undefined') apps.showToast('Błąd API', 'Ustaw klucz Gemini w aplikacji BigAI', 'error'); 
             return returnText ? "Błąd." : null;
         }
 
@@ -618,14 +618,12 @@ window.skrybaApp = {
             
             let responseText = "Błąd.";
 
-            if (prov === 'gemini_free' || prov === 'gemini_api') {
-                const actualKey = prov === 'gemini_free' ? '' : key;
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${actualKey}`;
+            if (prov === 'gemini_api') {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${key}`;
                 const payload = {
                     contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                     systemInstruction: { parts: [{ text: systemPrompt }] }
                 };
-                if (prov === 'gemini_free') payload.tools = [{ google_search: {} }];
 
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 const data = await response.json();
@@ -633,9 +631,32 @@ window.skrybaApp = {
                     let textParts = data.candidates?.[0]?.content?.parts?.filter(p => p.text)?.map(p => p.text) || [];
                     responseText = textParts.join('\n') || "Brak odpowiedzi od modelu.";
                 } else throw new Error(data.error?.message || response.statusText);
-            } 
+            }
+            else if (prov === 'openai' || prov === 'groq' || prov === 'openrouter' || prov === 'xai' || prov === 'deepseek') {
+                const endpoints = {
+                    openai: 'https://api.openai.com/v1/chat/completions',
+                    groq: 'https://api.groq.com/openai/v1/chat/completions',
+                    openrouter: 'https://openrouter.ai/api/v1/chat/completions',
+                    xai: 'https://api.x.ai/v1/chat/completions',
+                    deepseek: 'https://api.deepseek.com/chat/completions'
+                };
+                const response = await fetch(endpoints[prov], {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: mod,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
+                        ]
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error?.message || response.statusText);
+                responseText = data.choices?.[0]?.message?.content || "Brak odpowiedzi od modelu.";
+            }
             else {
-                throw new Error("W Skrybie na razie włączony jest tylko silnik Google Gemini.");
+                responseText = targetText;
             }
 
             responseText = responseText.replace(/```html\n|```\n|```/g, '').trim();

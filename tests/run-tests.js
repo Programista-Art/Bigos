@@ -1712,6 +1712,47 @@ async function testDeepAudits() {
       param: 'rm -rf /'
     });
     eq(invalidAction.ok, false, 'unregistered action rejected');
+
+    // Weryfikacja usunięcia gemini_free oraz obecności modeli 2026, STT, TTS i generatorów mediów
+    eq('gemini_free' in ctx.MODELS_DB, false, 'gemini_free must be removed from MODELS_DB');
+    ok(ctx.MODELS_DB.gemini_api.some(m => m.id === 'gemini-4-argon'), 'Gemini 4 Argon present');
+    ok(ctx.MODELS_DB.openai.some(m => m.id === 'gpt-6-astra'), 'GPT-6 Astra present');
+    ok(ctx.MODELS_DB.anthropic.some(m => m.id === 'claude-fable-5-1'), 'Claude Fable 5.1 present');
+    ok(ctx.MODELS_DB.anthropic.some(m => m.id === 'claude-opus-5-5'), 'Claude Opus 5.5 present');
+    ok(ctx.MODELS_DB.anthropic.some(m => m.id === 'claude-sonnet-5-5'), 'Claude Sonnet 5.5 present');
+    ok(ctx.MODELS_DB.anthropic.some(m => m.id === 'claude-haiku-5-5'), 'Claude Haiku 5.5 present');
+
+    ok(ctx.STT_ENGINES_DB && ctx.STT_ENGINES_DB.openai && ctx.STT_ENGINES_DB.deepgram && ctx.STT_ENGINES_DB.elevenlabs_stt, '2026 STT engines present');
+    ok(ctx.VOICES_DB && ctx.VOICES_DB.gemini.length >= 6 && ctx.VOICES_DB.elevenlabs.length >= 5 && ctx.VOICES_DB.cartesia.length >= 3, '2026 assistant voices present');
+
+    const imgIds = (ctx.IMAGE_GENERATORS_DB || []).map(g => g.id);
+    ok(imgIds.includes('nano-banana-2.1'), 'Nano Banana 2.1 image generator present');
+    ok(imgIds.includes('nano-banana-pro'), 'Nano Banana Pro image generator present');
+    ok(imgIds.includes('nano-banana-2-lite'), 'Nano Banana 2 lite image generator present');
+    ok(imgIds.includes('flux-3'), 'FLUX 3 image generator present');
+
+    const vidIds = (ctx.VIDEO_GENERATORS_DB || []).map(g => g.id);
+    ok(vidIds.includes('omni-1.1-flash'), 'Omni 1.1 Flash video generator present');
+    ok(vidIds.includes('veo-3.1-lite'), 'Veo 3.1-lite video generator present');
+    ok(vidIds.includes('veo-3.1-fast'), 'Veo 3.1 -fast video generator present');
+    ok(vidIds.includes('veo-3.1-quality'), 'Veo3.1- Quality video generator present');
+    ok(vidIds.includes('flux-3-video'), 'FLUX 3 video generator present');
+
+    // Weryfikacja parsera poleceń systemowych BigAI
+    const skrybaCmd = ctx.podpowiadaczApp.parseNaturalCommands('Otwórz Skrybę i zapisz: Spotkanie o 15');
+    ok(skrybaCmd && skrybaCmd.includes('[BIGOS:skryba_note:'), 'natural command parses Skryba dictation note');
+
+    const searchCmd = ctx.podpowiadaczApp.parseNaturalCommands('Wyszukaj w przeglądarce Sieciosław kurs euro');
+    ok(searchCmd && searchCmd.includes('[BIGOS:search_web:kurs euro]'), 'natural command parses Sieciosław search');
+
+    const folderCmd = ctx.podpowiadaczApp.parseNaturalCommands('Stwórz folder Dokumenty');
+    ok(folderCmd && folderCmd.includes('[BIGOS:create_folder:Dokumenty]'), 'natural command parses folder creation');
+
+    const imgGenCmd = ctx.podpowiadaczApp.parseNaturalCommands('Wygeneruj zdjęcie zachodu słońca w Nano Banana Pro');
+    ok(imgGenCmd && imgGenCmd.includes('[BIGOS:generate_image:') && imgGenCmd.includes('nano-banana-pro'), 'natural command parses Nano Banana Pro image generation');
+
+    const vidGenCmd = ctx.podpowiadaczApp.parseNaturalCommands('Wygeneruj wideo oceanu w Veo 3.1 -fast');
+    ok(vidGenCmd && vidGenCmd.includes('[BIGOS:generate_video:') && vidGenCmd.includes('veo-3.1-fast'), 'natural command parses Veo 3.1 video generation');
   });
 
   await test('diagnostics sanitizes Error stacks and API key patterns', () => {
@@ -2639,6 +2680,48 @@ async function testWelcomeApp() {
         eq(overlaps, false, `icons ${a.id} (${a.x},${a.y}) and ${b.id} (${b.x},${b.y}) must not overlap`);
       }
     }
+  });
+
+  await test('BigAI 2026 exposes Gemini 4 Argon / 3.8 / 3.6 / 3.5-lite, OpenAI GPT-6 / 6.1 / 5.6 / 5.5 with service tiers, and uncrowded markdown', () => {
+    const ls = makeLocalStorage();
+    const mockDoc = {
+      getElementById: () => null,
+      createElement: () => ({ style: {}, classList: { add() {}, remove() {} }, appendChild() {}, querySelector: () => null }),
+      addEventListener: () => {},
+      body: { appendChild: () => {} }
+    };
+    const ctx = loadModules(['js/aplikacje/podpowiadacz.js'], {
+      localStorage: ls,
+      extras: {
+        document: mockDoc,
+        window: { innerWidth: 1920, innerHeight: 1080 }
+      }
+    });
+
+    const geminiIds = ctx.MODELS_DB.gemini_api.map(m => m.id);
+    for (const id of ['gemini-4-argon', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite']) {
+      ok(geminiIds.includes(id), `Gemini model ${id} is present in MODELS_DB.gemini_api`);
+    }
+
+    const openaiMap = new Map(ctx.MODELS_DB.openai.map(m => [m.id, m]));
+    for (const id of ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-6.1-terra']) {
+      const m = openaiMap.get(id);
+      ok(m, `OpenAI model ${id} is present`);
+      eq(JSON.stringify(m.tiers), JSON.stringify(['standard', 'fast', 'ultrafast']), `${id} supports standard/fast/ultrafast tiers`);
+    }
+    for (const id of ['gpt-6-luna', 'gpt-6-sol', 'gpt-5.5', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna', 'gpt-5.6-nano']) {
+      const m = openaiMap.get(id);
+      ok(m, `OpenAI model ${id} is present`);
+      eq(JSON.stringify(m.tiers), JSON.stringify(['standard', 'fast']), `${id} supports standard/fast tiers`);
+    }
+
+    const anthropicNames = ctx.MODELS_DB.anthropic.map(m => m.name);
+    for (const name of ['Claude Fable 5.1', 'Claude Opus 5.5', 'Claude Sonnet 5.5', 'Claude Haiku 5.5']) {
+      ok(anthropicNames.includes(name), `Anthropic model ${name} is present in MODELS_DB.anthropic`);
+    }
+
+    const mdHtml = ctx.podpowiadaczApp.formatMarkdown('* 🚀 **Otwierać i zamykać aplikacje** (np. *"Otwórz Kalkulator"*, *"Zamknij Skrybę"*)\n* 🌐 **Wyszukiwać** (np. *"Kurs"* )');
+    eq((mdHtml.match(/<li /g) || []).length, 2, 'formatMarkdown preserves all bullet points even when lines contain italic quotes');
   });
 }
 
